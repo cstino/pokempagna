@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Backpack, Package, Zap, Heart, Search, Loader2, Plus, X } from 'lucide-react';
+import { Backpack, Package, Zap, Heart, Search, Loader2, Plus, X, Check, HelpCircle } from 'lucide-react';
 import './Zaino.css';
 
 export default function Zaino() {
@@ -10,8 +10,14 @@ export default function Zaino() {
     const [items, setItems] = useState([]);
     const [allOggetti, setAllOggetti] = useState([]);
     const [activeFilter, setActiveFilter] = useState('Tutti');
+
+    // Stati Modale Aggiunta
     const [showAddModal, setShowAddModal] = useState(false);
+    const [addCart, setAddCart] = useState({}); // { oggId: qty }
     const [adding, setAdding] = useState(false);
+
+    // Stati Modale Conferma Uso
+    const [confirmAction, setConfirmAction] = useState(null); // { item, onConfirm }
 
     const filters = ['Tutti', 'Cura', 'Strumento', 'Battle', 'Altro'];
 
@@ -28,21 +34,13 @@ export default function Zaino() {
                 .from('zaino_giocatore')
                 .select(`
                     quantita,
-                    oggetto:oggetti (
-                        id,
-                        nome,
-                        descrizione,
-                        categoria,
-                        rarita,
-                        immagine_url
-                    )
+                    oggetto:oggetti (*)
                 `)
                 .eq('giocatore_id', profile.id);
 
             if (error) throw error;
             setItems(data || []);
 
-            // Recupera anche tutti gli oggetti disponibili per il modale di aggiunta
             const { data: oggData } = await supabase.from('oggetti').select('*').order('nome');
             setAllOggetti(oggData || []);
         } catch (err) {
@@ -52,33 +50,58 @@ export default function Zaino() {
         }
     };
 
-    const handleAddOggetto = async (oggId) => {
+    const handleConfirmAdd = async () => {
+        const entries = Object.entries(addCart).filter(([_, qty]) => qty > 0);
+        if (entries.length === 0) return;
+
         setAdding(true);
         try {
-            // Controlla se l'oggetto esiste già nello zaino
-            const existing = items.find(i => i.oggetto.id === oggId);
-
-            if (existing) {
-                // Incrementa quantità
-                await supabase
-                    .from('zaino_giocatore')
-                    .update({ quantita: existing.quantita + 1, ultimo_aggiornamento: new Date() })
-                    .eq('giocatore_id', profile.id)
-                    .eq('oggetto_id', oggId);
-            } else {
-                // Inserisce nuovo
-                await supabase
-                    .from('zaino_giocatore')
-                    .insert({ giocatore_id: profile.id, oggetto_id: oggId, quantita: 1 });
+            for (const [oggId, qty] of entries) {
+                const existing = items.find(i => i.oggetto.id === oggId);
+                if (existing) {
+                    await supabase.from('zaino_giocatore')
+                        .update({ quantita: existing.quantita + qty, ultimo_aggiornamento: new Date() })
+                        .eq('giocatore_id', profile.id).eq('oggetto_id', oggId);
+                } else {
+                    await supabase.from('zaino_giocatore')
+                        .insert({ giocatore_id: profile.id, oggetto_id: oggId, quantita: qty });
+                }
             }
-
             await fetchItems();
             setShowAddModal(false);
+            setAddCart({});
         } catch (err) {
-            console.error("Errore aggiunta oggetto:", err);
+            console.error("Errore aggiunta massiva:", err);
         } finally {
             setAdding(false);
         }
+    };
+
+    const handleUseItem = (item) => {
+        setConfirmAction({
+            item,
+            onConfirm: async () => {
+                try {
+                    if (item.quantita > 1) {
+                        await supabase.from('zaino_giocatore')
+                            .update({ quantita: item.quantita - 1, ultimo_aggiornamento: new Date() })
+                            .eq('giocatore_id', profile.id).eq('oggetto_id', item.oggetto.id);
+                    } else {
+                        await supabase.from('zaino_giocatore')
+                            .delete().eq('giocatore_id', profile.id).eq('oggetto_id', item.oggetto.id);
+                    }
+                    await fetchItems();
+                    setConfirmAction(null);
+                } catch (err) { console.error(err); }
+            }
+        });
+    };
+
+    const updateCart = (id, delta) => {
+        setAddCart(prev => ({
+            ...prev,
+            [id]: Math.max(0, (prev[id] || 0) + delta)
+        }));
     };
 
     const filteredItems = activeFilter === 'Tutti'
@@ -154,7 +177,7 @@ export default function Zaino() {
                                 <h4>{item.oggetto.nome}</h4>
                                 <p>{item.oggetto.descrizione}</p>
                             </div>
-                            <button className="use-btn">Usa</button>
+                            <button className="use-btn" onClick={() => handleUseItem(item)}>Usa</button>
                         </div>
                     ))
                 ) : (
@@ -175,14 +198,18 @@ export default function Zaino() {
                 <div className="zaino-modal-overlay" onClick={() => setShowAddModal(false)}>
                     <div className="zaino-modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3>Trova Oggetto</h3>
-                            <button className="close-btn" onClick={() => setShowAddModal(false)}>
-                                <X size={20} />
+                            <div>
+                                <h3>Aggiungi allo zaino</h3>
+                                <small style={{ color: 'var(--text-muted)' }}>Seleziona gli oggetti e le quantità</small>
+                            </div>
+                            <button className="confirm-add-btn" onClick={handleConfirmAdd} disabled={adding || Object.values(addCart).every(v => v === 0)}>
+                                {adding ? <Loader2 className="spin" size={18} /> : <Check size={18} />}
+                                Conferma
                             </button>
                         </div>
                         <div className="modal-body">
                             {allOggetti.map(ogg => (
-                                <div key={ogg.id} className="add-item-row" onClick={() => handleAddOggetto(ogg.id)}>
+                                <div key={ogg.id} className="add-item-row-v2">
                                     <div className="add-item-icon">
                                         {ogg.immagine_url ? <img src={ogg.immagine_url} alt={ogg.nome} /> : <Package size={20} />}
                                     </div>
@@ -190,9 +217,32 @@ export default function Zaino() {
                                         <strong>{ogg.nome}</strong>
                                         <small>{ogg.categoria}</small>
                                     </div>
-                                    <Plus size={16} color="var(--accent-primary)" />
+                                    <div className="row-qty-controls">
+                                        <button onClick={() => updateCart(ogg.id, -1)} className="minus-btn">-</button>
+                                        <span className="cart-qty">{addCart[ogg.id] || 0}</span>
+                                        <button onClick={() => updateCart(ogg.id, 1)} className="plus-btn">+</button>
+                                    </div>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODALE CONFERMA USO PERSONALIZZATO */}
+            {confirmAction && (
+                <div className="zaino-modal-overlay confirmation">
+                    <div className="zaino-modal confirm-small">
+                        <div className="modal-body center">
+                            <div className="confirm-icon-circle">
+                                <HelpCircle size={32} color="#fcd34d" />
+                            </div>
+                            <h3>Vuoi usare {confirmAction.item.oggetto.nome}?</h3>
+                            <p>L'oggetto verrà consumato e rimosso dallo zaino.</p>
+                            <div className="confirm-actions">
+                                <button className="btn-cancel" onClick={() => setConfirmAction(null)}>Annulla</button>
+                                <button className="btn-confirm-use" onClick={confirmAction.onConfirm}>Si, usa</button>
+                            </div>
                         </div>
                     </div>
                 </div>
