@@ -3,6 +3,8 @@
     background-color: #0b121f;
     color: #e2e8f0;
     padding: 24px;
+    padding-left: max(24px, env(safe-area-inset-left));
+    padding-right: max(24px, env(safe-area-inset-right));
     font-family: 'Inter', system-ui, sans-serif;
 }
 
