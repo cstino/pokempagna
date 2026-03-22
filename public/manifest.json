@@ -1,0 +1,17 @@
+{
+    "name": "Pokémpagna",
+    "short_name": "Pokémpagna",
+    "description": "App per la gestione di campagne GDR a tema Pokémon",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0a0a0f",
+    "theme_color": "#0a0a0f",
+    "icons": [
+        {
+            "src": "/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}
