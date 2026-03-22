@@ -1,0 +1,185 @@
+/* ============================================
+   Zaino Player Styles (Versione Premium)
+   ============================================ */
+
+.zaino-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    padding: 70px var(--space-md) var(--space-3xl);
+    min-height: 100vh;
+}
+
+/* -- Sezione Statistica Rapida -- */
+.zaino-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
+.zaino-stat-card {
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.zaino-stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+/* -- Filtri -- */
+.zaino-filters {
+    display: flex;
+    gap: var(--space-sm);
+    overflow-x: auto;
+    padding-bottom: var(--space-xs);
+    scrollbar-width: none;
+}
+
+.zaino-filters::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-chip {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-full);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-chip.active {
+    background: var(--accent-primary);
+    color: #000;
+    border-color: var(--accent-primary);
+}
+
+/* -- Lista Oggetti -- */
+.items-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.item-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-xl);
+    padding: var(--space-md);
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    transition: transform 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.item-card:active {
+    transform: scale(0.98);
+}
+
+.item-icon-container {
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.item-icon-container img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.item-qty-badge {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    background: #fcd34d;
+    color: #000;
+    font-weight: 900;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.item-info {
+    flex: 1;
+}
+
+.item-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.item-info p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.use-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    padding: 10px 16px;
+    border-radius: var(--radius-lg);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+/* -- Empty State -- */
+.zaino-empty {
+    text-align: center;
+    padding: var(--space-3xl) var(--space-lg);
+    background: rgba(30, 41, 59, 0.2);
+    border-radius: var(--radius-xl);
+    border: 2px dashed rgba(255, 255, 255, 0.05);
+}
+
+.zaino-empty p {
+    color: var(--text-secondary);
+    margin-top: var(--space-md);
+}
