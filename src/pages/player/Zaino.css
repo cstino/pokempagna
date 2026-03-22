@@ -220,17 +220,16 @@
     backdrop-filter: blur(8px);
     z-index: 1000;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+    /* 🛡️ Allinea all'inizio per gestire il margine */
     justify-content: center;
     padding: var(--space-md);
-    padding-top: 80px;
-    /* 🛡️ Fix per header mobile in landscape */
     animation: fadeIn 0.2s ease-out;
 }
 
 .zaino-modal-overlay.confirmation {
-    padding-top: var(--space-md);
-    /* Conferma non serve padding extra */
+    align-items: center;
+    /* Conferma rimane centrata */
 }
 
 .zaino-modal {
@@ -238,7 +237,10 @@
     border-radius: var(--radius-xl);
     width: 100%;
     max-width: 440px;
-    max-height: 85vh;
+    max-height: 75vh;
+    /* 🛡️ Limitata per non toccare il fondo in landscape */
+    margin-top: 64px;
+    /* 🛡️ Distanza fissa dall'header */
     display: flex;
     flex-direction: column;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -402,31 +404,7 @@
     color: white;
 }
 
-/* 📱 Mobile Landscape Optimization */
-@media (max-height: 500px) {
-    .zaino-modal {
-        max-height: 95vh;
-    }
 
-    .modal-body {
-        padding: var(--space-sm);
-    }
-
-    .add-item-row-v2 {
-        padding: 8px;
-        margin-bottom: 4px;
-    }
-
-    .add-item-icon {
-        width: 36px;
-        height: 36px;
-    }
-
-    .add-item-icon img {
-        width: 24px;
-        height: 24px;
-    }
-}
 
 
 @keyframes fadeIn {
