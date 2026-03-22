@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Star, Loader2, Trophy, Ruler, Weight, Shield, Zap, Heart, Info, ArrowRightLeft, XCircle, AlertCircle } from 'lucide-react';
+import { Star, Loader2, Trophy, Ruler, Weight, Shield, Zap, Heart, Info, ArrowRightLeft, XCircle, AlertCircle, Box } from 'lucide-react';
 import gsap from 'gsap';
 import { Draggable } from 'gsap/Draggable';
 import './Squadra.css';
@@ -69,7 +69,6 @@ export default function Squadra() {
             let newPos;
 
             if (isMakingTitolare) {
-                // Troviamo il primo slot vuoto tra i titolari
                 const occupati = pokemon.filter(p => p.posizione_squadra < slots).map(p => p.posizione_squadra);
                 newPos = -1;
                 for (let i = 0; i < slots; i++) {
@@ -84,7 +83,6 @@ export default function Squadra() {
                     return;
                 }
             } else {
-                // Spostiamo in panchina (un indice alto qualsiasi >= slots)
                 newPos = 99;
             }
 
@@ -143,7 +141,9 @@ export default function Squadra() {
             )}
 
             <div className="page-header">
-                <h1 className="page-title"><Star size={32} color="#fcd34d" fill="#fcd34d" /> Titolari</h1>
+                <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Star size={32} color="#fcd34d" fill="#fcd34d" /> Squadra
+                </h1>
                 <p className="page-subtitle">I tuoi {slots} Pokémon pronti alla battaglia</p>
             </div>
 
@@ -165,9 +165,11 @@ export default function Squadra() {
 
             {panchinaList.length > 0 && (
                 <>
-                    <div className="page-header" style={{ marginTop: 'var(--space-2xl)' }}>
-                        <h2 className="page-title"><Trophy size={24} color="var(--text-muted)" /> Panchina</h2>
-                        <p className="page-subtitle">Riserve pronte a subentrare</p>
+                    <div className="page-header bench-header" style={{ marginTop: 'var(--space-2xl)' }}>
+                        <h2 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <Box size={24} color="var(--text-muted)" /> Box
+                        </h2>
+                        <p className="page-subtitle">Pokémon in deposito</p>
                     </div>
                     <div className="squadra-grid-panchina">
                         {panchinaList.map(p => (
@@ -190,7 +192,7 @@ export default function Squadra() {
             {selectedPkmn && (
                 <div className="modal-overlay" onClick={() => setSelectedPkmn(null)}>
                     <div className="modal-content pkmn-detail-modal-custom" onClick={e => e.stopPropagation()}>
-                        <div className="modal-pkmn-bg" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                        <div className="modal-pkmn-bg">
                             <button className="modal-close-btn" onClick={() => setSelectedPkmn(null)}>✕</button>
                             <img
                                 src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${selectedPkmn.pokemon_id}.png`}
@@ -205,7 +207,6 @@ export default function Squadra() {
                                 <p style={{ opacity: 0.5, textTransform: 'uppercase', fontSize: '0.8rem' }}>Lv. {selectedPkmn.livello}</p>
                             </div>
 
-                            {/* AZIONI SCAMBIO */}
                             <div className="pkmn-actions-container">
                                 {selectedPkmn.posizione_squadra < slots ? (
                                     <button className="btn-action-pkmn to-bench" onClick={() => handleSwap(selectedPkmn.id, false)}>
@@ -218,43 +219,57 @@ export default function Squadra() {
                                 )}
                             </div>
 
-                            {/* STATISTICHE (Stile Pokedex) */}
-                            <div className="stats-container-modal" style={{ marginTop: 'var(--space-md)' }}>
-                                <div className="stat-row-modal">
-                                    <span className="stat-label-modal">HP</span>
-                                    <div className="stat-bar-modal-bg">
-                                        <div className="stat-bar-modal-fill" style={{ width: `${(selectedPkmn.hp_max / 255) * 100}%` }} />
+                            {/* STATISTICHE (Stile Pokedex - 2 Colonne) */}
+                            <div className="stats-container-modal">
+                                <h4 className="stats-title">Statistiche Base</h4>
+                                <div className="stats-grid-2col">
+                                    {/* Colonna 1 */}
+                                    <div className="stats-col">
+                                        <StatRow label="HP" val={selectedPkmn.hp_max} max={255} />
+                                        <StatRow label="ATK" val={selectedPkmn.attacco || 0} max={190} />
+                                        <StatRow label="DEF" val={selectedPkmn.difesa || 0} max={230} />
                                     </div>
-                                    <span className="stat-val-modal" style={{ fontSize: '0.6rem', minWidth: '20px' }}>{selectedPkmn.hp_max}</span>
-                                </div>
-                                <div className="stat-row-modal">
-                                    <span className="stat-label-modal">ATT</span>
-                                    <div className="stat-bar-modal-bg">
-                                        <div className="stat-bar-modal-fill" style={{ width: '45%', opacity: 0.7 }} />
+                                    {/* Colonna 2 */}
+                                    <div className="stats-col">
+                                        <StatRow label="VEL" val={selectedPkmn.velocita || 0} max={180} />
+                                        <StatRow label="ATK SP" val={selectedPkmn.attacco_speciale || 0} max={194} />
+                                        <StatRow label="DEF SP" val={selectedPkmn.difesa_speciale || 0} max={230} />
                                     </div>
-                                    <span className="stat-val-modal" style={{ fontSize: '0.6rem' }}>--</span>
                                 </div>
                             </div>
 
                             {/* MOSSE */}
                             <div className="pkmn-moves-container">
-                                <h4 className="stats-title" style={{ fontSize: '0.7rem', opacity: 0.5, marginBottom: '8px' }}>Mosse Conosciute</h4>
+                                <h4 className="stats-title">Mosse Conosciute</h4>
                                 <div className="pkmn-moves-grid">
                                     {moves.length > 0 ? moves.map(m => (
                                         <div key={m.id} className="move-item-squadra">
-                                            <span className="move-name-squadra" style={{ fontSize: '0.7rem' }}>{m.nome}</span>
-                                            <div className="move-details-squadra" style={{ fontSize: '0.5rem' }}>
+                                            <span className="move-name-squadra">{m.nome}</span>
+                                            <div className="move-details-squadra">
                                                 <span>{m.tipo}</span>
-                                                <span>PP {m.pp_attuale}</span>
+                                                <span>PP {m.pp_attuale}/{m.pp_max}</span>
                                             </div>
                                         </div>
-                                    )) : <p style={{ opacity: 0.3, fontSize: '0.7rem' }}>Nessuna mossa</p>}
+                                    )) : <p style={{ opacity: 0.3, fontSize: '0.8rem' }}>Nessuna mossa conosciuta</p>}
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+function StatRow({ label, val, max }) {
+    const pct = Math.min(100, (val / max) * 100);
+    return (
+        <div className="stat-row-modal">
+            <span className="stat-label-modal">{label}</span>
+            <span className="stat-val-modal">{val}</span>
+            <div className="stat-bar-modal-bg">
+                <div className="stat-bar-modal-fill" style={{ width: `${pct}%` }} />
+            </div>
         </div>
     );
 }
