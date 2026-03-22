@@ -75,6 +75,22 @@
     font-size: 0.85rem;
 }
 
+.pkmn-type-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .pkmn-image {
     width: 135px;
     height: 135px;

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { User, Shield, Zap, TrendingUp, Medal, Camera, Loader2, Edit2, Check } from 'lucide-react';
+import { User, Shield, Zap, TrendingUp, Medal, Camera, Loader2, Edit2, Check, Heart } from 'lucide-react';
 import './Profilo.css';
 
 export default function Profilo() {
@@ -157,21 +157,26 @@ export default function Profilo() {
                 </div>
             </div>
 
-            {/* SEZIONE HP RPG */}
-            <div className="card hp-section">
-                <div className="hp-header">
-                    <span className="hp-label">Salute Allenatore</span>
-                    <span className="hp-numbers" style={{ color: hpColor }}>{profile.hp} / {profile.hp_max}</span>
-                </div>
-                <div className="hp-bar-bg">
-                    <div className="hp-bar-fill" style={{ width: `${hpPercent}%`, backgroundColor: hpColor }}></div>
-                </div>
-            </div>
-
             {/* STATISTICHE FISICHE */}
             <div className="card stats-section">
                 <h3 className="section-title">Statistiche Base</h3>
                 <div className="stats-grid">
+                    {/* HP INTEGRATI NELLE STATS */}
+                    <div className="stat-box" style={{ gridColumn: '1 / -1', background: 'rgba(52, 211, 153, 0.05)', border: '1px solid rgba(52, 211, 153, 0.1)' }}>
+                        <div className="stat-icon-bg" style={{ background: 'rgba(52, 211, 153, 0.2)' }}>
+                            <Heart size={20} color="#34d399" fill="#34d399" />
+                        </div>
+                        <div className="stat-data" style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                <span className="stat-name">Salute Allenatore</span>
+                                <span className="stat-value" style={{ color: hpColor, fontVariantNumeric: 'tabular-nums' }}>{profile.hp} / {profile.hp_max}</span>
+                            </div>
+                            <div className="hp-bar-bg" style={{ marginTop: '8px', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                                <div className="hp-bar-fill" style={{ width: `${hpPercent}%`, height: '100%', backgroundColor: hpColor, transition: 'width 0.3s' }}></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="stat-box">
                         <div className="stat-icon-bg bg-red">
                             <Zap size={20} color="#ef4444" />

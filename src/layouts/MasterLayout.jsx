@@ -72,19 +72,7 @@ export default function MasterLayout() {
                 </nav>
 
                 <div className="master-sidebar-footer">
-                    <button className="theme-toggle-btn-master" onClick={toggleTheme} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        width: '100%',
-                        padding: '12px',
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '10px',
-                        color: 'var(--text-primary)',
-                        cursor: 'pointer',
-                        marginBottom: '12px'
-                    }}>
+                    <button className="theme-toggle-btn-master" onClick={toggleTheme}>
                         {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
                         <span>Tema {isDarkMode ? 'Chiaro' : 'Scuro'}</span>
                     </button>
