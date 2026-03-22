@@ -3,7 +3,7 @@
    ============================================ */
 
 .pokedex-page {
-    padding: var(--space-md);
+    padding: 70px var(--space-md) var(--space-xl);
     padding-bottom: 110px;
     /* Spazio per navbar mobile in basso */
 }
