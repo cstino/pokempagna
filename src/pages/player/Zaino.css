@@ -223,20 +223,28 @@
     align-items: center;
     justify-content: center;
     padding: var(--space-md);
+    padding-top: 80px;
+    /* 🛡️ Fix per header mobile in landscape */
     animation: fadeIn 0.2s ease-out;
+}
+
+.zaino-modal-overlay.confirmation {
+    padding-top: var(--space-md);
+    /* Conferma non serve padding extra */
 }
 
 .zaino-modal {
     background: #1e293b;
     border-radius: var(--radius-xl);
     width: 100%;
-    max-width: 400px;
-    max-height: 80vh;
+    max-width: 440px;
+    max-height: 85vh;
     display: flex;
     flex-direction: column;
     border: 1px solid rgba(255, 255, 255, 0.1);
     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     overflow: hidden;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
 }
 
 .modal-header {
@@ -393,6 +401,33 @@
     background: #ef4444;
     color: white;
 }
+
+/* 📱 Mobile Landscape Optimization */
+@media (max-height: 500px) {
+    .zaino-modal {
+        max-height: 95vh;
+    }
+
+    .modal-body {
+        padding: var(--space-sm);
+    }
+
+    .add-item-row-v2 {
+        padding: 8px;
+        margin-bottom: 4px;
+    }
+
+    .add-item-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .add-item-icon img {
+        width: 24px;
+        height: 24px;
+    }
+}
+
 
 @keyframes fadeIn {
     from {
