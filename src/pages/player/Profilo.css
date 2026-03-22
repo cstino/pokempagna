@@ -1,0 +1,347 @@
+/* ============================================
+   Profilo Allenatore Styles (Mobile Landscape First)
+   ============================================ */
+
+.profilo-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    padding-bottom: var(--space-3xl);
+}
+
+/* -- Trainer Card Top -- */
+.trainer-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    position: relative;
+    overflow: hidden;
+}
+
+.trainer-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+}
+
+.trainer-avatar-container {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+    flex-shrink: 0;
+    transition: all var(--transition-normal);
+}
+
+.trainer-avatar-container:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+.trainer-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.trainer-avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #334155, #1e293b);
+}
+
+.avatar-edit-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+}
+
+.trainer-avatar-container:hover .avatar-edit-overlay,
+.avatar-edit-overlay:has(.spin) {
+    opacity: 1;
+}
+
+.trainer-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.trainer-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trainer-name-row h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.btn-edit-name {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-edit-name:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.edit-name-mode {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+}
+
+.name-input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    width: 60%;
+    min-width: 120px;
+    outline: none;
+}
+
+.name-input:focus {
+    border-color: #3b82f6;
+}
+
+.btn-save-name {
+    background: #34d399;
+    color: #000;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.trainer-level {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.tlp-badge {
+    position: absolute;
+    top: var(--space-md);
+    right: var(--space-md);
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #fcd34d;
+    font-weight: 800;
+    font-size: 0.85rem;
+}
+
+/* -- HP Section -- */
+.hp-section {
+    padding: var(--space-lg);
+}
+
+.hp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: var(--space-sm);
+}
+
+.hp-label {
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+}
+
+.hp-numbers {
+    font-size: 1.2rem;
+    font-weight: 900;
+    font-family: monospace;
+}
+
+.hp-bar-bg {
+    width: 100%;
+    height: 12px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hp-bar-fill {
+    height: 100%;
+    transition: width 0.5s ease-out, background-color 0.5s ease;
+    border-radius: var(--radius-full);
+    box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.3);
+}
+
+/* -- Stats Section -- */
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
+.stat-box {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.stat-icon-bg {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.bg-red {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+.bg-blue {
+    background: rgba(59, 130, 246, 0.15);
+}
+
+.stat-data {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-name {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--text-primary);
+}
+
+/* -- Medals Section -- */
+.medals-grid {
+    display: flex;
+    padding: var(--space-sm) 0;
+    gap: var(--space-md);
+    overflow-x: auto;
+}
+
+.medal-slot {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px dashed rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.medal-slot.earned {
+    border: 2px solid #f59e0b;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.2) 0%, rgba(0, 0, 0, 0.3) 100%);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+}
+
+.empty-medals {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--space-lg) 0;
+    color: var(--text-muted);
+}
+
+.empty-medals p {
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 12px 0 4px;
+}
+
+.empty-medals span {
+    font-size: 0.85rem;
+    max-width: 250px;
+}
+
+.medal-placeholder {
+    display: flex;
+    gap: 8px;
+    margin-bottom: var(--space-sm);
+}

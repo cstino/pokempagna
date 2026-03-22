@@ -1,0 +1,326 @@
+.dashboard-layout {
+    min-height: 100vh;
+    background-color: #0b121f;
+    color: #e2e8f0;
+    padding: 24px;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto 32px auto;
+}
+
+.dash-user {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.dash-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dash-user h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    color: #ffffff;
+}
+
+.dash-user span {
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.btn-logout {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-logout:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Actions */
+.dash-actions {
+    display: flex;
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto 48px auto;
+}
+
+.action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1.05rem;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s, filter 0.2s;
+}
+
+.action-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+}
+
+.btn-cyan {
+    background: #56e3ff;
+    color: #000000;
+    box-shadow: 0 4px 14px rgba(86, 227, 255, 0.2);
+}
+
+.btn-dark {
+    background: #1e293b;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Grid */
+.dash-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.campaign-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px;
+}
+
+.campaign-card {
+    position: relative;
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0) 0%, rgba(15, 23, 42, 0.9) 100%),
+        url('https://images.unsplash.com/photo-1613771404784-3a5686aa2be3?q=80&w=600&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    height: 320px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 24px;
+}
+
+.campaign-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.card-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.bg-gold {
+    background: rgba(234, 179, 8, 0.9);
+    color: #1a1a1a;
+}
+
+.card-info h4 {
+    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.card-code {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-family: monospace;
+    letter-spacing: 1px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 64px;
+    color: #64748b;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+}
+
+.loading-state {
+    display: flex;
+    justify-content: center;
+    padding: 64px;
+    color: #56e3ff;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Modals */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 24px;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 32px;
+    width: 100%;
+    max-width: 400px;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.modal-close:hover {
+    color: #fff;
+}
+
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+}
+
+.modal-form h3 {
+    font-size: 1.5rem;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.modal-form p {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+}
+
+.modal-input {
+    width: 100%;
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 16px;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.code-input {
+    letter-spacing: 4px;
+    font-family: monospace;
+    font-weight: 700;
+}
+
+.modal-input:focus {
+    outline: none;
+    border-color: #56e3ff;
+}
+
+.btn-modal {
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.code-display {
+    background: #0f172a;
+    border: 1px dashed #56e3ff;
+    color: #56e3ff;
+    padding: 16px;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 8px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.error-box {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .dash-actions {
+        flex-direction: column;
+    }
+}

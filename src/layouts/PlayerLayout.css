@@ -1,0 +1,98 @@
+/* ============================================
+   Player Layout — Navbar & Structure
+   ============================================ */
+
+.player-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+.player-navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-dropdown);
+    background: rgba(10, 10, 15, 0.9);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 0 var(--space-md);
+}
+
+.player-navbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    max-width: 800px;
+    margin: 0 auto;
+    height: 56px;
+}
+
+.player-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all var(--transition-normal);
+    cursor: pointer;
+    text-decoration: none;
+    position: relative;
+}
+
+.player-nav-item:hover {
+    color: var(--text-secondary);
+}
+
+.player-nav-item.active {
+    color: var(--text-primary);
+}
+
+.player-nav-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 3px;
+    background: linear-gradient(135deg, var(--accent-primary-light), #818CF8);
+    border-radius: var(--radius-full);
+}
+
+.player-nav-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.player-content {
+    flex: 1;
+    padding-top: 64px;
+    padding-bottom: var(--space-lg);
+}
+
+/* Page header */
+.page-header {
+    padding: var(--space-lg) var(--space-md);
+}
+
+.page-title {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-top: var(--space-xs);
+}

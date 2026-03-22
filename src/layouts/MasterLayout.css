@@ -1,0 +1,193 @@
+/* ============================================
+   Master Layout — Sidebar & Structure
+   ============================================ */
+
+.master-layout {
+    display: flex;
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+.master-sidebar {
+    width: 240px;
+    background: rgba(17, 24, 39, 0.95);
+    backdrop-filter: blur(16px);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    padding: var(--space-lg) 0;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: var(--z-dropdown);
+}
+
+.master-sidebar-header {
+    padding: 0 var(--space-lg);
+    margin-bottom: var(--space-xl);
+}
+
+.master-sidebar-logo {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #818CF8, #A78BFA);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.master-sidebar-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 2px 8px;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: var(--radius-full);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #F59E0B;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: var(--space-xs);
+}
+
+.sidebar-campaign-info {
+    margin: 0 var(--space-lg) var(--space-md);
+    padding: var(--space-sm);
+    background: rgba(86, 227, 255, 0.05);
+    border: 1px dashed rgba(86, 227, 255, 0.3);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.sidebar-campaign-info:hover {
+    background: rgba(86, 227, 255, 0.1);
+    border-color: rgba(86, 227, 255, 0.6);
+}
+
+.sci-label {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+.sci-code-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sci-code {
+    font-family: monospace;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #56e3ff;
+    letter-spacing: 2px;
+}
+
+.sci-copy-icon {
+    color: rgba(86, 227, 255, 0.6);
+    transition: color 0.2s;
+}
+
+.sidebar-campaign-info:hover .sci-copy-icon {
+    color: #56e3ff;
+}
+
+.master-nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: 0 var(--space-sm);
+}
+
+.master-nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all var(--transition-normal);
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.master-nav-item:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.master-nav-item.active {
+    color: var(--text-primary);
+    background: rgba(45, 45, 143, 0.2);
+    box-shadow: inset 3px 0 0 var(--accent-primary-light);
+}
+
+.master-nav-icon {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+}
+
+.master-sidebar-footer {
+    padding: var(--space-md) var(--space-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.master-logout-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    width: 100%;
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    transition: all var(--transition-normal);
+}
+
+.master-logout-btn:hover {
+    color: var(--status-error);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.master-content {
+    flex: 1;
+    margin-left: 240px;
+    padding: var(--space-xl);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .master-sidebar {
+        width: 64px;
+        padding: var(--space-md) 0;
+    }
+
+    .master-sidebar-header,
+    .master-nav-item span:not(.master-nav-icon),
+    .master-sidebar-badge,
+    .master-sidebar-footer span {
+        display: none;
+    }
+
+    .master-nav-item {
+        justify-content: center;
+        padding: var(--space-sm);
+    }
+
+    .master-content {
+        margin-left: 64px;
+    }
+}
