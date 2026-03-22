@@ -183,3 +183,134 @@
     color: var(--text-secondary);
     margin-top: var(--space-md);
 }
+
+/* -- FAB -- */
+.zaino-fab {
+    position: fixed;
+    bottom: 30px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #fcd34d;
+    color: #000;
+    border: none;
+    box-shadow: 0 4px 15px rgba(252, 211, 77, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 90;
+    transition: all 0.2s;
+}
+
+.zaino-fab:active {
+    transform: scale(0.9);
+}
+
+/* -- Add Modal -- */
+.zaino-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-md);
+}
+
+.zaino-modal {
+    background: #1e293b;
+    border-radius: var(--radius-xl);
+    width: 100%;
+    max-width: 400px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: slideUp 0.3s ease-out;
+}
+
+.modal-header {
+    padding: var(--space-md);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.modal-body {
+    padding: var(--space-md);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.add-item-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.add-item-row:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.add-item-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-item-icon img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+}
+
+.add-item-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.add-item-text strong {
+    font-size: 0.95rem;
+}
+
+.add-item-text small {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
