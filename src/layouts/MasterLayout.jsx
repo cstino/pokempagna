@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Map, Users, Swords, LogOut, LayoutDashboard, Copy } from 'lucide-react';
+import { Map, Users, Swords, LogOut, LayoutDashboard, Copy, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import './MasterLayout.css';
 
@@ -14,6 +15,7 @@ const NAV_ITEMS = [
 
 export default function MasterLayout() {
     const { profile, signOut } = useAuth();
+    const { isDarkMode, toggleTheme } = useTheme();
     const [campagna, setCampagna] = useState(null);
 
     useEffect(() => {
@@ -70,6 +72,22 @@ export default function MasterLayout() {
                 </nav>
 
                 <div className="master-sidebar-footer">
+                    <button className="theme-toggle-btn-master" onClick={toggleTheme} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        width: '100%',
+                        padding: '12px',
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '10px',
+                        color: 'var(--text-primary)',
+                        cursor: 'pointer',
+                        marginBottom: '12px'
+                    }}>
+                        {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                        <span>Tema {isDarkMode ? 'Chiaro' : 'Scuro'}</span>
+                    </button>
                     <button className="master-logout-btn" onClick={signOut}>
                         <LogOut size={20} />
                         <span>Esci</span>

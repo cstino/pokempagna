@@ -2,7 +2,7 @@ import { Star } from 'lucide-react';
 
 export default function Squadra() {
     return (
-        <div className="animate-fade-in">
+        <div className="animate-fade-in" style={{ paddingTop: '70px', paddingLeft: 'var(--space-md)', paddingRight: 'var(--space-md)' }}>
             <div className="page-header" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <Star size={32} color="#fcd34d" />

@@ -133,11 +133,15 @@ function AppRoutes() {
   );
 }
 
+import { ThemeProvider } from './contexts/ThemeContext';
+
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <ThemeProvider>
+          <AppRoutes />
+        </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>
   );

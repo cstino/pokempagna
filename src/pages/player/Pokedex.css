@@ -1,0 +1,288 @@
+/* ============================================
+   Pokédex Styling (Pocket-UI Premium)
+   ============================================ */
+
+.pokedex-page {
+    padding: var(--space-md);
+    padding-bottom: 110px;
+    /* Spazio per navbar mobile in basso */
+}
+
+/* Header */
+.pokedex-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-2xl);
+}
+
+.header-text h1 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Search Bar */
+.search-bar-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+
+.search-bar-container input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 12px 12px 42px;
+    border-radius: var(--radius-lg);
+    color: white;
+    font-size: 1rem;
+    outline: none;
+}
+
+/* Grid */
+.pokedex-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: var(--space-lg);
+}
+
+/* Individual Card */
+.pkmn-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-xl);
+    padding: var(--space-md);
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Centra tutto orizzontalmente */
+}
+
+.pkmn-card:hover {
+    transform: translateY(-8px);
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.pkmn-id {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-family: monospace;
+    font-weight: 800;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    opacity: 0.5;
+}
+
+.pkmn-image-container {
+    padding: 20px 0;
+}
+
+.pkmn-image {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+}
+
+.pkmn-card-details h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.pkmn-types {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.type-badge {
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+   MODALE DETTAGLI (Stile Premium - Simile alla tua foto!)
+   ============================================ */
+
+.pkmn-detail-modal {
+    width: 90vw !important;
+    max-width: 700px !important;
+    height: 85vh !important;
+    max-height: 520px !important;
+    padding: 0 !important;
+    overflow: hidden;
+    display: flex !important;
+    flex-direction: row !important;
+    /* Forza due colonne (Landscape) */
+    background: rgba(17, 24, 39, 0.8) !important;
+    /* Sfondo scuro semitrasparente */
+    backdrop-filter: blur(25px) !important;
+    /* Vetro satinato */
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 32px !important;
+    margin-top: 60px !important;
+    /* Evita sovrapposizione header */
+}
+
+/* Colonna Sinistra Colorata */
+.modal-pkmn-bg {
+    width: 45%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.modal-pkmn-img {
+    width: 85%;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.4));
+}
+
+/* Colonna Destra Informativa (La parte nera/grigia della tua foto) */
+.modal-pkmn-body {
+    flex: 1;
+    overflow-y: auto;
+    /* Scorrimento indipendente */
+    padding: var(--space-xl);
+    background: rgba(10, 10, 15, 0.4);
+    /* Overlay scuro per far risaltare il testo */
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 100;
+}
+
+.modal-pkmn-header {
+    text-align: center;
+    margin-bottom: var(--space-lg);
+}
+
+.modal-pkmn-header h2 {
+    font-size: 2.5rem;
+    font-family: var(--font-display);
+    margin: 4px 0;
+    letter-spacing: -1px;
+}
+
+.pkmn-types-modal {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.pkmn-flavor-text {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 15px;
+    border-radius: 12px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: var(--space-xl);
+    font-style: italic;
+    border-left: 3px solid var(--text-muted);
+}
+
+.pkmn-info-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+}
+
+.info-box {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.info-box span {
+    font-weight: 800;
+    font-size: 1.2rem;
+    display: block;
+}
+
+.info-box label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+/* Stats */
+.stats-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 20px 0 15px;
+    font-weight: 800;
+}
+
+.stat-row {
+    display: grid;
+    grid-template-columns: 80px 30px 1fr;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.stat-name {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--text-muted);
+}
+
+.stat-val {
+    font-family: monospace;
+    font-weight: 800;
+}
+
+.stat-bar-bg {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.stat-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+}

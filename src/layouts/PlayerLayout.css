@@ -2,23 +2,25 @@
    Player Layout — Navbar & Structure
    ============================================ */
 
-.player-layout {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    background: var(--bg-primary);
-}
-
 .player-navbar {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    z-index: var(--z-dropdown);
-    background: rgba(10, 10, 15, 0.9);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    height: 56px;
+    z-index: 1000;
+    background: rgba(10, 10, 15, 0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     padding: 0 var(--space-md);
+}
+
+.player-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: var(--bg-primary);
+    overflow-x: hidden;
 }
 
 .player-navbar-inner {
@@ -75,8 +77,8 @@
 
 .player-content {
     flex: 1;
-    padding-top: 64px;
-    padding-bottom: var(--space-lg);
+    padding-top: 0;
+    padding-bottom: 20px;
 }
 
 /* Page header */

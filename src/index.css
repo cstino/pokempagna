@@ -15,7 +15,38 @@
   --text-primary: #FFFFFF;
   --text-secondary: #9CA3AF;
   --text-muted: #6B7280;
+}
 
+/* 🌞 LIGHT MODE OVERRIDES (Solo per Master) */
+:root.light {
+  --bg-primary: #f3f4f6;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f9fafb;
+  --bg-overlay: rgba(255, 255, 255, 0.9);
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  --accent-primary: #3b82f6;
+  --accent-glow: rgba(59, 130, 246, 0.1);
+}
+
+:root.dark {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #111827;
+  --bg-card: #1a1a2e;
+  --bg-card-hover: #222244;
+  --bg-overlay: rgba(10, 10, 15, 0.85);
+  --text-primary: #FFFFFF;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+}
+
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+:root {
   /* Accent */
   --accent-primary: #2d2d8f;
   --accent-primary-light: #4040b0;
@@ -138,7 +169,9 @@ button {
   color: inherit;
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
   font-family: inherit;
   font-size: inherit;
   color: inherit;
@@ -152,29 +185,29 @@ img {
   display: block;
 }
 
-ul, ol {
+ul,
+ol {
   list-style: none;
 }
 
 /* ============================================
-   Scrollbar Styling
+   Scrollbar Hiding (Look da App Nativa)
    ============================================ */
+/* Nascondi per Chrome, Safari e Opera */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  display: none;
 }
 
-::-webkit-scrollbar-track {
-  background: var(--bg-primary);
+/* Nascondi per Firefox */
+html,
+body {
+  scrollbar-width: none;
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--bg-card-hover);
-  border-radius: var(--radius-full);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+/* Nascondi per IE e Edge */
+html,
+body {
+  -ms-overflow-style: none;
 }
 
 /* ============================================
@@ -245,7 +278,7 @@ ul, ol {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
   opacity: 0;
   transition: opacity var(--transition-fast);
 }
@@ -350,56 +383,167 @@ ul, ol {
 /* ============================================
    Type-specific Glow Effects
    ============================================ */
-.type-glow-fire { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); border-color: var(--type-fire); }
-.type-glow-water { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); border-color: var(--type-water); }
-.type-glow-electric { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); border-color: var(--type-electric); }
-.type-glow-grass { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); border-color: var(--type-grass); }
-.type-glow-ice { box-shadow: 0 0 20px rgba(6, 182, 212, 0.3); border-color: var(--type-ice); }
-.type-glow-poison { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); border-color: var(--type-poison); }
-.type-glow-psychic { box-shadow: 0 0 20px rgba(236, 72, 153, 0.3); border-color: var(--type-psychic); }
-.type-glow-fighting { box-shadow: 0 0 20px rgba(220, 38, 38, 0.3); border-color: var(--type-fighting); }
-.type-glow-ground { box-shadow: 0 0 20px rgba(146, 64, 14, 0.3); border-color: var(--type-ground); }
-.type-glow-flying { box-shadow: 0 0 20px rgba(129, 140, 248, 0.3); border-color: var(--type-flying); }
-.type-glow-bug { box-shadow: 0 0 20px rgba(132, 204, 22, 0.3); border-color: var(--type-bug); }
-.type-glow-rock { box-shadow: 0 0 20px rgba(161, 98, 7, 0.3); border-color: var(--type-rock); }
-.type-glow-ghost { box-shadow: 0 0 20px rgba(124, 58, 237, 0.3); border-color: var(--type-ghost); }
-.type-glow-dragon { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); border-color: var(--type-dragon); }
-.type-glow-dark { box-shadow: 0 0 20px rgba(55, 65, 81, 0.3); border-color: var(--type-dark); }
-.type-glow-steel { box-shadow: 0 0 20px rgba(148, 163, 184, 0.3); border-color: var(--type-steel); }
-.type-glow-fairy { box-shadow: 0 0 20px rgba(244, 114, 182, 0.3); border-color: var(--type-fairy); }
-.type-glow-normal { box-shadow: 0 0 20px rgba(107, 114, 128, 0.3); border-color: var(--type-normal); }
+.type-glow-fire {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  border-color: var(--type-fire);
+}
+
+.type-glow-water {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  border-color: var(--type-water);
+}
+
+.type-glow-electric {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+  border-color: var(--type-electric);
+}
+
+.type-glow-grass {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  border-color: var(--type-grass);
+}
+
+.type-glow-ice {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+  border-color: var(--type-ice);
+}
+
+.type-glow-poison {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+  border-color: var(--type-poison);
+}
+
+.type-glow-psychic {
+  box-shadow: 0 0 20px rgba(236, 72, 153, 0.3);
+  border-color: var(--type-psychic);
+}
+
+.type-glow-fighting {
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.3);
+  border-color: var(--type-fighting);
+}
+
+.type-glow-ground {
+  box-shadow: 0 0 20px rgba(146, 64, 14, 0.3);
+  border-color: var(--type-ground);
+}
+
+.type-glow-flying {
+  box-shadow: 0 0 20px rgba(129, 140, 248, 0.3);
+  border-color: var(--type-flying);
+}
+
+.type-glow-bug {
+  box-shadow: 0 0 20px rgba(132, 204, 22, 0.3);
+  border-color: var(--type-bug);
+}
+
+.type-glow-rock {
+  box-shadow: 0 0 20px rgba(161, 98, 7, 0.3);
+  border-color: var(--type-rock);
+}
+
+.type-glow-ghost {
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+  border-color: var(--type-ghost);
+}
+
+.type-glow-dragon {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+  border-color: var(--type-dragon);
+}
+
+.type-glow-dark {
+  box-shadow: 0 0 20px rgba(55, 65, 81, 0.3);
+  border-color: var(--type-dark);
+}
+
+.type-glow-steel {
+  box-shadow: 0 0 20px rgba(148, 163, 184, 0.3);
+  border-color: var(--type-steel);
+}
+
+.type-glow-fairy {
+  box-shadow: 0 0 20px rgba(244, 114, 182, 0.3);
+  border-color: var(--type-fairy);
+}
+
+.type-glow-normal {
+  box-shadow: 0 0 20px rgba(107, 114, 128, 0.3);
+  border-color: var(--type-normal);
+}
 
 /* ============================================
    Animations
    ============================================ */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px var(--accent-glow); }
-  50% { box-shadow: 0 0 40px var(--accent-glow), 0 0 60px var(--accent-glow); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  50% {
+    box-shadow: 0 0 40px var(--accent-glow), 0 0 60px var(--accent-glow);
+  }
 }
 
 .animate-fade-in {
@@ -415,17 +559,34 @@ ul, ol {
 }
 
 /* Stagger children animations */
-.stagger-children > * {
+.stagger-children>* {
   opacity: 0;
   animation: fadeIn 0.4s ease forwards;
 }
 
-.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
-.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
-.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
-.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
-.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
-.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+.stagger-children>*:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.stagger-children>*:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.stagger-children>*:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.stagger-children>*:nth-child(4) {
+  animation-delay: 0.2s;
+}
+
+.stagger-children>*:nth-child(5) {
+  animation-delay: 0.25s;
+}
+
+.stagger-children>*:nth-child(6) {
+  animation-delay: 0.3s;
+}
 
 /* ============================================
    Responsive

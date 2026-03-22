@@ -25,30 +25,48 @@ export default function MenuIniziale() {
     }, [profile]);
 
     async function caricaCampagne() {
+        if (!profile) return;
         setFetchingCampagne(true);
         console.log("Inizio fetching campagne per:", profile.id);
+
         try {
-            // Aggiungiamo un timeout manuale di sicurezza per evitare hangs infiniti della libreria REST di Supabase
-            const fetchPromise = supabase
+            // 1. Carichiamo le campagne dove l'utente è il MASTER
+            const masterPromise = supabase
                 .from('campagne')
                 .select('*')
                 .eq('master_id', profile.id);
+
+            // 2. Se l'utente ha una campagna_corrente_id, carichiamola (e' quella in cui partecipa come giocatore o master)
+            let dataG = [];
+            if (profile.campagna_corrente_id) {
+                const { data: currentCamp } = await supabase
+                    .from('campagne')
+                    .select('*')
+                    .eq('id', profile.campagna_corrente_id)
+                    .single();
+                if (currentCamp) dataG = [currentCamp];
+            }
 
             const timeoutPromise = new Promise((_, reject) => {
                 setTimeout(() => reject(new Error('Supabase request timeout after 5s')), 5000);
             });
 
-            const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
+            const { data: dataM, error: errorM } = await Promise.race([masterPromise, timeoutPromise]);
 
-            if (error) throw error;
-            console.log("Campagne caricate con successo:", data);
-            setCampagne(data || []);
+            if (errorM) throw errorM;
+
+            // Uniamo le campagne evitando duplicati (se l'utente e' master e ha quella campagna come corrente)
+            const map = new Map();
+            [...dataM, ...dataG].forEach(c => map.set(c.id, c));
+            const allCampagne = Array.from(map.values());
+
+            console.log("Tutte le campagne recuperate:", allCampagne);
+            setCampagne(allCampagne);
         } catch (err) {
             console.error("Errore critico caricamento campagne:", err);
             setError(err.message || "Errore sconosciuto nel database");
             setCampagne([]);
         } finally {
-            console.log("Fetching completato, disabilito loader.");
             setFetchingCampagne(false);
         }
     }
@@ -290,19 +308,25 @@ export default function MenuIniziale() {
                     <div className="loading-state"><Loader2 className="spin" size={32} /></div>
                 ) : campagne.length > 0 ? (
                     <div className="campaign-grid">
-                        {campagne.map((camp) => (
-                            <div
-                                key={camp.id}
-                                className="campaign-card"
-                                onClick={() => selezionaCampagna(camp.id, 'master')}
-                            >
-                                <div className="card-badge bg-gold">DM</div>
-                                <div className="card-info">
-                                    <h4>{camp.nome}</h4>
-                                    <span className="card-code">CODE: {camp.codice_invito}</span>
+                        {campagne.map((camp) => {
+                            const isMasterInThis = camp.master_id === profile.id;
+                            const badgeColor = isMasterInThis ? 'bg-gold' : 'bg-cyan';
+                            const badgeText = isMasterInThis ? 'DM' : 'GIOCATORE';
+
+                            return (
+                                <div
+                                    key={camp.id}
+                                    className="campaign-card"
+                                    onClick={() => selezionaCampagna(camp.id, isMasterInThis ? 'master' : 'giocatore')}
+                                >
+                                    <div className={`card-badge ${badgeColor}`}>{badgeText}</div>
+                                    <div className="card-info">
+                                        <h4>{camp.nome}</h4>
+                                        <span className="card-code">CODE: {camp.codice_invito}</span>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 ) : (
                     <div className="empty-state">
