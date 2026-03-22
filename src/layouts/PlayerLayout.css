@@ -21,6 +21,10 @@
     min-height: 100vh;
     background: var(--bg-primary);
     overflow-x: hidden;
+
+    /* 🛡️ Notch & Safe Area Protection (iPhone Landscape) */
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
 }
 
 .player-navbar-inner {
