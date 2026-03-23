@@ -1,0 +1,88 @@
+/* Animazioni Battaglia Overlay (Classico Toon) */
+.battle-animations-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+/* Base per tutti i proiettili "Gommosi" */
+.toon-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: url('#toonFlame');
+    /* Filtro fusione gommosa */
+    opacity: 0;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+/* Fuoco */
+.fire-particle {
+    background: radial-gradient(circle, #ffcc00, #ff4d00);
+}
+
+/* Acqua */
+.water-particle {
+    position: absolute;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #60a5fa, #1d4ed8);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+}
+
+/* Effetto Burst Toon Generale */
+.toon-burst-effect {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    filter: blur(8px);
+    z-index: 10001;
+    opacity: 0.7;
+}
+
+/* DOPPIO CALCIO */
+.kick-impact-effect {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: white;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+    border: 3px solid #ffcc00;
+    border-radius: 50%;
+    z-index: 10005;
+}
+
+.kick-line {
+    position: absolute;
+    width: 40px;
+    height: 3px;
+    background: #ffcc00;
+    border-radius: 2px;
+    transform-origin: left center;
+    z-index: 10004;
+}
+
+/* FOGLIA LAMA */
+.leaf-particle {
+    position: absolute;
+    width: 24px;
+    height: 32px;
+    background: linear-gradient(135deg, #4ade80, #166534);
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transform-style: preserve-3d;
+}
+
+.toon-slash-effect {
+    position: absolute;
+    width: 350px;
+    height: 15px;
+    background: white;
+    box-shadow: 0 0 40px rgba(255, 255, 255, 1);
+    border-radius: 10px;
+    transform-origin: center;
+    z-index: 10002;
+}

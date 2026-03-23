@@ -21,6 +21,7 @@ import Combat from './pages/player/Combat';
 import Campagna from './pages/master/Campagna';
 import Party from './pages/master/Party';
 import Battaglia from './pages/master/Battaglia';
+import TestAnim from './pages/master/TestAnim';
 
 function ProtectedRoute({ children, requiredRole }) {
   const { user, profile, loading, signOut } = useAuth();
@@ -122,6 +123,7 @@ function AppRoutes() {
         <Route path="campagna" element={<Campagna />} />
         <Route path="party" element={<Party />} />
         <Route path="battaglia" element={<Battaglia />} />
+        <Route path="test-anim" element={<TestAnim />} />
       </Route>
 
       {/* HUB Battaglia — no auth required, just a display screen */}
