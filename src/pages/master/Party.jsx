@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Users, User, Shield, Zap, Medal, Edit2, Loader2, X, Check, Save, Heart, TrendingUp, Plus, Minus, Package } from 'lucide-react';
+import { Users, User, Shield, Zap, Medal, Edit2, Loader2, X, Check, Save, Heart, TrendingUp, Plus, Minus, Package, Trash2, Search, Info } from 'lucide-react';
 import './Party.css';
 
 export default function Party() {
@@ -24,6 +24,16 @@ export default function Party() {
     const [showAddItem, setShowAddItem] = useState(false);
     const [addCart, setAddCart] = useState({}); // { oggId: qty }
     const [savingItem, setSavingItem] = useState(false);
+
+    // Stati per i Pokémon
+    const [editingPkmn, setEditingPkmn] = useState(null);
+    const [searching, setSearching] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResult, setSearchResult] = useState(null);
+    const [fullPokeList, setFullPokeList] = useState([]);
+    const [filteredPokeList, setFilteredPokeList] = useState([]);
+    const [currentTypeFilter, setCurrentTypeFilter] = useState('all');
+    const [sortOrder, setSortOrder] = useState('id'); // 'id' | 'name'
 
     // Stato per la conferma personalizzata
     const [confirmModal, setConfirmModal] = useState(null); // { title, message, onConfirm, type }
@@ -216,6 +226,148 @@ export default function Party() {
                 } catch (err) { console.error(err); }
             }
         });
+    };
+    // 🏁 Inizializzazione Pokédex Library
+    const caricaPokedexLibrary = async () => {
+        if (fullPokeList.length > 0) return;
+        setSearching(true);
+        try {
+            const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1025');
+            const data = await res.json();
+            const list = data.results.map((p, idx) => ({
+                id: idx + 1,
+                name: p.name,
+                url: p.url
+            }));
+            setFullPokeList(list);
+            setFilteredPokeList(list);
+        } catch (err) {
+            console.error("Errore caricamento pokedex:", err);
+        } finally {
+            setSearching(false);
+        }
+    };
+
+    // ⚡ Filtro Live & Ordinamento
+    useEffect(() => {
+        let list = [...fullPokeList];
+
+        // 1. Filtro Nome
+        if (searchQuery) {
+            list = list.filter(p => p.name.includes(searchQuery.toLowerCase().trim()));
+        }
+
+        // 2. Ordinamento
+        if (sortOrder === 'name') {
+            list.sort((a, b) => a.name.localeCompare(b.name));
+        } else {
+            list.sort((a, b) => a.id - b.id);
+        }
+
+        setFilteredPokeList(list);
+    }, [searchQuery, sortOrder, fullPokeList]);
+
+    const selectFromLibrary = async (p) => {
+        setSearching(true);
+        try {
+            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${p.id}`);
+            const data = await res.json();
+            setSearchResult(data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setSearching(false);
+        }
+    };
+
+    const handlePokeStatChange = (stat, value) => {
+        setEditingPkmn(prev => ({
+            ...prev,
+            [stat]: stat === 'soprannome' ? value : (parseInt(value) || 0)
+        }));
+    };
+
+    const salvaPokeStats = async () => {
+        if (!editingPkmn) return;
+        setSaving(true);
+        try {
+            const { error } = await supabase
+                .from('pokemon_giocatore')
+                .update({
+                    soprannome: editingPkmn.soprannome,
+                    livello: editingPkmn.livello,
+                    hp_attuale: editingPkmn.hp_attuale,
+                    hp_max: editingPkmn.hp_max,
+                    attacco: editingPkmn.attacco,
+                    difesa: editingPkmn.difesa,
+                    attacco_speciale: editingPkmn.attacco_speciale,
+                    difesa_speciale: editingPkmn.difesa_speciale,
+                    velocita: editingPkmn.velocita
+                })
+                .eq('id', editingPkmn.id);
+
+            if (error) throw error;
+            caricaDatiExtra(editForm.id);
+            setEditingPkmn(null);
+        } catch (err) {
+            console.error("Errore salvataggio stats pokemon:", err);
+            alert("Errore nel salvataggio.");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const cercaPokemon = async () => {
+        if (!searchQuery) return;
+        setSearching(true);
+        setSearchResult(null);
+        try {
+            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${searchQuery.toLowerCase().trim()}`);
+            if (!res.ok) throw new Error("Pokémon non trovato");
+            const data = await res.json();
+            setSearchResult(data);
+        } catch (err) {
+            console.error(err);
+            alert("Pokémon non trovato. Verifica il nome (in inglese) o l'ID.");
+        } finally {
+            setSearching(false);
+        }
+    };
+
+    const aggiungiPokemon = async () => {
+        if (!searchResult || !editForm) return;
+        setSaving(true);
+        try {
+            const { error } = await supabase
+                .from('pokemon_giocatore')
+                .insert({
+                    giocatore_id: editForm.id,
+                    pokemon_id: searchResult.id,
+                    soprannome: searchResult.name.toUpperCase(),
+                    livello: 5,
+                    hp_attuale: searchResult.stats[0].base_stat,
+                    hp_max: searchResult.stats[0].base_stat,
+                    attacco: searchResult.stats[1].base_stat,
+                    difesa: searchResult.stats[2].base_stat,
+                    attacco_speciale: searchResult.stats[3].base_stat,
+                    difesa_speciale: searchResult.stats[4].base_stat,
+                    velocita: searchResult.stats[5].base_stat,
+                    tipo1: searchResult.types[0]?.type.name.toUpperCase(),
+                    tipo2: searchResult.types[1]?.type.name.toUpperCase() || null,
+                    posizione_squadra: 99 // Inserisci nel box come default
+                });
+
+            if (error) throw error;
+            setSearchResult(null);
+            setSearchQuery('');
+            caricaDatiExtra(editForm.id);
+            setShowAddItem(false); // Riutilizziamo lo stato showAddItem per la vista ricerca
+        } catch (err) {
+            console.error("Errore aggiunta pokemon:", err);
+            alert("Errore durante l'aggiunta.");
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handleStatChange = (stat, value) => {
@@ -548,59 +700,228 @@ export default function Party() {
                             {activeTab === 'pokemon' && (
                                 <div className="edit-section-container animate-fade-in">
                                     <div className="section-header-row">
-                                        <h4 className="edit-section-title">Squadra e Box</h4>
-                                        <button className="btn-add-mini"><TrendingUp size={14} /> Nuovo Pkmn</button>
+                                        <h4 className="edit-section-title">
+                                            {editingPkmn ? 'Modifica Statistiche' : showAddItem ? 'Cerca Nuovo Pokémon' : 'Squadra e Box'}
+                                        </h4>
+                                        <button
+                                            className={`btn-add-mini ${showAddItem || editingPkmn ? 'active' : ''}`}
+                                            onClick={() => {
+                                                if (editingPkmn) {
+                                                    setEditingPkmn(null);
+                                                } else {
+                                                    setShowAddItem(!showAddItem);
+                                                    if (!showAddItem) caricaPokedexLibrary();
+                                                    setSearchResult(null);
+                                                    setSearchQuery('');
+                                                }
+                                            }}
+                                        >
+                                            {showAddItem || editingPkmn ? <X size={14} /> : <Plus size={14} />}
+                                            {showAddItem || editingPkmn ? 'Annulla' : 'Nuovo Pkmn'}
+                                        </button>
                                     </div>
-                                    <div className="pokemon-grid-master">
-                                        {loadingExtra ? (
-                                            <div className="flex-center p-xl"><Loader2 className="spin" /></div>
-                                        ) : playerPokemon.length === 0 ? (
-                                            <p className="empty-text">Nessun Pokémon registrato.</p>
-                                        ) : (
-                                            playerPokemon.map(poke => {
-                                                const hpPct = (poke.hp_attuale / poke.hp_max) * 100;
-                                                const hpCol = hpPct > 50 ? '#34d399' : hpPct > 20 ? '#fbbf24' : '#ef4444';
 
-                                                return (
-                                                    <div key={poke.id} className="pkmn-card-master">
-                                                        <div className="pkmn-card-top">
-                                                            <div className="pkmn-thumb">
+                                    {editingPkmn ? (
+                                        <div className="pokemon-edit-form animate-slide-up">
+                                            <div className="pkmn-edit-header">
+                                                <img
+                                                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${editingPkmn.pokemon_id}.png`}
+                                                    alt={editingPkmn.soprannome}
+                                                />
+                                                <div className="input-field">
+                                                    <label>Soprannome</label>
+                                                    <input
+                                                        type="text"
+                                                        value={editingPkmn.soprannome}
+                                                        onChange={(e) => handlePokeStatChange('soprannome', e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="edit-grid-3">
+                                                <div className="input-field">
+                                                    <label>Livello</label>
+                                                    <input type="number" value={editingPkmn.livello} onChange={(e) => handlePokeStatChange('livello', e.target.value)} />
+                                                </div>
+                                                <div className="input-field">
+                                                    <label>HP Attuali</label>
+                                                    <input type="number" value={editingPkmn.hp_attuale} onChange={(e) => handlePokeStatChange('hp_attuale', e.target.value)} />
+                                                </div>
+                                                <div className="input-field">
+                                                    <label>HP Max</label>
+                                                    <input type="number" value={editingPkmn.hp_max} onChange={(e) => handlePokeStatChange('hp_max', e.target.value)} />
+                                                </div>
+                                                <div className="input-field">
+                                                    <label>Attacco</label>
+                                                    <input type="number" value={editingPkmn.attacco} onChange={(e) => handlePokeStatChange('attacco', e.target.value)} />
+                                                </div>
+                                                <div className="input-field">
+                                                    <label>Difesa</label>
+                                                    <input type="number" value={editingPkmn.difesa} onChange={(e) => handlePokeStatChange('difesa', e.target.value)} />
+                                                </div>
+                                                <div className="input-field">
+                                                    <label>Velocità</label>
+                                                    <input type="number" value={editingPkmn.velocita} onChange={(e) => handlePokeStatChange('velocita', e.target.value)} />
+                                                </div>
+                                                <div className="input-field">
+                                                    <label>Att. Spec.</label>
+                                                    <input type="number" value={editingPkmn.attacco_speciale} onChange={(e) => handlePokeStatChange('attacco_speciale', e.target.value)} />
+                                                </div>
+                                                <div className="input-field">
+                                                    <label>Dif. Spec.</label>
+                                                    <input type="number" value={editingPkmn.difesa_speciale} onChange={(e) => handlePokeStatChange('difesa_speciale', e.target.value)} />
+                                                </div>
+                                            </div>
+
+                                            <button className="btn-confirm-add" onClick={salvaPokeStats} disabled={saving}>
+                                                {saving ? <Loader2 size={18} className="spin" /> : <Save size={18} />}
+                                                Salva Statistiche
+                                            </button>
+                                        </div>
+                                    ) : showAddItem ? (
+                                        <div className="pokemon-search-view animate-slide-up library-mode">
+                                            <div className="search-controls-master">
+                                                <div className="search-bar-master">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Filtra Pokémon..."
+                                                        value={searchQuery}
+                                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="sort-controls">
+                                                    <button
+                                                        className={`btn-sort ${sortOrder === 'id' ? 'active' : ''}`}
+                                                        onClick={() => setSortOrder('id')}
+                                                    >
+                                                        # ID
+                                                    </button>
+                                                    <button
+                                                        className={`btn-sort ${sortOrder === 'name' ? 'active' : ''}`}
+                                                        onClick={() => setSortOrder('name')}
+                                                    >
+                                                        A-Z
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="library-layout-master">
+                                                {/* LISTA FILTRATA (LIBRARY) */}
+                                                <div className="pokemon-library-scroll">
+                                                    {searching && fullPokeList.length === 0 ? (
+                                                        <div className="flex-center p-xl"><Loader2 className="spin" /></div>
+                                                    ) : (
+                                                        filteredPokeList.map(p => (
+                                                            <div
+                                                                key={p.id}
+                                                                className={`library-item-pkmn ${searchResult?.id === p.id ? 'selected' : ''}`}
+                                                                onClick={() => selectFromLibrary(p)}
+                                                            >
                                                                 <img
-                                                                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`}
-                                                                    alt={poke.soprannome}
+                                                                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`}
+                                                                    alt={p.name}
                                                                 />
+                                                                <span>{p.name.toUpperCase()}</span>
                                                             </div>
-                                                            <div className="pkmn-info">
-                                                                <div className="pkmn-name-row">
-                                                                    <strong>{poke.soprannome}</strong>
-                                                                    <span className="lvl-tag">Lv.{poke.livello}</span>
-                                                                </div>
+                                                        ))
+                                                    )}
+                                                </div>
+
+                                                {/* RISULTATO SELEZIONATO (PER CONFERMA) */}
+                                                <div className="library-selection-detail">
+                                                    {searchResult ? (
+                                                        <div className="search-result-card selection-mode animate-fade-in">
+                                                            <img
+                                                                src={searchResult.sprites.other['official-artwork'].front_default}
+                                                                alt={searchResult.name}
+                                                            />
+                                                            <div className="result-info">
+                                                                <h3>#{searchResult.id} {searchResult.name.toUpperCase()}</h3>
                                                                 <div className="pkmn-types">
-                                                                    <span className="type-tag" style={{ borderLeftColor: `var(--type-${poke.tipo1?.toLowerCase()})` }}>
-                                                                        {poke.tipo1}
-                                                                    </span>
+                                                                    {searchResult.types.map(t => (
+                                                                        <span key={t.type.name} className="type-tag" style={{ borderLeftColor: `var(--type-${t.type.name})` }}>
+                                                                            {t.type.name}
+                                                                        </span>
+                                                                    ))}
                                                                 </div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="pkmn-card-bottom">
-                                                            <div className="pkmn-hp-bar">
-                                                                <div className="hp-fill" style={{ width: `${hpPct}%`, backgroundColor: hpCol }}></div>
-                                                            </div>
-                                                            <div className="pkmn-actions">
-                                                                <button className="btn-icon-sm" title="Modifica Stats"><Edit2 size={12} /></button>
-                                                                <button
-                                                                    className="btn-icon-sm btn-del"
-                                                                    onClick={() => rimuoviPokemon(poke.id, editForm.id)}
-                                                                >
-                                                                    <X size={12} />
+                                                                <button className="btn-confirm-add" style={{ marginTop: '15px' }} onClick={aggiungiPokemon} disabled={saving}>
+                                                                    {saving ? <Loader2 size={18} className="spin" /> : <Plus size={18} />}
+                                                                    Assegna all'Allenatore
                                                                 </button>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })
-                                        )}
-                                    </div>
+                                                    ) : (
+                                                        <div className="empty-selection-placeholder">
+                                                            <Info size={32} />
+                                                            <p>Seleziona un Pokémon dalla lista per assegnarlo</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="pokemon-grid-master">
+                                            {loadingExtra ? (
+                                                <div className="flex-center p-xl"><Loader2 className="spin" /></div>
+                                            ) : playerPokemon.length === 0 ? (
+                                                <p className="empty-text">Nessun Pokémon registrato.</p>
+                                            ) : (
+                                                playerPokemon.map(poke => {
+                                                    const hpPct = (poke.hp_attuale / poke.hp_max) * 100;
+                                                    const hpCol = hpPct > 50 ? '#34d399' : hpPct > 20 ? '#fbbf24' : '#ef4444';
+
+                                                    return (
+                                                        <div key={poke.id} className="pkmn-card-master">
+                                                            <div className="pkmn-card-top">
+                                                                <div className="pkmn-thumb">
+                                                                    <img
+                                                                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`}
+                                                                        alt={poke.soprannome}
+                                                                    />
+                                                                </div>
+                                                                <div className="pkmn-info">
+                                                                    <div className="pkmn-name-row">
+                                                                        <strong>{poke.soprannome}</strong>
+                                                                        <span className="lvl-tag">Lv.{poke.livello}</span>
+                                                                    </div>
+                                                                    <div className="pkmn-types">
+                                                                        <span className="type-tag" style={{ borderLeftColor: `var(--type-${poke.tipo1?.toLowerCase()})` }}>
+                                                                            {poke.tipo1}
+                                                                        </span>
+                                                                        {poke.tipo2 && (
+                                                                            <span className="type-tag" style={{ borderLeftColor: `var(--type-${poke.tipo2?.toLowerCase()})` }}>
+                                                                                {poke.tipo2}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="pkmn-card-bottom">
+                                                                <div className="pkmn-hp-bar">
+                                                                    <div className="hp-fill" style={{ width: `${hpPct}%`, backgroundColor: hpCol }}></div>
+                                                                </div>
+                                                                <div className="pkmn-actions">
+                                                                    <button
+                                                                        className="btn-icon-sm"
+                                                                        title="Modifica Stats"
+                                                                        onClick={() => setEditingPkmn(poke)}
+                                                                    >
+                                                                        <Edit2 size={12} />
+                                                                    </button>
+                                                                    <button
+                                                                        className="btn-icon-sm btn-del"
+                                                                        onClick={() => rimuoviPokemon(poke.id, editForm.id)}
+                                                                    >
+                                                                        <X size={12} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
