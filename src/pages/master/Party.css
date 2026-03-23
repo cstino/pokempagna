@@ -1155,3 +1155,233 @@
         padding: 12px;
     }
 }
+
+/* NPC SPECIFIC STYLES - REFINED & ROUNDED */
+.npc-card {
+    border: 1px solid rgba(167, 139, 250, 0.15) !important;
+    background: rgba(255, 255, 255, 0.02);
+    overflow: hidden;
+    border-radius: 24px !important;
+    /* Arrotondamento richiesto */
+}
+
+.npc-banner {
+    background: linear-gradient(90deg, #1f2937, #4b5563) !important;
+    border-bottom: 2px solid var(--primary-master) !important;
+}
+
+.npc-avatar-aura {
+    position: relative;
+    border: 2px solid var(--primary-master);
+    box-shadow: 0 0 15px rgba(167, 139, 250, 0.3);
+    border-radius: 18px !important;
+    overflow: hidden;
+}
+
+/* Fallback per immagine rotta/mancante */
+.avatar-placeholder-master {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #374151, #1f2937);
+    color: var(--primary-master);
+}
+
+.avatar-placeholder-master.large {
+    background: linear-gradient(135deg, #4b5563, #374151);
+    color: var(--primary-master);
+}
+
+.npc-name-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.npc-name-badge h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-master);
+    font-weight: 800;
+}
+
+.npc-lvl-tag {
+    background: var(--primary-master);
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: 900;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.hp-val-mini {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.pc-stats-grid-npc {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 15px 0;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+}
+
+.pc-stats-grid-npc .pc-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pc-stats-grid-npc label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.pc-stats-grid-npc span {
+    font-weight: 700;
+    color: var(--text-master);
+}
+
+.pc-footer-npc {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.btn-edit-npc {
+    flex: 1;
+    background: var(--primary-master);
+    color: #000;
+    border: none;
+    padding: 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-edit-npc:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(167, 139, 250, 0.4);
+}
+
+.btn-del-npc {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    padding: 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-del-npc:hover {
+    background: #ef4444;
+    color: #fff;
+}
+
+/* MODAL NPC PREMIUM */
+.npc-modal-premium {
+    border-radius: 30px !important;
+    border: 2px solid rgba(167, 139, 250, 0.1);
+    background: var(--bg-master);
+}
+
+.modal-title-npc {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.modal-subtitle-npc {
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: var(--primary-master);
+    opacity: 0.8;
+}
+
+.edit-npc-name-input-hero {
+    background: transparent;
+    border: none;
+    color: var(--text-master);
+    font-size: 2rem;
+    font-weight: 900;
+    padding: 0;
+    outline: none;
+    width: 100%;
+}
+
+.npc-preview-aura {
+    width: 60px;
+    height: 60px;
+    border: 3px solid var(--primary-master);
+    box-shadow: 0 0 20px rgba(167, 139, 250, 0.4);
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+/* FOOTER CENTRATO */
+.modal-footer-centered {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.btn-save-hero {
+    background: var(--primary-master);
+    color: #000;
+    border: none;
+    padding: 14px 40px;
+    border-radius: 20px;
+    font-size: 1rem;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 10px 20px rgba(167, 139, 250, 0.2);
+}
+
+.btn-save-hero:hover {
+    transform: scale(1.05);
+    box-shadow: 0 15px 25px rgba(167, 139, 250, 0.4);
+}
+
+.btn-cancel-flat {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px;
+}
+
+.btn-cancel-flat:hover {
+    color: var(--text-master);
+}
+
+.btn-icon-sq.btn-del-light {
+    color: #ef4444;
+}
+
+.btn-icon-sq.btn-del-light:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
