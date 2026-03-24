@@ -546,11 +546,18 @@
 }
 
 .item-qty-badge {
-    font-size: 0.85rem;
-    font-weight: 800;
-    color: var(--primary-master);
-    opacity: 0.9;
-    margin-right: 15px;
+    background: #ffcb05;
+    /* Giallo Poké classico */
+    color: #000;
+    font-size: 0.7rem;
+    font-weight: 900;
+    padding: 2px 8px;
+    border-radius: 8px;
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .btn-del-absolute {
@@ -586,12 +593,12 @@
     position: relative;
     width: 44px;
     height: 44px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--border-subtle);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .item-img-box img {
@@ -1470,4 +1477,190 @@
 
 .btn-icon-sq.btn-del-light:hover {
     background: rgba(239, 68, 68, 0.1);
+}
+
+/* --- MASTER POKEMON CARD PREMIUM (TCG STYLE) --- */
+.master-card-premium {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    border-radius: 20px !important;
+    padding: 12px 12px 15px !important;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 200px !important;
+    height: 275px !important;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+}
+
+.master-card-premium:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+    border-color: rgba(167, 139, 250, 0.3) !important;
+}
+
+.master-card-premium .pkmn-lvl-badge {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    font-weight: 900 !important;
+    color: #b45309 !important;
+    /* Oro scuro per light mode */
+    font-size: 0.85rem !important;
+    background: transparent !important;
+    padding: 0 !important;
+}
+
+.master-card-premium .pkmn-type-badge {
+    position: absolute !important;
+    top: 12px !important;
+    left: 12px !important;
+    padding: 2px 8px !important;
+    background: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    font-weight: 900 !important;
+    font-size: 0.65rem !important;
+    color: #64748b !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.master-card-premium .pkmn-image {
+    width: 135px !important;
+    height: 135px !important;
+    margin: 15px 0 10px 0 !important;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15)) !important;
+    object-fit: contain !important;
+}
+
+.master-card-premium .pkmn-card-details h3 {
+    margin: 5px 0 10px 0 !important;
+    font-size: 1.1rem !important;
+    font-weight: 1000 !important;
+    color: #1e293b !important;
+    text-transform: uppercase !important;
+}
+
+.master-card-premium .hp-section {
+    width: 175px !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+}
+
+.master-card-premium .hp-info {
+    display: flex !important;
+    justify-content: space-between !important;
+    padding: 0 2px !important;
+}
+
+.master-card-premium .hp-info span {
+    font-size: 0.65rem !important;
+    font-weight: 900 !important;
+    color: #94a3b8 !important;
+}
+
+.master-card-premium .hp-info span:last-child {
+    color: #1e293b !important;
+}
+
+.master-card-premium .hp-bar-bg {
+    width: 100% !important;
+    height: 14px !important;
+    background: #f1f5f9 !important;
+    border-radius: 7px !important;
+    overflow: hidden !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+.master-card-premium .hp-bar-fill {
+    height: 100% !important;
+    border-radius: 7px !important;
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* Overlay azioni V3 (Master) */
+.pkmn-card-actions-overlay-v3 {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(5px);
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    border-radius: 20px;
+    z-index: 10;
+}
+
+.master-card-premium:hover .pkmn-card-actions-overlay-v3,
+.compact-box-card-v3:hover .pkmn-card-actions-overlay-v3 {
+    opacity: 1;
+}
+
+.btn-v3 {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-v3:hover {
+    transform: scale(1.15);
+    background: #e2e8f0;
+}
+
+.btn-v3.del {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.btn-v3.del:hover {
+    background: #fee2e2;
+}
+
+/* Compact Box Card V3 */
+.compact-box-card-v3 {
+    width: 140px !important;
+    height: 180px !important;
+    background: white !important;
+    border: 1px solid #f1f5f9 !important;
+    border-radius: 16px !important;
+    padding: 10px !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    transition: 0.3s;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+}
+
+.pkmn-image-mini {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin: 15px 0 5px;
+}
+
+.pkmn-name-mini {
+    font-size: 0.75rem;
+    font-weight: 900;
+    color: #475569;
 }

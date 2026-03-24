@@ -161,7 +161,7 @@ export default function NPC() {
             setNpcItems(items || []);
 
             const { data: pokes } = await supabase
-                .from('pokemon_squadra')
+                .from('pokemon_giocatore')
                 .select('*')
                 .eq('giocatore_id', npc.id)
                 .order('created_at', { ascending: true });
@@ -200,6 +200,7 @@ export default function NPC() {
                 .eq('id', editForm.id);
 
             if (error) throw error;
+            await caricaNPC(); // Ricarica la lista per vedere i cambiamenti (es. immagine profilo)
             setIsEditing(false);
         } catch (err) {
             console.error(err);
@@ -263,22 +264,26 @@ export default function NPC() {
         if (!searchResult) return;
         setSaving(true);
         try {
-            const { error } = await supabase.from('pokemon_squadra').insert([{
+            const { error } = await supabase.from('pokemon_giocatore').insert([{
                 giocatore_id: editForm.id,
-                nome: searchResult.name.toUpperCase(),
+                pokemon_id: searchResult.id,
                 soprannome: searchResult.name.toUpperCase(),
                 livello: 5,
+                hp_max: searchResult.stats[0].base_stat,
+                hp_attuale: searchResult.stats[0].base_stat,
+                attacco: searchResult.stats[1].base_stat,
+                difesa: searchResult.stats[2].base_stat,
+                attacco_speciale: searchResult.stats[3].base_stat,
+                difesa_speciale: searchResult.stats[4].base_stat,
+                velocita: searchResult.stats[5].base_stat,
                 tipo1: searchResult.types[0].type.name.toUpperCase(),
                 tipo2: searchResult.types[1]?.type.name.toUpperCase() || null,
-                immagine_url: searchResult.sprites.other['official-artwork'].front_default,
-                hp_max: 20,
-                hp_attuale: 20,
-                base_id: searchResult.id
+                posizione_squadra: 99
             }]);
             if (error) throw error;
             setShowAddItem(false);
             setSearchResult(null);
-            const { data: pokes } = await supabase.from('pokemon_squadra').select('*').eq('giocatore_id', editForm.id);
+            const { data: pokes } = await supabase.from('pokemon_giocatore').select('*').eq('giocatore_id', editForm.id).order('created_at', { ascending: true });
             setNpcPokemon(pokes || []);
         } catch (err) {
             console.error(err);
@@ -288,8 +293,60 @@ export default function NPC() {
     }
 
     async function rimuoviPokemonSquadra(id) {
-        const { error } = await supabase.from('pokemon_squadra').delete().eq('id', id);
+        const { error } = await supabase.from('pokemon_giocatore').delete().eq('id', id);
         if (!error) setNpcPokemon(prev => prev.filter(p => p.id !== id));
+    }
+
+    async function spostaPokemon(pkmnId, targetPos) {
+        setSaving(true);
+        try {
+            const { error } = await supabase
+                .from('pokemon_giocatore')
+                .update({ posizione_squadra: targetPos })
+                .eq('id', pkmnId);
+
+            if (error) throw error;
+            const { data: pokes } = await supabase.from('pokemon_giocatore').select('*').eq('giocatore_id', editForm.id).order('posizione_squadra', { ascending: true });
+            setNpcPokemon(pokes || []);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    const handlePokeStatChange = (stat, value) => {
+        setEditingPkmn(prev => ({ ...prev, [stat]: stat === 'soprannome' ? value : (parseInt(value) || 0) }));
+    };
+
+    async function salvaPokeStats() {
+        if (!editingPkmn) return;
+        setSaving(true);
+        try {
+            const { error } = await supabase
+                .from('pokemon_giocatore')
+                .update({
+                    soprannome: editingPkmn.soprannome,
+                    livello: editingPkmn.livello,
+                    hp_attuale: editingPkmn.hp_attuale,
+                    hp_max: editingPkmn.hp_max,
+                    attacco: editingPkmn.attacco,
+                    difesa: editingPkmn.difesa,
+                    attacco_speciale: editingPkmn.attacco_speciale,
+                    difesa_speciale: editingPkmn.difesa_speciale,
+                    velocita: editingPkmn.velocita
+                })
+                .eq('id', editingPkmn.id);
+
+            if (error) throw error;
+            const { data: pokes } = await supabase.from('pokemon_giocatore').select('*').eq('giocatore_id', editForm.id).order('created_at', { ascending: true });
+            setNpcPokemon(pokes || []);
+            setEditingPkmn(null);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setSaving(false);
+        }
     }
 
     const updateCart = (oggId, delta) => {
@@ -569,12 +626,10 @@ export default function NPC() {
                                                             <strong>{item.oggetti?.nome}</strong>
                                                         </div>
                                                     </div>
-                                                    <div className="item-card-actions-right">
-                                                        <span className="item-qty-badge">x{item.quantita}</span>
-                                                        <button className="btn-del-absolute" onClick={() => removeItem(item.id)}>
-                                                            <Trash2 size={14} />
-                                                        </button>
-                                                    </div>
+                                                    <span className="item-qty-badge">x{item.quantita}</span>
+                                                    <button className="btn-del-absolute" onClick={() => removeItem(item.id)}>
+                                                        <Trash2 size={14} />
+                                                    </button>
                                                 </div>
                                             ))}
                                         </div>
@@ -585,7 +640,7 @@ export default function NPC() {
                             {activeTab === 'pokemon' && (
                                 <div className="edit-section-container animate-fade-in">
                                     <div className="section-header-row">
-                                        <h4 className="edit-section-title">{showAddItem ? 'Nuovo Pkmn dalla Library' : 'Squadra NPC'}</h4>
+                                        <h4 className="edit-section-title">{showAddItem ? 'Nuovo Pkmn dalla Library' : 'Gestione Pokémon'}</h4>
                                         <button className={`btn-add-mini ${showAddItem ? 'active' : ''}`} onClick={() => { setShowAddItem(!showAddItem); if (!showAddItem) caricaPokedexLibrary(); setSearchResult(null); setSearchQuery(''); }}>
                                             {showAddItem ? <X size={14} /> : <Plus size={14} />} {showAddItem ? 'Annulla' : 'Aggiungi'}
                                         </button>
@@ -625,21 +680,65 @@ export default function NPC() {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="pokemon-grid-master">
-                                            {npcPokemon.length === 0 ? <p className="empty-msg-master">Nessun Pokémon in squadra</p> : npcPokemon.map(poke => (
-                                                <div key={poke.id} className="pkmn-card-master">
-                                                    <div className="pkmn-card-top">
-                                                        <div className="pkmn-thumb"><img src={poke.immagine_url} alt={poke.soprannome} /></div>
-                                                        <div className="pkmn-info">
-                                                            <div className="pkmn-name-row"><strong>{poke.soprannome}</strong><span className="lvl-tag">Lv.{poke.livello}</span></div>
-                                                            <div className="pkmn-types"><span className="type-tag" style={{ borderLeftColor: `var(--type-${poke.tipo1?.toLowerCase()})` }}>{poke.tipo1}</span></div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="pkmn-card-bottom">
-                                                        <button className="btn-icon-sm btn-del" onClick={() => rimuoviPokemonSquadra(poke.id)}><Trash2 size={12} /></button>
-                                                    </div>
+                                        <div className="squadra-box-layout">
+                                            <div className="squadra-section-master">
+                                                <h5 className="sub-title-master">Squadra Attiva (Max 3)</h5>
+                                                <div className="pokemon-grid-master">
+                                                    {npcPokemon.filter(p => p.posizione_squadra < 3).length === 0 ? <p className="empty-msg-master">Nessun Pokémon pronto alla battaglia</p> : npcPokemon.filter(p => p.posizione_squadra < 3).map((poke, idx) => {
+                                                        const hpPerc = (poke.hp_attuale / poke.hp_max) * 100;
+                                                        const hpColor = hpPerc > 50 ? '#10b981' : hpPerc > 20 ? '#f59e0b' : '#ef4444';
+
+                                                        return (
+                                                            <div key={poke.id} className="pkmn-card-squadra master-card-premium clickable" onClick={() => setEditingPkmn(poke)}>
+                                                                <div className="pkmn-type-badge">{poke.tipo1?.toUpperCase()}</div>
+                                                                <div className="pkmn-lvl-badge">Nv.{poke.livello}</div>
+
+                                                                <img
+                                                                    className="pkmn-image"
+                                                                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`}
+                                                                    alt={poke.soprannome}
+                                                                />
+
+                                                                <div className="pkmn-card-details">
+                                                                    <h3>{poke.soprannome?.toUpperCase()}</h3>
+                                                                    <div className="hp-section">
+                                                                        <div className="hp-info">
+                                                                            <span>HP</span>
+                                                                            <span>{poke.hp_attuale}/{poke.hp_max}</span>
+                                                                        </div>
+                                                                        <div className="hp-bar-bg">
+                                                                            <div className="hp-bar-fill" style={{ width: `${hpPerc}%`, background: hpColor }}></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="pkmn-card-actions-overlay-v3">
+                                                                    <button className="btn-v3" title="Metti nel Box" onClick={(e) => { e.stopPropagation(); spostaPokemon(poke.id, 99); }}><Package size={18} /></button>
+                                                                    <button className="btn-v3 del" onClick={(e) => { e.stopPropagation(); rimuoviPokemonSquadra(poke.id); }}><Trash2 size={18} /></button>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
-                                            ))}
+                                            </div>
+
+                                            <div className="box-section-master" style={{ marginTop: '40px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '20px' }}>
+                                                <h5 className="sub-title-master" style={{ color: '#64748b' }}>Box Riserve</h5>
+                                                <div className="pokemon-grid-master">
+                                                    {npcPokemon.filter(p => p.posizione_squadra >= 3).length === 0 ? <p className="empty-msg-master">Box vuoto</p> : npcPokemon.filter(p => p.posizione_squadra >= 3).map(poke => (
+                                                        <div key={poke.id} className="pkmn-card-squadra compact-box-card-v3 clickable" onClick={() => setEditingPkmn(poke)}>
+                                                            <div className="pkmn-lvl-badge" style={{ fontSize: '0.6rem' }}>Nv.{poke.livello}</div>
+                                                            <img className="pkmn-image-mini" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.pokemon_id}.png`} alt={poke.soprannome} />
+                                                            <div className="pkmn-name-mini">{poke.soprannome?.toUpperCase()}</div>
+
+                                                            <div className="pkmn-card-actions-overlay-v3">
+                                                                <button className="btn-v3" title="Metti in Squadra" onClick={(e) => { e.stopPropagation(); const sCount = npcPokemon.filter(p => p.posizione_squadra < 3).length; if (sCount >= 3) return alert('Squadra piena!'); spostaPokemon(poke.id, sCount); }}><Plus size={18} /></button>
+                                                                <button className="btn-v3 del" onClick={(e) => { e.stopPropagation(); rimuoviPokemonSquadra(poke.id); }}><Trash2 size={18} /></button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -650,6 +749,85 @@ export default function NPC() {
                             <button className="btn-cancel-flat" onClick={() => setIsEditing(false)}>Annulla</button>
                             <button className="btn-save-hero" onClick={salvaModifiche} disabled={saving}>
                                 {saving ? <Loader2 className="spin" /> : <Save size={18} />} Conferma Modifiche
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {editingPkmn && (
+                <div className="modal-overlay sub-modal">
+                    <div className="master-edit-modal npc-modal-premium animate-slide-up">
+                        <div className="modal-header header-reversed">
+                            <div className="modal-header-info">
+                                <div className="modal-title-npc">
+                                    <span className="modal-subtitle-npc">MODIFICA POKÉMON</span>
+                                    <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>{editingPkmn.soprannome}</h3>
+                                </div>
+                                <div className="modal-avatar-preview npc-preview-aura right-side">
+                                    <img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${editingPkmn.pokemon_id}.png`} alt={editingPkmn.soprannome} />
+                                </div>
+                            </div>
+                            <button className="modal-close" onClick={() => setEditingPkmn(null)}><X size={20} /></button>
+                        </div>
+
+                        <div className="npc-content-master scrollable" style={{ padding: '20px' }}>
+                            <div className="edit-grid-2" style={{ marginBottom: '20px' }}>
+                                <div className="input-field">
+                                    <label>Soprannome</label>
+                                    <input type="text" value={editingPkmn.soprannome} onChange={(e) => handlePokeStatChange('soprannome', e.target.value)} />
+                                </div>
+                                <div className="input-field">
+                                    <label>Livello</label>
+                                    <input type="number" value={editingPkmn.livello} onChange={(e) => handlePokeStatChange('livello', e.target.value)} />
+                                </div>
+                            </div>
+
+                            <div className="edit-section-v2">
+                                <h4 className="section-title-master">Punti Salute & Velocità</h4>
+                                <div className="edit-grid-3">
+                                    <div className="input-field">
+                                        <label>HP Attuali</label>
+                                        <input type="number" value={editingPkmn.hp_attuale} onChange={(e) => handlePokeStatChange('hp_attuale', e.target.value)} />
+                                    </div>
+                                    <div className="input-field">
+                                        <label>HP Max</label>
+                                        <input type="number" value={editingPkmn.hp_max} onChange={(e) => handlePokeStatChange('hp_max', e.target.value)} />
+                                    </div>
+                                    <div className="input-field">
+                                        <label>Velocità</label>
+                                        <input type="number" value={editingPkmn.velocita} onChange={(e) => handlePokeStatChange('velocita', e.target.value)} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="edit-section-v2" style={{ marginTop: '20px' }}>
+                                <h4 className="section-title-master">Statistiche Combattimento</h4>
+                                <div className="edit-grid-2">
+                                    <div className="input-field">
+                                        <label>Attacco Fisico</label>
+                                        <input type="number" value={editingPkmn.attacco} onChange={(e) => handlePokeStatChange('attacco', e.target.value)} />
+                                    </div>
+                                    <div className="input-field">
+                                        <label>Difesa Fisica</label>
+                                        <input type="number" value={editingPkmn.difesa} onChange={(e) => handlePokeStatChange('difesa', e.target.value)} />
+                                    </div>
+                                    <div className="input-field">
+                                        <label>Attacco Speciale</label>
+                                        <input type="number" value={editingPkmn.attacco_speciale} onChange={(e) => handlePokeStatChange('attacco_speciale', e.target.value)} />
+                                    </div>
+                                    <div className="input-field">
+                                        <label>Difesa Speciale</label>
+                                        <input type="number" value={editingPkmn.difesa_speciale} onChange={(e) => handlePokeStatChange('difesa_speciale', e.target.value)} />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="modal-footer-centered">
+                            <button className="btn-cancel-flat" onClick={() => setEditingPkmn(null)}>Annulla</button>
+                            <button className="btn-save-hero" onClick={salvaPokeStats} disabled={saving}>
+                                {saving ? <Loader2 className="spin" /> : <Save size={18} />} Salva Pokémon
                             </button>
                         </div>
                     </div>
