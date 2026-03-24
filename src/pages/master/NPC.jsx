@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Users, User, Shield, Zap, Edit2, Loader2, X, Check, Save, Heart, TrendingUp, Plus, Package, Trash2, Search, Info } from 'lucide-react';
+import { Users, User, Shield, Zap, Edit2, Loader2, X, Check, Save, Heart, TrendingUp, Plus, Package, Trash2, Search, Info, Camera } from 'lucide-react';
 import './Party.css';
 
 export default function NPC() {
@@ -313,7 +313,7 @@ export default function NPC() {
                     <h1>Gestione NPC</h1>
                     <p>Crea e gestisci i personaggi non giocanti della tua campagna</p>
                 </div>
-                <button className="btn-save" onClick={creaNPC} disabled={saving}>
+                <button className="btn-save" onClick={creaNPC} disabled={saving} style={{ marginTop: '20px' }}>
                     {saving ? <Loader2 className="spin" /> : <Plus size={18} />}
                     Nuovo NPC
                 </button>
@@ -322,7 +322,7 @@ export default function NPC() {
             {loading ? (
                 <div className="flex-center p-xl"><Loader2 className="spin" size={40} /></div>
             ) : (
-                <div className="party-grid">
+                <div className="party-grid" style={{ marginTop: '30px' }}>
                     {npcs.length === 0 ? (
                         <div className="empty-state">
                             <Users size={48} color="rgba(255,255,255,0.2)" />
@@ -332,57 +332,50 @@ export default function NPC() {
                     ) : (
                         npcs.map(npc => {
                             const hpPerc = Math.round((npc.hp / (npc.hp_max || 1)) * 100);
+                            const hpColor = hpPerc > 50 ? '#10b981' : hpPerc > 20 ? '#f59e0b' : '#ef4444';
                             return (
-                                <div key={npc.id} className="player-card npc-card">
-                                    <div className="pc-banner npc-banner">
-                                        <span className="pc-role">NPC MASTER</span>
+                                <div key={npc.id} className="player-card" onClick={() => openEditModal(npc)}>
+                                    <div className="player-card-header">
+                                        <div className="player-card-avatar">
+                                            {npc.immagine_profilo ? (
+                                                <img src={npc.immagine_profilo} alt={npc.nome} />
+                                            ) : (
+                                                <div className="avatar-initial">{npc.nome?.[0]?.toUpperCase()}</div>
+                                            )}
+                                        </div>
+                                        <div className="player-card-info">
+                                            <h3>{npc.nome}</h3>
+                                            <span>Livello {npc.livello_allenatore}</span>
+                                        </div>
+                                        <Edit2 size={16} className="edit-hint-icon" />
                                     </div>
-                                    <div className="pc-content">
-                                        <div className="pc-header">
-                                            <div className="pc-avatar npc-avatar-aura">
-                                                {npc.immagine_profilo ? (
-                                                    <img src={npc.immagine_profilo} alt={npc.nome} />
-                                                ) : (
-                                                    <div className="avatar-placeholder-master"><User size={24} /></div>
-                                                )}
+
+                                    <div className="player-card-body">
+                                        <div className="hp-mini-row">
+                                            <div className="hp-mini-stats">
+                                                <span>HP</span>
+                                                <span style={{ color: hpColor }}>{npc.hp}/{npc.hp_max}</span>
                                             </div>
-                                            <div className="pc-meta">
-                                                <div className="npc-name-badge">
-                                                    <h3>{npc.nome}</h3>
-                                                    <span className="npc-lvl-tag">Lv. {npc.livello_allenatore}</span>
-                                                </div>
-                                                <div className="pc-hp-row">
-                                                    <div
-                                                        className="pc-hp-bar"
-                                                    >
-                                                        <div
-                                                            className="pc-hp-fill"
-                                                            style={{ width: `${Math.min(100, Math.max(0, hpPerc))}%` }}
-                                                        ></div>
-                                                    </div>
-                                                    <span className="hp-val-mini">{npc.hp} / {npc.hp_max} HP</span>
-                                                </div>
+                                            <div className="hp-mini-bar-bg">
+                                                <div
+                                                    className="hp-mini-bar-fill"
+                                                    style={{ width: `${hpPerc}%`, backgroundColor: hpColor }}
+                                                ></div>
                                             </div>
                                         </div>
-                                        <div className="pc-stats-grid-npc">
-                                            <div className="pc-stat">
-                                                <Zap size={12} />
-                                                <label>FOR</label>
+
+                                        <div className="stats-mini-grid">
+                                            <div className="stat-mini-box">
+                                                <Zap size={14} color="#ef4444" />
                                                 <span>{npc.forza}</span>
                                             </div>
-                                            <div className="pc-stat">
-                                                <Shield size={12} />
-                                                <label>DES</label>
+                                            <div className="stat-mini-box">
+                                                <Shield size={14} color="#3b82f6" />
                                                 <span>{npc.destrezza}</span>
                                             </div>
-                                        </div>
-                                        <div className="pc-footer-npc">
-                                            <button className="btn-edit-npc" onClick={() => openEditModal(npc)}>
-                                                <Edit2 size={14} /> Gestisci
-                                            </button>
-                                            <button className="btn-del-npc" onClick={() => rimuoviNPC(npc.id)}>
-                                                <Trash2 size={14} />
-                                            </button>
+                                            <div className="stat-mini-box" onClick={(e) => { e.stopPropagation(); rimuoviNPC(npc.id); }} style={{ background: 'rgba(239, 68, 68, 0.1)', cursor: 'pointer' }}>
+                                                <Trash2 size={14} color="#ef4444" />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -395,23 +388,26 @@ export default function NPC() {
             {isEditing && editForm && (
                 <div className="modal-overlay">
                     <div className="master-edit-modal npc-modal-premium animate-slide-up">
-                        <div className="modal-header">
+                        <div className="modal-header header-reversed">
                             <div className="modal-header-info">
-                                <div className="modal-avatar-preview npc-preview-aura">
-                                    {editForm.immagine_profilo ? (
-                                        <img src={editForm.immagine_profilo} alt={editForm.nome} />
-                                    ) : (
-                                        <div className="avatar-placeholder-master large"><User size={40} /></div>
-                                    )}
-                                </div>
                                 <div className="modal-title-npc">
-                                    <span className="modal-subtitle-npc">CONFIGURAZIONE ENTITÀ</span>
+                                    <span className="modal-subtitle-npc">CONFIGURAZIONE NPC</span>
                                     <input
                                         className="edit-npc-name-input-hero"
                                         value={editForm.nome}
                                         onChange={(e) => handleStatChange('nome', e.target.value)}
                                         placeholder="Nome NPC..."
                                     />
+                                </div>
+                                <div className="modal-avatar-preview npc-preview-aura right-side" onClick={() => setActiveTab('stats')}>
+                                    {editForm.immagine_profilo ? (
+                                        <img src={editForm.immagine_profilo} alt={editForm.nome} />
+                                    ) : (
+                                        <div className="avatar-placeholder-master large"><User size={40} /></div>
+                                    )}
+                                    <div className="avatar-edit-overlay">
+                                        <Camera size={26} />
+                                    </div>
                                 </div>
                             </div>
                             <button className="modal-close" onClick={() => setIsEditing(false)}>
@@ -420,9 +416,24 @@ export default function NPC() {
                         </div>
 
                         <div className="modal-tabs">
-                            <button className={`modal-tab ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => setActiveTab('stats')}><Zap size={18} /> Statistiche</button>
-                            <button className={`modal-tab ${activeTab === 'zaino' ? 'active' : ''}`} onClick={() => setActiveTab('zaino')}><Package size={18} /> Zaino</button>
-                            <button className={`modal-tab ${activeTab === 'pokemon' ? 'active' : ''}`} onClick={() => setActiveTab('pokemon')}><TrendingUp size={18} /> Pokémon</button>
+                            <button
+                                className={`modal-tab ${activeTab === 'stats' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('stats')}
+                            >
+                                <Zap size={18} /> Statistiche
+                            </button>
+                            <button
+                                className={`modal-tab ${activeTab === 'zaino' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('zaino')}
+                            >
+                                <Package size={18} /> Zaino
+                            </button>
+                            <button
+                                className={`modal-tab ${activeTab === 'pokemon' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('pokemon')}
+                            >
+                                <TrendingUp size={18} /> Pokémon
+                            </button>
                         </div>
 
                         <div className="modal-body-scroll">
@@ -443,22 +454,36 @@ export default function NPC() {
                                                 <label>Livello</label>
                                                 <input type="number" value={editForm.livello_allenatore} onChange={(e) => handleStatChange('livello_allenatore', e.target.value)} />
                                             </div>
-                                            <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                                                <label>Immagine URL (Avatar)</label>
-                                                <input value={editForm.immagine_profilo || ''} onChange={(e) => handleStatChange('immagine_profilo', e.target.value)} placeholder="https://..." />
+                                            <div className="input-field" style={{ gridColumn: 'span 3' }}>
+                                                <label>URL Immagine Profilo</label>
+                                                <div className="input-with-icon">
+                                                    <Camera size={14} color="var(--text-muted)" />
+                                                    <input
+                                                        value={editForm.immagine_profilo || ''}
+                                                        onChange={(e) => handleStatChange('immagine_profilo', e.target.value)}
+                                                        placeholder="Inserisci link immagine (PNG/JPG)..."
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+
                                     <div className="edit-section">
-                                        <h4 className="edit-section-title"><Shield size={16} /> Statistiche Base</h4>
+                                        <h4 className="edit-section-title"><Shield size={16} /> Statistiche di Combattimento</h4>
                                         <div className="edit-grid-2">
                                             <div className="input-field">
                                                 <label>Forza (Attacco)</label>
-                                                <input type="number" value={editForm.forza} onChange={(e) => handleStatChange('forza', e.target.value)} />
+                                                <div className="input-with-icon">
+                                                    <Zap size={14} color="#ef4444" />
+                                                    <input type="number" value={editForm.forza} onChange={(e) => handleStatChange('forza', e.target.value)} />
+                                                </div>
                                             </div>
                                             <div className="input-field">
                                                 <label>Destrezza (Difesa)</label>
-                                                <input type="number" value={editForm.destrezza} onChange={(e) => handleStatChange('destrezza', e.target.value)} />
+                                                <div className="input-with-icon">
+                                                    <Shield size={14} color="#3b82f6" />
+                                                    <input type="number" value={editForm.destrezza} onChange={(e) => handleStatChange('destrezza', e.target.value)} />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
