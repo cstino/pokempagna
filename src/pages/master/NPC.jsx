@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Users, User, Shield, Zap, Edit2, Loader2, X, Check, Save, Heart, TrendingUp, Plus, Package, Trash2, Search, Info, Camera } from 'lucide-react';
@@ -11,6 +11,7 @@ export default function NPC() {
     const [loading, setLoading] = useState(true);
     const [selectedNPC, setSelectedNPC] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
+    const fileInputRef = useRef(null);
     const [saving, setSaving] = useState(false);
 
     // Stato temporaneo per la modifica
@@ -114,6 +115,35 @@ export default function NPC() {
             setSaving(false);
         }
     }
+
+    const handleAvatarUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setSaving(true);
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+            const filePath = `npcs/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath);
+
+            setEditForm(prev => ({ ...prev, immagine_profilo: publicUrl }));
+        } catch (err) {
+            console.error("Errore upload immagine:", err);
+            alert("Errore nel caricamento: " + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const openEditModal = async (npc) => {
         setSelectedNPC(npc);
@@ -399,15 +429,22 @@ export default function NPC() {
                                         placeholder="Nome NPC..."
                                     />
                                 </div>
-                                <div className="modal-avatar-preview npc-preview-aura right-side" onClick={() => setActiveTab('stats')}>
+                                <div className="modal-avatar-preview npc-preview-aura right-side" onClick={() => fileInputRef.current?.click()}>
                                     {editForm.immagine_profilo ? (
                                         <img src={editForm.immagine_profilo} alt={editForm.nome} />
                                     ) : (
                                         <div className="avatar-placeholder-master large"><User size={40} /></div>
                                     )}
                                     <div className="avatar-edit-overlay">
-                                        <Camera size={26} />
+                                        {saving ? <Loader2 className="spin" size={26} /> : <Camera size={26} />}
                                     </div>
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleAvatarUpload}
+                                        style={{ display: 'none' }}
+                                        accept="image/*"
+                                    />
                                 </div>
                             </div>
                             <button className="modal-close" onClick={() => setIsEditing(false)}>
@@ -523,12 +560,21 @@ export default function NPC() {
                                     ) : (
                                         <div className="items-grid-master">
                                             {npcItems.length === 0 ? <p className="empty-msg-master">Nessun oggetto nello zaino</p> : npcItems.map(item => (
-                                                <div key={item.id} className="item-card-master">
-                                                    <div className="icm-header">
-                                                        <div className="icm-img">{item.oggetti?.immagine_url ? <img src={item.oggetti.immagine_url} alt={item.oggetti.nome} /> : <Package size={16} />}</div>
-                                                        <div className="icm-info"><strong>{item.oggetti?.nome}</strong><span>x{item.quantita}</span></div>
+                                                <div key={item.id} className="item-card-master premium-item-card">
+                                                    <div className="item-card-main">
+                                                        <div className="item-img-box">
+                                                            {item.oggetti?.immagine_url ? <img src={item.oggetti.immagine_url} alt={item.oggetti.nome} /> : <Package size={20} />}
+                                                        </div>
+                                                        <div className="item-details">
+                                                            <strong>{item.oggetti?.nome}</strong>
+                                                        </div>
                                                     </div>
-                                                    <button className="btn-del-sm" onClick={() => removeItem(item.id)}><Trash2 size={12} /></button>
+                                                    <div className="item-card-actions-right">
+                                                        <span className="item-qty-badge">x{item.quantita}</span>
+                                                        <button className="btn-del-absolute" onClick={() => removeItem(item.id)}>
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>

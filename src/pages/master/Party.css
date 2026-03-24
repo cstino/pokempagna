@@ -531,6 +531,49 @@
 .item-card-master:hover {
     transform: translateY(-2px);
     background: rgba(255, 255, 255, 0.05);
+    border-color: var(--primary-master);
+}
+
+.premium-item-card {
+    position: relative;
+    padding-top: 15px !important;
+}
+
+.item-card-actions-right {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+.item-qty-badge {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--primary-master);
+    opacity: 0.9;
+    margin-right: 15px;
+}
+
+.btn-del-absolute {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: rgba(239, 68, 68, 0.05);
+    color: #ef4444;
+    border: none;
+    border-radius: 8px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-del-absolute:hover {
+    background: #ef4444;
+    color: white;
+    transform: scale(1.1);
 }
 
 .item-card-main {
