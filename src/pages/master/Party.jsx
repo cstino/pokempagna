@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Users, User, Shield, Zap, Medal, Edit2, Loader2, X, Check, Save, Heart, TrendingUp, Plus, Minus, Package, Trash2, Search, Info } from 'lucide-react';
+import { Users, User, Shield, Zap, Medal, Edit2, Loader2, X, Check, Save, Heart, TrendingUp, Plus, Minus, Package, Trash2, Search, Info, Layout } from 'lucide-react';
 import './Party.css';
 
 export default function Party() {
@@ -209,6 +209,20 @@ export default function Party() {
         } catch (err) { console.error(err); }
     };
 
+    const spostaPokemon = async (pkmnId, nuovaPosizione) => {
+        try {
+            const { error } = await supabase
+                .from('pokemon_giocatore')
+                .update({ posizione_squadra: nuovaPosizione })
+                .eq('id', pkmnId);
+
+            if (error) throw error;
+            caricaDatiExtra(editForm.id);
+        } catch (err) {
+            console.error("Errore spostamento pokemon:", err);
+        }
+    };
+
     const rimuoviPokemon = async (pkmnId, playerId) => {
         setConfirmModal({
             title: "Liberare Pokémon?",
@@ -390,6 +404,7 @@ export default function Party() {
                     punti_tlp: editForm.punti_tlp,
                     forza: editForm.forza,
                     destrezza: editForm.destrezza,
+                    slot_squadra: editForm.slot_squadra,
                 })
                 .eq('id', editForm.id);
 
@@ -570,6 +585,17 @@ export default function Party() {
                                                     value={editForm.punti_tlp}
                                                     onChange={(e) => handleStatChange('punti_tlp', e.target.value)}
                                                 />
+                                            </div>
+                                            <div className="input-field">
+                                                <label>Slot Squadra</label>
+                                                <div className="input-with-icon">
+                                                    <Layout size={14} color="#fcd34d" />
+                                                    <input
+                                                        type="number"
+                                                        value={editForm.slot_squadra !== undefined && editForm.slot_squadra !== null ? editForm.slot_squadra : 3}
+                                                        onChange={(e) => handleStatChange('slot_squadra', e.target.value)}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -860,65 +886,98 @@ export default function Party() {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="pokemon-grid-master">
+                                        <div className="squadra-box-layout">
                                             {loadingExtra ? (
                                                 <div className="flex-center p-xl"><Loader2 className="spin" /></div>
-                                            ) : playerPokemon.length === 0 ? (
-                                                <p className="empty-text">Nessun Pokémon registrato.</p>
                                             ) : (
-                                                playerPokemon.map(poke => {
-                                                    const hpPct = (poke.hp_attuale / poke.hp_max) * 100;
-                                                    const hpCol = hpPct > 50 ? '#34d399' : hpPct > 20 ? '#fbbf24' : '#ef4444';
-
-                                                    return (
-                                                        <div key={poke.id} className="pkmn-card-master">
-                                                            <div className="pkmn-card-top">
-                                                                <div className="pkmn-thumb">
-                                                                    <img
-                                                                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`}
-                                                                        alt={poke.soprannome}
-                                                                    />
-                                                                </div>
-                                                                <div className="pkmn-info">
-                                                                    <div className="pkmn-name-row">
-                                                                        <strong>{poke.soprannome}</strong>
-                                                                        <span className="lvl-tag">Lv.{poke.livello}</span>
-                                                                    </div>
-                                                                    <div className="pkmn-types">
-                                                                        <span className="type-tag" style={{ borderLeftColor: `var(--type-${poke.tipo1?.toLowerCase()})` }}>
-                                                                            {poke.tipo1}
-                                                                        </span>
-                                                                        {poke.tipo2 && (
-                                                                            <span className="type-tag" style={{ borderLeftColor: `var(--type-${poke.tipo2?.toLowerCase()})` }}>
-                                                                                {poke.tipo2}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div className="pkmn-card-bottom">
-                                                                <div className="pkmn-hp-bar">
-                                                                    <div className="hp-fill" style={{ width: `${hpPct}%`, backgroundColor: hpCol }}></div>
-                                                                </div>
-                                                                <div className="pkmn-actions">
-                                                                    <button
-                                                                        className="btn-icon-sm"
-                                                                        title="Modifica Stats"
-                                                                        onClick={() => setEditingPkmn(poke)}
-                                                                    >
-                                                                        <Edit2 size={12} />
-                                                                    </button>
-                                                                    <button
-                                                                        className="btn-icon-sm btn-del"
-                                                                        onClick={() => rimuoviPokemon(poke.id, editForm.id)}
-                                                                    >
-                                                                        <X size={12} />
-                                                                    </button>
-                                                                </div>
-                                                            </div>
+                                                <>
+                                                    {/* SQUADRA */}
+                                                    <div className="squadra-section-master">
+                                                        <h5 className="title-premium-master team-title">SQUADRA</h5>
+                                                        <div className="pokemon-grid-master grid-4-cols">
+                                                            {playerPokemon.filter(p => p.posizione_squadra < (editForm.slot_squadra || 3)).length === 0 ? (
+                                                                <p className="empty-text">Nessun Pokémon in squadra.</p>
+                                                            ) : (
+                                                                playerPokemon.filter(p => p.posizione_squadra < (editForm.slot_squadra || 3)).map(poke => {
+                                                                    const hpPct = (poke.hp_attuale / poke.hp_max) * 100;
+                                                                    const hpCol = hpPct > 50 ? '#34d399' : hpPct > 20 ? '#fbbf24' : '#ef4444';
+                                                                    return (
+                                                                        <div key={poke.id} className="pkmn-card-squadra master-card-premium clickable" onClick={() => setEditingPkmn(poke)}>
+                                                                            <div className="pkmn-type-badge">{poke.tipo1?.toUpperCase()}</div>
+                                                                            <div className="pkmn-lvl-badge">Nv.{poke.livello}</div>
+                                                                            <img className="pkmn-image" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`} alt={poke.soprannome} />
+                                                                            <div className="pkmn-card-details">
+                                                                                <h3>{poke.soprannome?.toUpperCase()}</h3>
+                                                                                <div className="hp-section">
+                                                                                    <div className="hp-info">
+                                                                                        <span>HP</span>
+                                                                                        <span>{poke.hp_attuale}/{poke.hp_max}</span>
+                                                                                    </div>
+                                                                                    <div className="hp-bar-bg">
+                                                                                        <div className="hp-bar-fill" style={{ width: `${hpPct}%`, backgroundColor: hpCol }}></div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="pkmn-card-actions-overlay-v3">
+                                                                                <button className="btn-v3" title="Sposta in Box" onClick={(e) => { e.stopPropagation(); spostaPokemon(poke.id, 99); }}><Package size={18} /></button>
+                                                                                <button className="btn-v3 del" onClick={(e) => { e.stopPropagation(); rimuoviPokemon(poke.id, editForm.id); }}><Trash2 size={18} /></button>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })
+                                                            )}
                                                         </div>
-                                                    );
-                                                })
+                                                    </div>
+
+                                                    {/* BOX */}
+                                                    <div className="box-section-master" style={{ marginTop: '50px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '30px' }}>
+                                                        <h5 className="title-premium-master box-title">BOX</h5>
+                                                        <div className="pokemon-grid-master grid-4-cols">
+                                                            {playerPokemon.filter(p => p.posizione_squadra >= (editForm.slot_squadra || 3)).length === 0 ? (
+                                                                <p className="empty-text">Il box è vuoto.</p>
+                                                            ) : (
+                                                                playerPokemon.filter(p => p.posizione_squadra >= (editForm.slot_squadra || 3)).map(poke => {
+                                                                    const hpPct = (poke.hp_attuale / poke.hp_max) * 100;
+                                                                    const hpCol = hpPct > 50 ? '#34d399' : hpPct > 20 ? '#fbbf24' : '#ef4444';
+                                                                    return (
+                                                                        <div key={poke.id} className="pkmn-card-squadra compact-box-card-v3 clickable" onClick={() => setEditingPkmn(poke)}>
+                                                                            <div className="pkmn-lvl-badge" style={{ fontSize: '0.6rem' }}>Nv.{poke.livello}</div>
+                                                                            <img className="pkmn-image-mini" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.pokemon_id}.png`} alt={poke.soprannome} />
+                                                                            <div className="pkmn-name-mini">{poke.soprannome?.toUpperCase()}</div>
+                                                                            <div className="hp-section mini-hp">
+                                                                                <div className="hp-info">
+                                                                                    <span>HP</span>
+                                                                                    <span>{poke.hp_attuale}/{poke.hp_max}</span>
+                                                                                </div>
+                                                                                <div className="hp-bar-bg mini-bar">
+                                                                                    <div className="hp-bar-fill" style={{ width: `${hpPct}%`, backgroundColor: hpCol }}></div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="pkmn-card-actions-overlay-v3">
+                                                                                <button className="btn-v3" title="Sposta in Squadra" onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    const limit = editForm.slot_squadra || 3;
+                                                                                    const sCount = playerPokemon.filter(p => p.posizione_squadra < limit).length;
+                                                                                    if (sCount >= limit) {
+                                                                                        setConfirmModal({
+                                                                                            title: "Limite Raggiunto",
+                                                                                            message: `La squadra ha già ${limit} Pokémon attivi. Sposta un Pokémon nel box per far posto a questo.`,
+                                                                                            type: "error",
+                                                                                            onConfirm: () => setConfirmModal(null)
+                                                                                        });
+                                                                                        return;
+                                                                                    }
+                                                                                    spostaPokemon(poke.id, sCount);
+                                                                                }}><Plus size={18} /></button>
+                                                                                <button className="btn-v3 del" onClick={(e) => { e.stopPropagation(); rimuoviPokemon(poke.id, editForm.id); }}><Trash2 size={18} /></button>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </>
                                             )}
                                         </div>
                                     )}

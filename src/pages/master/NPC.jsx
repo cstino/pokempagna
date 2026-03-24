@@ -682,9 +682,9 @@ export default function NPC() {
                                     ) : (
                                         <div className="squadra-box-layout">
                                             <div className="squadra-section-master">
-                                                <h5 className="sub-title-master">Squadra Attiva (Max 3)</h5>
-                                                <div className="pokemon-grid-master">
-                                                    {npcPokemon.filter(p => p.posizione_squadra < 3).length === 0 ? <p className="empty-msg-master">Nessun Pokémon pronto alla battaglia</p> : npcPokemon.filter(p => p.posizione_squadra < 3).map((poke, idx) => {
+                                                <h5 className="title-premium-master team-title">SQUADRA</h5>
+                                                <div className="pokemon-grid-master grid-4-cols">
+                                                    {npcPokemon.filter(p => p.posizione_squadra < 99).length === 0 ? <p className="empty-msg-master">Nessun Pokémon in squadra</p> : npcPokemon.filter(p => p.posizione_squadra < 99).map((poke, idx) => {
                                                         const hpPerc = (poke.hp_attuale / poke.hp_max) * 100;
                                                         const hpColor = hpPerc > 50 ? '#10b981' : hpPerc > 20 ? '#f59e0b' : '#ef4444';
 
@@ -713,7 +713,7 @@ export default function NPC() {
                                                                 </div>
 
                                                                 <div className="pkmn-card-actions-overlay-v3">
-                                                                    <button className="btn-v3" title="Metti nel Box" onClick={(e) => { e.stopPropagation(); spostaPokemon(poke.id, 99); }}><Package size={18} /></button>
+                                                                    <button className="btn-v3" title="Sposta in Box" onClick={(e) => { e.stopPropagation(); spostaPokemon(poke.id, 99); }}><Package size={18} /></button>
                                                                     <button className="btn-v3 del" onClick={(e) => { e.stopPropagation(); rimuoviPokemonSquadra(poke.id); }}><Trash2 size={18} /></button>
                                                                 </div>
                                                             </div>
@@ -722,21 +722,36 @@ export default function NPC() {
                                                 </div>
                                             </div>
 
-                                            <div className="box-section-master" style={{ marginTop: '40px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '20px' }}>
-                                                <h5 className="sub-title-master" style={{ color: '#64748b' }}>Box Riserve</h5>
-                                                <div className="pokemon-grid-master">
-                                                    {npcPokemon.filter(p => p.posizione_squadra >= 3).length === 0 ? <p className="empty-msg-master">Box vuoto</p> : npcPokemon.filter(p => p.posizione_squadra >= 3).map(poke => (
-                                                        <div key={poke.id} className="pkmn-card-squadra compact-box-card-v3 clickable" onClick={() => setEditingPkmn(poke)}>
-                                                            <div className="pkmn-lvl-badge" style={{ fontSize: '0.6rem' }}>Nv.{poke.livello}</div>
-                                                            <img className="pkmn-image-mini" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.pokemon_id}.png`} alt={poke.soprannome} />
-                                                            <div className="pkmn-name-mini">{poke.soprannome?.toUpperCase()}</div>
+                                            <div className="box-section-master" style={{ marginTop: '50px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '30px' }}>
+                                                <h5 className="title-premium-master box-title">BOX</h5>
+                                                <div className="pokemon-grid-master grid-4-cols">
+                                                    {npcPokemon.filter(p => p.posizione_squadra >= 99).length === 0 ? <p className="empty-msg-master">Box vuoto</p> : npcPokemon.filter(p => p.posizione_squadra >= 99).map(poke => {
+                                                        const hpPerc = (poke.hp_attuale / poke.hp_max) * 100;
+                                                        const hpColor = hpPerc > 50 ? '#10b981' : hpPerc > 20 ? '#f59e0b' : '#ef4444';
 
-                                                            <div className="pkmn-card-actions-overlay-v3">
-                                                                <button className="btn-v3" title="Metti in Squadra" onClick={(e) => { e.stopPropagation(); const sCount = npcPokemon.filter(p => p.posizione_squadra < 3).length; if (sCount >= 3) return alert('Squadra piena!'); spostaPokemon(poke.id, sCount); }}><Plus size={18} /></button>
-                                                                <button className="btn-v3 del" onClick={(e) => { e.stopPropagation(); rimuoviPokemonSquadra(poke.id); }}><Trash2 size={18} /></button>
+                                                        return (
+                                                            <div key={poke.id} className="pkmn-card-squadra compact-box-card-v3 clickable" onClick={() => setEditingPkmn(poke)}>
+                                                                <div className="pkmn-lvl-badge" style={{ fontSize: '0.6rem' }}>Nv.{poke.livello}</div>
+                                                                <img className="pkmn-image-mini" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.pokemon_id}.png`} alt={poke.soprannome} />
+                                                                <div className="pkmn-name-mini">{poke.soprannome?.toUpperCase()}</div>
+
+                                                                <div className="hp-section mini-hp">
+                                                                    <div className="hp-info">
+                                                                        <span>HP</span>
+                                                                        <span>{poke.hp_attuale}/{poke.hp_max}</span>
+                                                                    </div>
+                                                                    <div className="hp-bar-bg mini-bar">
+                                                                        <div className="hp-bar-fill" style={{ width: `${hpPerc}%`, background: hpColor }}></div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="pkmn-card-actions-overlay-v3">
+                                                                    <button className="btn-v3" title="Sposta in Squadra" onClick={(e) => { e.stopPropagation(); const sCount = npcPokemon.filter(p => p.posizione_squadra < 99).length; spostaPokemon(poke.id, sCount); }}><Plus size={18} /></button>
+                                                                    <button className="btn-v3 del" onClick={(e) => { e.stopPropagation(); rimuoviPokemonSquadra(poke.id); }}><Trash2 size={18} /></button>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         </div>

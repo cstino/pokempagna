@@ -1549,7 +1549,8 @@
 
 .master-card-premium .hp-section {
     width: 175px !important;
-    margin: 0 auto !important;
+    margin: -20px auto 0 !important;
+    /* Alzata di 20px per compattare il footer */
     display: flex !important;
     flex-direction: column !important;
     gap: 4px !important;
@@ -1663,4 +1664,70 @@
     font-size: 0.75rem;
     font-weight: 900;
     color: #475569;
+}
+
+/* Grid a 4 colonne */
+.pokemon-grid-master.grid-4-cols {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 20px !important;
+}
+
+/* Titoli Premium SQUADRA / BOX */
+.title-premium-master {
+    font-size: 1.4rem !important;
+    font-weight: 1000 !important;
+    letter-spacing: 2px !important;
+    margin-bottom: 25px !important;
+    padding-left: 10px !important;
+    border-left: 5px solid;
+    display: inline-block;
+    line-height: 1;
+}
+
+.title-premium-master.team-title {
+    color: #6366f1 !important;
+    /* Indigo */
+    border-left-color: #6366f1;
+    text-shadow: 2px 2px 0px rgba(99, 102, 241, 0.1);
+}
+
+.title-premium-master.box-title {
+    color: #0ea5e9 !important;
+    /* Sky Blue */
+    border-left-color: #0ea5e9;
+    text-shadow: 2px 2px 0px rgba(14, 165, 233, 0.1);
+}
+
+/* Mini HP per Box Card */
+.mini-hp {
+    width: 90% !important;
+    margin-top: -10px !important;
+    /* Alzata per visibilità */
+}
+
+.mini-hp .hp-info {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-bottom: 2px !important;
+}
+
+.mini-hp .hp-info span {
+    font-size: 0.6rem !important;
+    font-weight: 800 !important;
+    color: #94a3b8 !important;
+}
+
+.mini-hp .hp-info span:last-child {
+    color: #475569 !important;
+}
+
+.mini-bar {
+    height: 6px !important;
+}
+
+.compact-box-card-v3 .pkmn-name-mini {
+    margin-top: 5px !important;
+    font-size: 0.85rem !important;
+    font-weight: 900 !important;
+    color: #1e293b !important;
 }

@@ -132,13 +132,39 @@
     position: absolute;
     bottom: -5px;
     right: -5px;
+    height: 18px;
+    /* Altezza fissa per precisione */
+    padding: 0 6px;
+    /* Padding laterale bilanciato */
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: #fcd34d;
     color: #000;
-    font-weight: 900;
-    font-size: 0.75rem;
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    font-weight: 1000;
+    /* Super Bold */
+    font-size: 0.7rem;
+    border-radius: 6px;
+    /* Rettangolo stondato perfetto */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+    white-space: nowrap;
+    z-index: 10;
+}
+
+@media (max-width: 1024px) {
+    .item-icon-container {
+        position: static !important;
+        /* Libera il badge per ancorarsi alla card grande intera */
+    }
+
+    .item-qty-badge {
+        top: 8px;
+        right: 8px;
+        bottom: auto !important;
+        left: auto !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        margin: 0 !important;
+    }
 }
 
 .item-info {

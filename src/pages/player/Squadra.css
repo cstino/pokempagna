@@ -22,12 +22,21 @@
     margin-top: -60px;
     /* 🛡️ Sollevato ulteriormente l'intero blocco di card */
     padding: 10px var(--space-md) 25px;
+    /* Ripristinato padding standard */
     overflow-x: auto;
     overflow-y: hidden;
     display: flex;
     gap: var(--space-lg);
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
+}
+
+/* 🛡️ DISTANZIATORE MOBILE: Forza lo scroll orizzontale a riconoscere il margine finale */
+.titolari-scroll-container::after {
+    content: '';
+    flex: 0 0 100px;
+    /* Crea un blocco di 100px fissi dopo l'ultima card */
+    height: 10px;
 }
 
 .titolari-scroll-container::-webkit-scrollbar {
@@ -52,7 +61,8 @@
     height: 275px;
     /* 🛡️ Altezza fissa ottimizzata per non avere vuoto */
     flex-shrink: 0;
-    scroll-snap-align: center;
+    scroll-snap-align: start;
+    /* 🛡️ Cambiato a start per facilitare la visione dell'ultima card */
 }
 
 .squadra-grid-panchina {
