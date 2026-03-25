@@ -265,7 +265,7 @@
 .stat-bar-modal-fill {
     height: 100%;
     border-radius: 3px;
-    background: var(--accent-primary);
+    background: #ff00d4;
 }
 
 .btn-action-pkmn {

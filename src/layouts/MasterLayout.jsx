@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Map, Users, Swords, LogOut, LayoutDashboard, Copy, Sun, Moon, User as UserIcon } from 'lucide-react';
+import { Map, Users, Swords, LogOut, LayoutDashboard, Copy, Sun, Moon, User as UserIcon, Heart, Package, Zap } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import './MasterLayout.css';
@@ -11,6 +11,9 @@ const NAV_ITEMS = [
     { path: '/master/campagna', icon: <Map size={22} />, label: 'Campagna' },
     { path: '/master/party', icon: <Users size={22} />, label: 'Party' },
     { path: '/master/npc', icon: <UserIcon size={22} />, label: 'NPC' },
+    { path: '/master/pokemon', icon: <Heart size={22} />, label: 'Pokémon' },
+    { path: '/master/oggetti', icon: <Package size={22} />, label: 'Oggetti' },
+    { path: '/master/mosse', icon: <Zap size={22} />, label: 'Mosse' },
     { path: '/master/battaglia', icon: <Swords size={22} />, label: 'Battaglia' },
 ];
 

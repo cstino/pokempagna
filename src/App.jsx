@@ -23,6 +23,9 @@ import Party from './pages/master/Party';
 import Battaglia from './pages/master/Battaglia';
 import TestAnim from './pages/master/TestAnim';
 import NPC from './pages/master/NPC';
+import PokemonMaster from './pages/master/Pokemon';
+import OggettiMaster from './pages/master/Oggetti';
+import MosseMaster from './pages/master/Mosse';
 
 function ProtectedRoute({ children, requiredRole }) {
   const { user, profile, loading, signOut } = useAuth();
@@ -124,6 +127,9 @@ function AppRoutes() {
         <Route path="campagna" element={<Campagna />} />
         <Route path="party" element={<Party />} />
         <Route path="npc" element={<NPC />} />
+        <Route path="pokemon" element={<PokemonMaster />} />
+        <Route path="oggetti" element={<OggettiMaster />} />
+        <Route path="mosse" element={<MosseMaster />} />
         <Route path="battaglia" element={<Battaglia />} />
         <Route path="test-anim" element={<TestAnim />} />
       </Route>

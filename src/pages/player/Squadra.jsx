@@ -210,11 +210,11 @@ export default function Squadra() {
                             <div className="pkmn-actions-container">
                                 {selectedPkmn.posizione_squadra < slots ? (
                                     <button className="btn-action-pkmn to-bench" onClick={() => handleSwap(selectedPkmn.id, false)}>
-                                        <ArrowRightLeft size={18} /> Sposta in Panchina
+                                        <ArrowRightLeft size={18} /> Sposta nel Box
                                     </button>
                                 ) : (
                                     <button className="btn-action-pkmn to-squad" onClick={() => handleSwap(selectedPkmn.id, true)}>
-                                        <Zap size={18} /> Rendi Titolare
+                                        <Zap size={18} /> Sposta in Squadra
                                     </button>
                                 )}
                             </div>

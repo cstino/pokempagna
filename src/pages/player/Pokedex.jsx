@@ -1,70 +1,68 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Info, Zap, Shield, Heart, Weight, Ruler, ChevronRight, BookOpen, Loader2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 import './Pokedex.css';
-
-// 🧪 DATI DI PROVA (In attesa del tuo DB ufficiale)
-const MOCK_POKEDEX = [
-    {
-        id: 1,
-        nome: "Bulbasaur",
-        tipo: ["Erba", "Veleno"],
-        stats: { hp: 45, atk: 49, def: 49, spatk: 65, spdef: 65, speed: 45 },
-        descrizione: "Una strana semente è stata piantata sul suo dorso alla nascita. La pianta germoglia e cresce con lui.",
-        altezza: "0.7m",
-        peso: "6.9kg",
-        immagine: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png"
-    },
-    {
-        id: 4,
-        nome: "Charmander",
-        tipo: ["Fuoco"],
-        stats: { hp: 39, atk: 52, def: 43, spatk: 60, spdef: 50, speed: 65 },
-        descrizione: "Preferisce le cose calde. Si dice che quando piove gli esca vapore dalla punta della coda.",
-        altezza: "0.6m",
-        peso: "8.5kg",
-        immagine: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png"
-    },
-    {
-        id: 7,
-        nome: "Squirtle",
-        tipo: ["Acqua"],
-        stats: { hp: 44, atk: 48, def: 65, spatk: 50, spdef: 64, speed: 43 },
-        descrizione: "Dopo la nascita il suo dorso si gonfia e si indurisce diventando un guscio. Germoglia schiuma dalla bocca.",
-        altezza: "0.5m",
-        peso: "9.0kg",
-        immagine: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png"
-    },
-    {
-        id: 25,
-        nome: "Pikachu",
-        tipo: ["Elettro"],
-        stats: { hp: 35, atk: 55, def: 40, spatk: 50, spdef: 50, speed: 90 },
-        descrizione: "Quando diversi di questi POKéMON si radunano, la loro elettricità può causare tempeste di fulmini.",
-        altezza: "0.4m",
-        peso: "6.0kg",
-        immagine: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png"
-    }
-];
 
 export default function Pokedex() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedPkmn, setSelectedPkmn] = useState(null);
+    const [pokemon, setPokemon] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const filteredPkmn = MOCK_POKEDEX.filter(p =>
+    useEffect(() => {
+        caricaPokedex();
+    }, []);
+
+    async function caricaPokedex() {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('pokemon')
+                .select('*')
+                .eq('visibile_pokedex', true)
+                .order('id', { ascending: true });
+
+            if (error) throw error;
+            setPokemon(data || []);
+        } catch (err) {
+            console.error("Errore caricamento Pokedex:", err);
+            // In caso di errore (es. tabella non pronta), usiamo una lista vuota
+            setPokemon([]);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const filteredPkmn = pokemon.filter(p =>
         p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.tipo.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()))
+        (p.tipo1 && p.tipo1.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (p.tipo2 && p.tipo2.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     const getTypeColor = (tipo) => {
+        if (!tipo) return '#9ca3af';
+        const t = tipo.toUpperCase();
         const colors = {
-            'Erba': '#10b981',
-            'Fuoco': '#ef4444',
-            'Acqua': '#3b82f6',
-            'Elettro': '#f59e0b',
-            'Veleno': '#a855f7',
-            'Normale': '#9ca3af'
+            'ERBA': '#10b981',
+            'FUOCO': '#ef4444',
+            'ACQUA': '#3b82f6',
+            'ELETTRO': '#f59e0b',
+            'VELENO': '#a855f7',
+            'NORMALE': '#9ca3af',
+            'GHIACCIO': '#bae6fd',
+            'LOTTA': '#b91c1c',
+            'TERRA': '#d97706',
+            'VOLANTE': '#6366f1',
+            'PSICO': '#ec4899',
+            'COLEOTTERO': '#84cc16',
+            'ROCCIA': '#78350f',
+            'SPETTRO': '#4c1d95',
+            'DRAGO': '#1e3a8a',
+            'BUIO': '#111827',
+            'ACCIAIO': '#4b5563',
+            'FOLLETTO': '#f472b6'
         };
-        return colors[tipo] || '#9ca3af';
+        return colors[t] || '#9ca3af';
     };
 
     return (
@@ -89,77 +87,82 @@ export default function Pokedex() {
                 </div>
             </header>
 
-            {/* GRIGLIA POKEMON */}
-            <div className="pokedex-grid">
-                {filteredPkmn.map((pkmn) => (
-                    <div
-                        key={pkmn.id}
-                        className="pkmn-card"
-                        onClick={() => setSelectedPkmn(pkmn)}
-                    >
-                        <div className="pkmn-id">#{String(pkmn.id).padStart(3, '0')}</div>
-                        <div className="pkmn-image-container">
-                            <img src={pkmn.image || pkmn.immagine} alt={pkmn.nome} className="pkmn-image" />
-                        </div>
-                        <div className="pkmn-card-details">
-                            <h3>{pkmn.nome}</h3>
-                            <div className="pkmn-types">
-                                {pkmn.tipo.map(t => (
-                                    <span key={t} style={{ backgroundColor: getTypeColor(t) }} className="type-badge">{t}</span>
-                                ))}
+            {loading ? (
+                <div className="flex-center p-xl"><Loader2 className="spin" size={40} /></div>
+            ) : (
+                <>
+                    {/* GRIGLIA POKEMON */}
+                    <div className="pokedex-grid">
+                        {filteredPkmn.length === 0 ? (
+                            <div className="empty-pokedex-msg">
+                                <Info size={40} opacity={0.3} />
+                                <p>Nessun Pokémon scoperto in questo habitat...</p>
                             </div>
-                        </div>
+                        ) : (
+                            filteredPkmn.map((pkmn) => (
+                                <div
+                                    key={pkmn.id}
+                                    className="pkmn-card"
+                                    onClick={() => setSelectedPkmn(pkmn)}
+                                >
+                                    <div className="pkmn-id">#{String(pkmn.id).padStart(3, '0')}</div>
+                                    <div className="pkmn-image-container">
+                                        <img src={pkmn.sprite_url || pkmn.immagine_url} alt={pkmn.nome} className="pkmn-image" />
+                                    </div>
+                                    <div className="pkmn-card-details">
+                                        <h3>{pkmn.nome.toUpperCase()}</h3>
+                                        <div className="pkmn-types">
+                                            <span style={{ backgroundColor: getTypeColor(pkmn.tipo1) }} className="type-badge">{pkmn.tipo1}</span>
+                                            {pkmn.tipo2 && <span style={{ backgroundColor: getTypeColor(pkmn.tipo2) }} className="type-badge">{pkmn.tipo2}</span>}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
-                ))}
-            </div>
+                </>
+            )}
 
             {/* MODALE DETTAGLI (Premium Look) */}
             {selectedPkmn && (
                 <div className="modal-overlay" onClick={() => setSelectedPkmn(null)}>
                     <div className="modal-content pkmn-detail-modal" onClick={e => e.stopPropagation()}>
-                        <div className="modal-pkmn-bg" style={{ backgroundColor: getTypeColor(selectedPkmn.tipo[0]) + '22' }}>
+                        <div className="modal-pkmn-bg" style={{ backgroundColor: getTypeColor(selectedPkmn.tipo1) + '22' }}>
                             <button className="modal-close-btn" onClick={() => setSelectedPkmn(null)}>✕</button>
-                            <img src={selectedPkmn.immagine} alt={selectedPkmn.nome} className="modal-pkmn-img" />
+                            <img src={selectedPkmn.immagine_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${selectedPkmn.id}.png`} alt={selectedPkmn.nome} className="modal-pkmn-img" />
                         </div>
 
                         <div className="modal-pkmn-body">
                             <div className="modal-pkmn-header">
                                 <span className="modal-pkmn-id">#{String(selectedPkmn.id).padStart(3, '0')}</span>
-                                <h2>{selectedPkmn.nome}</h2>
+                                <h2>{selectedPkmn.nome.toUpperCase()}</h2>
                                 <div className="pkmn-types-modal">
-                                    {selectedPkmn.tipo.map(t => (
-                                        <span key={t} style={{ backgroundColor: getTypeColor(t) }} className="type-badge large">{t}</span>
-                                    ))}
+                                    <span style={{ backgroundColor: getTypeColor(selectedPkmn.tipo1) }} className="type-badge large">{selectedPkmn.tipo1}</span>
+                                    {selectedPkmn.tipo2 && <span style={{ backgroundColor: getTypeColor(selectedPkmn.tipo2) }} className="type-badge large">{selectedPkmn.tipo2}</span>}
                                 </div>
                             </div>
 
-                            <p className="pkmn-flavor-text">{selectedPkmn.descrizione}</p>
-
-                            <div className="pkmn-info-row">
-                                <div className="info-box">
-                                    <Ruler size={16} />
-                                    <span>{selectedPkmn.altezza}</span>
-                                    <label>Altezza</label>
-                                </div>
-                                <div className="info-box">
-                                    <Weight size={16} />
-                                    <span>{selectedPkmn.peso}</span>
-                                    <label>Peso</label>
-                                </div>
-                            </div>
+                            <p className="pkmn-flavor-text">{selectedPkmn.descrizione || 'Nessuna descrizione disponibile.'}</p>
 
                             <div className="stats-container">
                                 <h4 className="stats-title">Statistiche Base</h4>
-                                {Object.entries(selectedPkmn.stats).map(([key, val]) => (
-                                    <div key={key} className="stat-row">
-                                        <span className="stat-name">{key.toUpperCase()}</span>
-                                        <span className="stat-val">{val}</span>
+                                {[
+                                    {label: 'HP', val: selectedPkmn.hp_base},
+                                    {label: 'ATK', val: selectedPkmn.atk_base},
+                                    {label: 'DEF', val: selectedPkmn.def_base},
+                                    {label: 'SP. ATK', val: selectedPkmn.spatk_base},
+                                    {label: 'SP. DEF', val: selectedPkmn.spdef_base},
+                                    {label: 'SPEED', val: selectedPkmn.speed_base}
+                                ].map((s) => (
+                                    <div key={s.label} className="stat-row">
+                                        <span className="stat-name">{s.label}</span>
+                                        <span className="stat-val">{s.val}</span>
                                         <div className="stat-bar-bg">
                                             <div
                                                 className="stat-bar-fill"
                                                 style={{
-                                                    width: `${(val / 150) * 100}%`,
-                                                    backgroundColor: getTypeColor(selectedPkmn.tipo[0])
+                                                    width: `${Math.min(100, (s.val / 150) * 100)}%`,
+                                                    backgroundColor: getTypeColor(selectedPkmn.tipo1)
                                                 }}
                                             ></div>
                                         </div>
