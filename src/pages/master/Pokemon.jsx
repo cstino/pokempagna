@@ -243,9 +243,8 @@ export default function PokemonMaster() {
                         <table className="master-list-table">
                             <thead>
                                 <tr>
-                                    <th>Sprite</th>
-                                    <th>Immagine</th>
                                     <th>ID</th>
+                                    <th>Immagine</th>
                                     <th>Nome</th>
                                     <th>Tipo</th>
                                     <th>Stats</th>
@@ -256,13 +255,10 @@ export default function PokemonMaster() {
                             <tbody>
                                 {filteredLocal.map((p) => (
                                     <tr key={p.id}>
-                                        <td>
-                                            <img src={p.sprite_url} alt={p.nome} className="master-list-sprite" />
-                                        </td>
+                                        <td style={{ opacity: 0.5, fontFamily: 'monospace' }}>#{p.id}</td>
                                         <td>
                                             <img src={p.immagine_url} alt={p.nome} className="master-list-img" />
                                         </td>
-                                        <td style={{ opacity: 0.5, fontFamily: 'monospace' }}>#{p.id}</td>
                                         <td style={{ fontWeight: 800 }}>{p.nome}</td>
                                         <td>
                                             <div className="pkmn-types-mini">
@@ -484,12 +480,6 @@ export default function PokemonMaster() {
                 .master-list-img {
                     width: 40px;
                     height: 40px;
-                    object-fit: contain;
-                }
-                .master-list-sprite {
-                    width: 48px;
-                    height: 48px;
-                    image-rendering: pixelated;
                     object-fit: contain;
                 }
                 .pkmn-types-mini {

@@ -107,7 +107,7 @@ export default function Pokedex() {
                                 >
                                     <div className="pkmn-id">#{String(pkmn.id).padStart(3, '0')}</div>
                                     <div className="pkmn-image-container">
-                                        <img src={pkmn.sprite_url || pkmn.immagine_url} alt={pkmn.nome} className="pkmn-image" />
+                                        <img src={pkmn.immagine_url} alt={pkmn.nome} className="pkmn-image" />
                                     </div>
                                     <div className="pkmn-card-details">
                                         <h3>{pkmn.nome.toUpperCase()}</h3>

@@ -65,11 +65,11 @@
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    /* Centra tutto orizzontalmente */
+    display: grid !important;
+    grid-template-columns: 1fr;
+    justify-items: center !important;
+    align-content: center;
+    text-align: center !important;
 }
 
 .pkmn-card:hover {
@@ -104,11 +104,10 @@
 .pkmn-card-details {
     width: 100%;
     margin-top: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
+    display: grid !important;
+    justify-items: center !important;
+    text-align: center !important;
+    gap: 8px;
 }
 
 .pkmn-card-details h3 {
@@ -116,17 +115,18 @@
     font-size: 1.1rem;
     font-weight: 800;
     text-transform: uppercase;
-    text-align: center;
+    text-align: center !important;
     width: 100%;
 }
 
 .pkmn-types {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 6px;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: var(--space-xs);
     flex-wrap: wrap;
     width: 100%;
+    margin: 0 auto;
 }
 
 .type-badge {
