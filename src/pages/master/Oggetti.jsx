@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Search, Plus, Edit2, Save, X, Loader2, Check, Info, Trash2, Package } from 'lucide-react';
+import { Search, Plus, Edit2, Save, X, Loader2, Check, Info, Trash2, Package, Upload } from 'lucide-react';
 import './Party.css';
 
 export default function OggettiMaster() {
@@ -10,6 +10,9 @@ export default function OggettiMaster() {
     const [editForm, setEditForm] = useState(null);
     const [saving, setSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [uploading, setUploading] = useState(false);
+
+    const BUCKET_NAME = 'oggetti_immagini';
 
     useEffect(() => {
         caricaOggetti();
@@ -49,6 +52,43 @@ export default function OggettiMaster() {
             });
         }
         setIsEditing(true);
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            // 🛡️ Upload su Supabase Storage
+            const { error: uploadError } = await supabase.storage
+                .from(BUCKET_NAME)
+                .upload(filePath, file);
+
+            if (uploadError) {
+                // Se il bucket non esiste, lo segnaliamo amichevolmente
+                if (uploadError.message.includes('bucket not found')) {
+                    throw new Error("Il bucket 'oggetti_immagini' non esiste su Supabase. Crealo nella sezione Storage.");
+                }
+                throw uploadError;
+            }
+
+            // Recupero URL pubblico
+            const { data: { publicUrl } } = supabase.storage
+                .from(BUCKET_NAME)
+                .getPublicUrl(filePath);
+
+            setEditForm(prev => ({ ...prev, immagine_url: publicUrl }));
+        } catch (err) {
+            console.error("Errore upload immagine:", err);
+            alert(err.message || "Errore durante il caricamento dell'immagine.");
+        } finally {
+            setUploading(false);
+        }
     };
 
     async function salvaOggetto(asNew = false) {
@@ -93,8 +133,8 @@ export default function OggettiMaster() {
         }
     }
 
-    const filteredOggetti = oggetti.filter(o => 
-        o.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const filteredOggetti = oggetti.filter(o =>
+        o.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         o.categoria.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -112,9 +152,9 @@ export default function OggettiMaster() {
 
             <div className="search-bar-container-master" style={{ margin: '20px 0' }}>
                 <Search className="search-icon" size={20} />
-                <input 
-                    type="text" 
-                    placeholder="Cerca per nome o categoria..." 
+                <input
+                    type="text"
+                    placeholder="Cerca per nome o categoria..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="master-search-input"
@@ -181,11 +221,11 @@ export default function OggettiMaster() {
                                 <div className="edit-grid-2">
                                     <div className="input-field">
                                         <label>Nome</label>
-                                        <input type="text" value={editForm.nome} onChange={(e) => setEditForm({...editForm, nome: e.target.value})} />
+                                        <input type="text" value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} />
                                     </div>
                                     <div className="input-field">
                                         <label>Categoria</label>
-                                        <select value={editForm.categoria} onChange={(e) => setEditForm({...editForm, categoria: e.target.value})}>
+                                        <select value={editForm.categoria} onChange={(e) => setEditForm({ ...editForm, categoria: e.target.value })}>
                                             <option value="STRUMENTO">STRUMENTO</option>
                                             <option value="POKÉBALL">POKÉBALL</option>
                                             <option value="CURATIVO">CURATIVO</option>
@@ -194,19 +234,46 @@ export default function OggettiMaster() {
                                         </select>
                                     </div>
                                     <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                                        <label>Immagine URL</label>
-                                        <input type="text" value={editForm.immagine_url || ''} onChange={(e) => setEditForm({...editForm, immagine_url: e.target.value})} />
+                                        <label>Immagine Oggetto</label>
+                                        <div className="master-upload-container">
+                                            {editForm.immagine_url ? (
+                                                <div className="master-upload-preview-box">
+                                                    <img src={editForm.immagine_url} alt="Anteprima" className="master-upload-preview" />
+                                                    <button className="btn-remove-upload" onClick={() => setEditForm({ ...editForm, immagine_url: '' })}>
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <label className="master-upload-placeholder">
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        style={{ display: 'none' }}
+                                                        onChange={handleFileUpload}
+                                                        disabled={uploading}
+                                                    />
+                                                    {uploading ? (
+                                                        <Loader2 className="spin" size={24} />
+                                                    ) : (
+                                                        <>
+                                                            <Upload size={24} />
+                                                            <span>Carica Immagine</span>
+                                                        </>
+                                                    )}
+                                                </label>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="input-field" style={{ gridColumn: 'span 2' }}>
                                         <label>Descrizione</label>
-                                        <textarea value={editForm.descrizione || ''} onChange={(e) => setEditForm({...editForm, descrizione: e.target.value})} />
+                                        <textarea value={editForm.descrizione || ''} onChange={(e) => setEditForm({ ...editForm, descrizione: e.target.value })} />
                                     </div>
                                     <div className="checkbox-field">
-                                        <input 
-                                            type="checkbox" 
+                                        <input
+                                            type="checkbox"
                                             id="battaglia-check"
-                                            checked={editForm.utilizzabile_in_battaglia} 
-                                            onChange={(e) => setEditForm({...editForm, utilizzabile_in_battaglia: e.target.checked})} 
+                                            checked={editForm.utilizzabile_in_battaglia}
+                                            onChange={(e) => setEditForm({ ...editForm, utilizzabile_in_battaglia: e.target.checked })}
                                         />
                                         <label htmlFor="battaglia-check">Utilizzabile in Battaglia</label>
                                     </div>
@@ -316,6 +383,85 @@ export default function OggettiMaster() {
                 .checkbox-field input {
                     width: 18px;
                     height: 18px;
+                }
+                .master-upload-container {
+                    margin-top: 8px;
+                    width: 100%;
+                }
+                .master-upload-preview-box {
+                    position: relative;
+                    width: 100px;
+                    height: 100px;
+                    background: var(--bg-secondary);
+                    border-radius: 12px;
+                    border: 2px dashed var(--border-subtle);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    overflow: hidden;
+                }
+                .master-upload-preview {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: contain;
+                }
+                .btn-remove-upload {
+                    position: absolute;
+                    top: 5px;
+                    right: 5px;
+                    background: rgba(239, 68, 68, 0.8);
+                    border: none;
+                    color: white;
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: 0.2s;
+                }
+                .btn-remove-upload:hover {
+                    background: #ef4444;
+                    transform: scale(1.1);
+                }
+                .master-upload-placeholder {
+                    width: 100%;
+                    height: 100px;
+                    background: var(--bg-secondary);
+                    border: 2px dashed var(--border-subtle);
+                    border-radius: 12px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    color: var(--text-muted);
+                }
+                .master-upload-placeholder:hover {
+                    border-color: var(--accent-primary);
+                    color: var(--accent-primary);
+                    background: rgba(255, 255, 255, 0.02);
+                }
+                .input-field textarea {
+                    width: 100%;
+                    min-height: 100px;
+                    background: var(--bg-secondary);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 8px;
+                    padding: 10px;
+                    color: var(--text-primary);
+                    font-family: inherit;
+                    resize: vertical;
+                    transition: all 0.2s;
+                    margin-top: 8px;
+                }
+                .input-field textarea:focus {
+                    outline: none;
+                    border-color: var(--accent-primary);
+                    box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.2);
                 }
             `}</style>
         </div>
