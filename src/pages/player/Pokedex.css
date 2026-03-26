@@ -82,12 +82,19 @@
 .pkmn-id {
     position: absolute;
     top: 12px;
-    right: 12px;
+    left: 12px;
     font-family: monospace;
     font-weight: 800;
     color: var(--text-muted);
     font-size: 0.8rem;
     opacity: 0.5;
+}
+
+.capture-status {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
 }
 
 .pkmn-image-container {
@@ -208,6 +215,21 @@
 .modal-pkmn-header {
     text-align: center;
     margin-bottom: var(--space-lg);
+    position: relative;
+}
+
+.modal-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.modal-pkmn-id {
+    font-size: 1.1rem;
+    font-family: monospace;
+    font-weight: 800;
+    color: var(--text-muted);
 }
 
 .modal-pkmn-header h2 {
@@ -309,8 +331,13 @@
 }
 
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .empty-pokedex-msg {

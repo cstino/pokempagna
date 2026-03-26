@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Map, Users, Swords, LogOut, LayoutDashboard, Copy, Sun, Moon, User as UserIcon, Heart, Package, Zap } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
+import PokeballLogo from '../components/PokeballLogo';
 import './MasterLayout.css';
 
 const NAV_ITEMS = [
@@ -46,6 +47,7 @@ export default function MasterLayout() {
         <div className="master-layout">
             <aside className="master-sidebar">
                 <div className="master-sidebar-header">
+                    <PokeballLogo size={32} animated={false} />
                     <div className="master-sidebar-logo">POKÉMPAGNA</div>
                     <div className="master-sidebar-badge">👑 Master</div>
                 </div>

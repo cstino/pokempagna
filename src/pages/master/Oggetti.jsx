@@ -178,6 +178,7 @@ export default function OggettiMaster() {
                                     <tr>
                                         <th>Immagine</th>
                                         <th>Nome</th>
+                                        <th>Descrizione</th>
                                         <th>Categoria</th>
                                         <th>In Battaglia</th>
                                         <th>Azioni</th>
@@ -192,6 +193,7 @@ export default function OggettiMaster() {
                                                 </div>
                                             </td>
                                             <td><strong>{o.nome}</strong></td>
+                                            <td className="desc-cell"><em>{o.descrizione || 'Nessuna descrizione'}</em></td>
                                             <td><span className="type-badge-mini">{o.categoria}</span></td>
                                             <td>{o.utilizzabile_in_battaglia ? <Check size={18} color="#10b981" /> : <X size={18} color="#ef4444" />}</td>
                                             <td className="actions-cell-column">
@@ -375,6 +377,13 @@ export default function OggettiMaster() {
                 .btn-icon:hover {
                     background: var(--bg-card-hover);
                     transform: translateY(-2px);
+                }
+                .desc-cell {
+                    font-size: 0.85rem;
+                    color: var(--text-muted);
+                    max-width: 300px;
+                    white-space: normal;
+                    line-height: 1.4;
                 }
                 .btn-group-master {
                     display: flex;

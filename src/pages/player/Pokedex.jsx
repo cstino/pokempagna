@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Info, Zap, Shield, Heart, Weight, Ruler, ChevronRight, BookOpen, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import PokeballLogo from '../../components/PokeballLogo';
 import './Pokedex.css';
 
 export default function Pokedex() {
@@ -8,6 +9,7 @@ export default function Pokedex() {
     const [selectedPkmn, setSelectedPkmn] = useState(null);
     const [pokemon, setPokemon] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [caughtIds, setCaughtIds] = useState(new Set());
 
     useEffect(() => {
         caricaPokedex();
@@ -16,6 +18,7 @@ export default function Pokedex() {
     async function caricaPokedex() {
         setLoading(true);
         try {
+            // 1. Carica lista pokemon visibili
             const { data, error } = await supabase
                 .from('pokemon')
                 .select('*')
@@ -24,9 +27,32 @@ export default function Pokedex() {
 
             if (error) throw error;
             setPokemon(data || []);
+
+            // 2. Carica catture dell'utente
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                // Proviamo a leggere dallo storico (tabella definitiva)
+                const { data: historyData, error: historyError } = await supabase
+                    .from('pokedex_catturati')
+                    .select('pokemon_id')
+                    .eq('giocatore_id', user.id);
+
+                if (!historyError && historyData) {
+                    setCaughtIds(new Set(historyData.map(c => c.pokemon_id)));
+                } else {
+                    // Fallback sulla squadra attuale se la tabella storica non esiste ancora
+                    const { data: teamData } = await supabase
+                        .from('pokemon_giocatore')
+                        .select('pokemon_id')
+                        .eq('giocatore_id', user.id);
+
+                    if (teamData) {
+                        setCaughtIds(new Set(teamData.map(c => c.pokemon_id)));
+                    }
+                }
+            }
         } catch (err) {
             console.error("Errore caricamento Pokedex:", err);
-            // In caso di errore (es. tabella non pronta), usiamo una lista vuota
             setPokemon([]);
         } finally {
             setLoading(false);
@@ -102,10 +128,13 @@ export default function Pokedex() {
                             filteredPkmn.map((pkmn) => (
                                 <div
                                     key={pkmn.id}
-                                    className="pkmn-card"
+                                    className={`pkmn-card ${caughtIds.has(pkmn.id) ? 'is-caught' : 'not-caught'}`}
                                     onClick={() => setSelectedPkmn(pkmn)}
                                 >
                                     <div className="pkmn-id">#{String(pkmn.id).padStart(3, '0')}</div>
+                                    <div className="capture-status">
+                                        <PokeballLogo size={24} animated={false} grayscale={!caughtIds.has(pkmn.id)} />
+                                    </div>
                                     <div className="pkmn-image-container">
                                         <img src={pkmn.immagine_url} alt={pkmn.nome} className="pkmn-image" />
                                     </div>
@@ -134,7 +163,12 @@ export default function Pokedex() {
 
                         <div className="modal-pkmn-body">
                             <div className="modal-pkmn-header">
-                                <span className="modal-pkmn-id">#{String(selectedPkmn.id).padStart(3, '0')}</span>
+                                <div className="modal-header-top">
+                                    <span className="modal-pkmn-id">#{String(selectedPkmn.id).padStart(3, '0')}</span>
+                                    <div className="modal-capture-status">
+                                        <PokeballLogo size={32} animated={true} grayscale={!caughtIds.has(selectedPkmn.id)} />
+                                    </div>
+                                </div>
                                 <h2>{selectedPkmn.nome.toUpperCase()}</h2>
                                 <div className="pkmn-types-modal">
                                     <span style={{ backgroundColor: getTypeColor(selectedPkmn.tipo1) }} className="type-badge large">{selectedPkmn.tipo1}</span>
@@ -147,12 +181,12 @@ export default function Pokedex() {
                             <div className="stats-container">
                                 <h4 className="stats-title">Statistiche Base</h4>
                                 {[
-                                    {label: 'HP', val: selectedPkmn.hp_base},
-                                    {label: 'ATK', val: selectedPkmn.atk_base},
-                                    {label: 'DEF', val: selectedPkmn.def_base},
-                                    {label: 'SP. ATK', val: selectedPkmn.spatk_base},
-                                    {label: 'SP. DEF', val: selectedPkmn.spdef_base},
-                                    {label: 'SPEED', val: selectedPkmn.speed_base}
+                                    { label: 'HP', val: selectedPkmn.hp_base },
+                                    { label: 'ATK', val: selectedPkmn.atk_base },
+                                    { label: 'DEF', val: selectedPkmn.def_base },
+                                    { label: 'SP. ATK', val: selectedPkmn.spatk_base },
+                                    { label: 'SP. DEF', val: selectedPkmn.spdef_base },
+                                    { label: 'SPEED', val: selectedPkmn.speed_base }
                                 ].map((s) => (
                                     <div key={s.label} className="stat-row">
                                         <span className="stat-name">{s.label}</span>

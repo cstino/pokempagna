@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Sparkles, Link as LinkIcon, LogOut, Loader2, X } from 'lucide-react';
+import PokeballLogo from '../components/PokeballLogo';
 import './MenuIniziale.css';
 
 export default function MenuIniziale() {
@@ -275,7 +276,7 @@ export default function MenuIniziale() {
                         {profile?.immagine_profilo ? (
                             <img src={profile.immagine_profilo} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
-                            <img src="/pokeball-icon.svg" alt="Avatar" style={{ opacity: 0.5, width: '24px' }} />
+                            <PokeballLogo size={24} animated={false} />
                         )}
                         {!profile?.immagine_profilo && profile?.nome?.[0]?.toUpperCase()}
                     </div>
