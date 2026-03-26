@@ -150,6 +150,7 @@ export default function MosseMaster() {
                                 <thead>
                                     <tr>
                                         <th>Nome</th>
+                                        <th>Descrizione</th>
                                         <th>Tipo</th>
                                         <th>Categoria</th>
                                         <th>Disponibile</th>
@@ -160,6 +161,7 @@ export default function MosseMaster() {
                                     {filteredMosse.map(m => (
                                         <tr key={m.id}>
                                             <td><strong>{m.nome}</strong></td>
+                                            <td className="desc-cell"><em>{m.descrizione || 'Nessuna descrizione'}</em></td>
                                             <td><span className="type-badge-mini" style={{ textTransform: 'uppercase' }}>{m.tipo}</span></td>
                                             <td><span className="type-badge-mini" style={{ textTransform: 'capitalize' }}>{m.categoria}</span></td>
                                             <td>
@@ -316,6 +318,13 @@ export default function MosseMaster() {
                 .btn-icon:hover {
                     background: var(--bg-card-hover);
                     transform: translateY(-2px);
+                }
+                .desc-cell {
+                    font-size: 0.85rem;
+                    color: var(--text-muted);
+                    max-width: 300px;
+                    white-space: normal;
+                    line-height: 1.4;
                 }
                 .pokedex-toggle {
                     width: 40px;

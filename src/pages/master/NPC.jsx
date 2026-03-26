@@ -216,7 +216,11 @@ export default function NPC() {
             type: "error",
             onConfirm: async () => {
                 const { error } = await supabase.from('giocatori').delete().eq('id', id);
-                if (error) console.error(error);
+                if (error) {
+                    console.error(error);
+                } else {
+                    await caricaNPC();
+                }
                 setConfirmModal(null);
                 if (isEditing) setIsEditing(false);
             }

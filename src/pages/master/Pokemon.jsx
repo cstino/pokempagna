@@ -198,7 +198,7 @@ export default function PokemonMaster() {
                     <h1 className="page-title"><TrendingUp size={32} /> Enciclopedia Pokémon</h1>
                     <p className="page-subtitle">Gestisci i Pokémon base della tua campagna</p>
                 </div>
-                <button className="btn-primary" onClick={() => openEditModal()}>
+                <button className="btn-save" onClick={() => openEditModal()}>
                     <Plus size={18} /> Nuovo Pokémon
                 </button>
             </div>
@@ -274,10 +274,7 @@ export default function PokemonMaster() {
                                         <td>
                                             <div 
                                                 className={`pokedex-toggle ${p.visibile_pokedex ? 'active' : ''}`}
-                                                onClick={() => {
-                                                    const newStatus = !p.visibile_pokedex;
-                                                    supabase.from('pokemon').update({ visibile_pokedex: newStatus }).eq('id', p.id).then(() => caricaPokemon());
-                                                }}
+                                                onClick={() => togglePokedex(p)}
                                             >
                                                 <div className="toggle-circle"></div>
                                             </div>
