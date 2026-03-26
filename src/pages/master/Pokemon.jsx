@@ -10,7 +10,7 @@ export default function PokemonMaster() {
     const [editForm, setEditForm] = useState(null);
     const [saving, setSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    
+
     // Globale / PokeAPI
     const [activeTab, setActiveTab] = useState('local'); // 'local' | 'global'
     const [fullGlobalList, setFullGlobalList] = useState([]);
@@ -70,8 +70,8 @@ export default function PokemonMaster() {
 
     useEffect(() => {
         if (activeTab === 'global') {
-            const filtered = fullGlobalList.filter(p => 
-                p.name.includes(searchTerm.toUpperCase()) || 
+            const filtered = fullGlobalList.filter(p =>
+                p.name.includes(searchTerm.toUpperCase()) ||
                 p.id.toString().includes(searchTerm)
             );
             setFilteredGlobalList(filtered);
@@ -83,7 +83,7 @@ export default function PokemonMaster() {
         try {
             const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${p.id}`);
             const data = await res.json();
-            
+
             setEditForm({
                 nome: data.name.toUpperCase(),
                 tipo1: data.types[0]?.type.name.toUpperCase(),
@@ -186,8 +186,8 @@ export default function PokemonMaster() {
         }
     }
 
-    const filteredLocal = pokemon.filter(p => 
-        p.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const filteredLocal = pokemon.filter(p =>
+        p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.id && p.id.toString().includes(searchTerm))
     );
 
@@ -205,13 +205,13 @@ export default function PokemonMaster() {
 
             {/* TAB SELECTOR */}
             <div className="master-tabs">
-                <button 
+                <button
                     className={`master-tab ${activeTab === 'local' ? 'active' : ''}`}
                     onClick={() => setActiveTab('local')}
                 >
                     <Heart size={18} /> La mia Campagna ({pokemon.length})
                 </button>
-                <button 
+                <button
                     className={`master-tab ${activeTab === 'global' ? 'active' : ''}`}
                     onClick={() => setActiveTab('global')}
                 >
@@ -221,9 +221,9 @@ export default function PokemonMaster() {
 
             <div className="search-bar-container">
                 <Search className="search-icon" size={20} />
-                <input 
-                    type="text" 
-                    placeholder={activeTab === 'local' ? "Cerca nei tuoi Pokémon..." : "Cerca ID o Nome su PokeAPI..."} 
+                <input
+                    type="text"
+                    placeholder={activeTab === 'local' ? "Cerca nei tuoi Pokémon..." : "Cerca ID o Nome su PokeAPI..."}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -272,14 +272,14 @@ export default function PokemonMaster() {
                                             </span>
                                         </td>
                                         <td>
-                                            <div 
+                                            <div
                                                 className={`pokedex-toggle ${p.visibile_pokedex ? 'active' : ''}`}
                                                 onClick={() => togglePokedex(p)}
                                             >
                                                 <div className="toggle-circle"></div>
                                             </div>
                                         </td>
-                                        <td>
+                                        <td className="actions-cell-column">
                                             <div className="actions-cell">
                                                 <button className="btn-icon" onClick={() => openEditModal(p)}><Edit2 size={16} /></button>
                                                 <button className="btn-icon del" onClick={() => eliminaPokemon(p.id)}><Trash2 size={16} /></button>
@@ -307,9 +307,9 @@ export default function PokemonMaster() {
                         filteredGlobalList.slice(0, 100).map(p => (
                             <div key={p.id} className="global-pkmn-card">
                                 <span className="global-pkmn-id">#{p.id}</span>
-                                <img 
-                                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`} 
-                                    alt={p.name} 
+                                <img
+                                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`}
+                                    alt={p.name}
                                     className="global-pkmn-img"
                                 />
                                 <div className="global-pkmn-info">
@@ -341,11 +341,11 @@ export default function PokemonMaster() {
                                 <div className="edit-grid-3">
                                     <div className="input-field">
                                         <label>Nome</label>
-                                        <input type="text" value={editForm.nome} onChange={(e) => setEditForm({...editForm, nome: e.target.value})} />
+                                        <input type="text" value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} />
                                     </div>
                                     <div className="input-field">
                                         <label>Tipo 1</label>
-                                        <select value={editForm.tipo1} onChange={(e) => setEditForm({...editForm, tipo1: e.target.value})}>
+                                        <select value={editForm.tipo1} onChange={(e) => setEditForm({ ...editForm, tipo1: e.target.value })}>
                                             <option value="NORMALE">NORMALE</option>
                                             <option value="FUOCO">FUOCO</option>
                                             <option value="ACQUA">ACQUA</option>
@@ -368,7 +368,7 @@ export default function PokemonMaster() {
                                     </div>
                                     <div className="input-field">
                                         <label>Tipo 2</label>
-                                        <select value={editForm.tipo2 || ''} onChange={(e) => setEditForm({...editForm, tipo2: e.target.value || null})}>
+                                        <select value={editForm.tipo2 || ''} onChange={(e) => setEditForm({ ...editForm, tipo2: e.target.value || null })}>
                                             <option value="">Nessuno</option>
                                             <option value="NORMALE">NORMALE</option>
                                             <option value="FUOCO">FUOCO</option>
@@ -392,11 +392,11 @@ export default function PokemonMaster() {
                                     </div>
                                     <div className="input-field" style={{ gridColumn: 'span 3' }}>
                                         <label>Immagine URL (Vuoto per auto-generata da ID)</label>
-                                        <input type="text" value={editForm.immagine_url || ''} onChange={(e) => setEditForm({...editForm, immagine_url: e.target.value})} />
+                                        <input type="text" value={editForm.immagine_url || ''} onChange={(e) => setEditForm({ ...editForm, immagine_url: e.target.value })} />
                                     </div>
                                     <div className="input-field" style={{ gridColumn: 'span 3' }}>
                                         <label>Descrizione Pokédex</label>
-                                        <textarea value={editForm.descrizione || ''} onChange={(e) => setEditForm({...editForm, descrizione: e.target.value})} />
+                                        <textarea value={editForm.descrizione || ''} onChange={(e) => setEditForm({ ...editForm, descrizione: e.target.value })} />
                                     </div>
                                 </div>
                             </div>
@@ -406,27 +406,27 @@ export default function PokemonMaster() {
                                 <div className="edit-grid-3">
                                     <div className="input-field">
                                         <label>HP</label>
-                                        <input type="number" value={editForm.hp_base} onChange={(e) => setEditForm({...editForm, hp_base: parseInt(e.target.value)})} />
+                                        <input type="number" value={editForm.hp_base} onChange={(e) => setEditForm({ ...editForm, hp_base: parseInt(e.target.value) })} />
                                     </div>
                                     <div className="input-field">
                                         <label>Attacco</label>
-                                        <input type="number" value={editForm.atk_base} onChange={(e) => setEditForm({...editForm, atk_base: parseInt(e.target.value)})} />
+                                        <input type="number" value={editForm.atk_base} onChange={(e) => setEditForm({ ...editForm, atk_base: parseInt(e.target.value) })} />
                                     </div>
                                     <div className="input-field">
                                         <label>Difesa</label>
-                                        <input type="number" value={editForm.def_base} onChange={(e) => setEditForm({...editForm, def_base: parseInt(e.target.value)})} />
+                                        <input type="number" value={editForm.def_base} onChange={(e) => setEditForm({ ...editForm, def_base: parseInt(e.target.value) })} />
                                     </div>
                                     <div className="input-field">
                                         <label>Attacco Sp.</label>
-                                        <input type="number" value={editForm.spatk_base} onChange={(e) => setEditForm({...editForm, spatk_base: parseInt(e.target.value)})} />
+                                        <input type="number" value={editForm.spatk_base} onChange={(e) => setEditForm({ ...editForm, spatk_base: parseInt(e.target.value) })} />
                                     </div>
                                     <div className="input-field">
                                         <label>Difesa Sp.</label>
-                                        <input type="number" value={editForm.spdef_base} onChange={(e) => setEditForm({...editForm, spdef_base: parseInt(e.target.value)})} />
+                                        <input type="number" value={editForm.spdef_base} onChange={(e) => setEditForm({ ...editForm, spdef_base: parseInt(e.target.value) })} />
                                     </div>
                                     <div className="input-field">
                                         <label>Velocità</label>
-                                        <input type="number" value={editForm.speed_base} onChange={(e) => setEditForm({...editForm, speed_base: parseInt(e.target.value)})} />
+                                        <input type="number" value={editForm.speed_base} onChange={(e) => setEditForm({ ...editForm, speed_base: parseInt(e.target.value) })} />
                                     </div>
                                 </div>
                             </div>
@@ -462,11 +462,12 @@ export default function PokemonMaster() {
                     border-collapse: collapse;
                     color: var(--text-primary);
                 }
-                .master-list-table th, .master-list-table td {
-                    padding: 15px;
-                    text-align: left;
-                    border-bottom: 1px solid var(--border-subtle);
-                }
+                 .master-list-table th, .master-list-table td {
+                     padding: 15px;
+                     text-align: left;
+                     border-bottom: 1px solid var(--border-subtle);
+                     vertical-align: middle;
+                 }
                 .master-list-table th {
                     background: var(--bg-secondary);
                     font-size: 0.8rem;
@@ -491,10 +492,14 @@ export default function PokemonMaster() {
                     border: 1px solid var(--border-subtle);
                     color: var(--text-secondary);
                 }
-                .actions-cell {
-                    display: flex;
-                    gap: 10px;
-                }
+                 .actions-cell {
+                     display: flex;
+                     gap: 10px;
+                     align-items: center;
+                 }
+                 .actions-cell-column {
+                     vertical-align: middle;
+                 }
                 .btn-icon {
                     background: var(--bg-secondary);
                     border: 1px solid var(--border-subtle);

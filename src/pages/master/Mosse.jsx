@@ -106,8 +106,8 @@ export default function MosseMaster() {
         }
     }
 
-    const filteredMosse = mosse.filter(m => 
-        m.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const filteredMosse = mosse.filter(m =>
+        m.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.tipo.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -125,9 +125,9 @@ export default function MosseMaster() {
 
             <div className="search-bar-container-master" style={{ margin: '20px 0' }}>
                 <Search className="search-icon" size={20} />
-                <input 
-                    type="text" 
-                    placeholder="Cerca per nome o tipo..." 
+                <input
+                    type="text"
+                    placeholder="Cerca per nome o tipo..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="master-search-input"
@@ -165,16 +165,18 @@ export default function MosseMaster() {
                                             <td><span className="type-badge-mini" style={{ textTransform: 'uppercase' }}>{m.tipo}</span></td>
                                             <td><span className="type-badge-mini" style={{ textTransform: 'capitalize' }}>{m.categoria}</span></td>
                                             <td>
-                                                <div 
+                                                <div
                                                     className={`pokedex-toggle ${m.disponibile ? 'active' : ''}`}
                                                     onClick={() => toggleDisponibile(m)}
                                                 >
                                                     <div className="toggle-circle"></div>
                                                 </div>
                                             </td>
-                                            <td className="actions-cell">
-                                                <button className="btn-icon" onClick={() => openEditModal(m)}><Edit2 size={16} /></button>
-                                                <button className="btn-icon del" onClick={() => eliminaMossa(m.id)}><Trash2 size={16} /></button>
+                                            <td className="actions-cell-column">
+                                                <div className="actions-cell">
+                                                    <button className="btn-icon" onClick={() => openEditModal(m)}><Edit2 size={16} /></button>
+                                                    <button className="btn-icon del" onClick={() => eliminaMossa(m.id)}><Trash2 size={16} /></button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -199,11 +201,11 @@ export default function MosseMaster() {
                                 <div className="edit-grid-2">
                                     <div className="input-field">
                                         <label>Nome</label>
-                                        <input type="text" value={editForm.nome} onChange={(e) => setEditForm({...editForm, nome: e.target.value})} />
+                                        <input type="text" value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} />
                                     </div>
                                     <div className="input-field">
                                         <label>Tipo</label>
-                                        <select value={editForm.tipo} onChange={(e) => setEditForm({...editForm, tipo: e.target.value})}>
+                                        <select value={editForm.tipo} onChange={(e) => setEditForm({ ...editForm, tipo: e.target.value })}>
                                             <option value="normale">NORMALE</option>
                                             <option value="fuoco">FUOCO</option>
                                             <option value="acqua">ACQUA</option>
@@ -226,21 +228,21 @@ export default function MosseMaster() {
                                     </div>
                                     <div className="input-field">
                                         <label>Categoria</label>
-                                        <select value={editForm.categoria} onChange={(e) => setEditForm({...editForm, categoria: e.target.value})}>
+                                        <select value={editForm.categoria} onChange={(e) => setEditForm({ ...editForm, categoria: e.target.value })}>
                                             <option value="fisico">FISICO</option>
                                             <option value="speciale">SPECIALE</option>
                                         </select>
                                     </div>
                                     <div className="input-field" style={{ gridColumn: 'span 2' }}>
                                         <label>Descrizione</label>
-                                        <textarea value={editForm.descrizione || ''} onChange={(e) => setEditForm({...editForm, descrizione: e.target.value})} />
+                                        <textarea value={editForm.descrizione || ''} onChange={(e) => setEditForm({ ...editForm, descrizione: e.target.value })} />
                                     </div>
                                     <div className="checkbox-field">
-                                        <input 
-                                            type="checkbox" 
+                                        <input
+                                            type="checkbox"
                                             id="disponibile-check"
-                                            checked={editForm.disponibile} 
-                                            onChange={(e) => setEditForm({...editForm, disponibile: e.target.checked})} 
+                                            checked={editForm.disponibile}
+                                            onChange={(e) => setEditForm({ ...editForm, disponibile: e.target.checked })}
                                         />
                                         <label htmlFor="disponibile-check">Disponibile (Visibile al Master)</label>
                                     </div>
@@ -282,6 +284,7 @@ export default function MosseMaster() {
                     padding: 15px;
                     text-align: left;
                     border-bottom: 1px solid var(--border-subtle);
+                    vertical-align: middle;
                 }
                 .master-list-table th {
                     background: var(--bg-secondary);
@@ -301,6 +304,11 @@ export default function MosseMaster() {
                 .actions-cell {
                     display: flex;
                     gap: 10px;
+                    align-items: center;
+                    justify-content: flex-start;
+                }
+                .actions-cell-column {
+                    vertical-align: middle;
                 }
                 .btn-icon {
                     background: var(--bg-secondary);

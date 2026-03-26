@@ -194,9 +194,11 @@ export default function OggettiMaster() {
                                             <td><strong>{o.nome}</strong></td>
                                             <td><span className="type-badge-mini">{o.categoria}</span></td>
                                             <td>{o.utilizzabile_in_battaglia ? <Check size={18} color="#10b981" /> : <X size={18} color="#ef4444" />}</td>
-                                            <td className="actions-cell">
-                                                <button className="btn-icon" onClick={() => openEditModal(o)}><Edit2 size={16} /></button>
-                                                <button className="btn-icon del" onClick={() => eliminaOggetto(o.id)}><Trash2 size={16} /></button>
+                                            <td className="actions-cell-column">
+                                                <div className="actions-cell">
+                                                    <button className="btn-icon" onClick={() => openEditModal(o)}><Edit2 size={16} /></button>
+                                                    <button className="btn-icon del" onClick={() => eliminaOggetto(o.id)}><Trash2 size={16} /></button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -315,6 +317,7 @@ export default function OggettiMaster() {
                     padding: 15px;
                     text-align: left;
                     border-bottom: 1px solid var(--border-subtle);
+                    vertical-align: middle;
                 }
                 .master-list-table th {
                     background: var(--bg-secondary);
@@ -322,6 +325,7 @@ export default function OggettiMaster() {
                     text-transform: uppercase;
                     letter-spacing: 1px;
                     color: var(--text-muted);
+                    vertical-align: middle;
                 }
                 .master-list-img {
                     width: 32px;
@@ -349,6 +353,11 @@ export default function OggettiMaster() {
                 .actions-cell {
                     display: flex;
                     gap: 10px;
+                    align-items: center;
+                    justify-content: flex-start;
+                }
+                .actions-cell-column {
+                    vertical-align: middle;
                 }
                 .btn-icon {
                     background: var(--bg-secondary);
