@@ -332,13 +332,21 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+    flex: 1;
+    min-width: 0;
+    /* Fondamentale per far funzionare ellipsis nel flex */
+    padding-right: 8px;
+    /* Margine di sicurezza dall'icona */
 }
 
 .move-name-v2 {
-    font-size: 0.85rem;
+    font-size: 0.72rem;
     font-weight: 900;
     color: white;
     text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .move-meta-v2 {
@@ -391,7 +399,8 @@
 
 /* -- Swap Panel INLINE (Contained in modal body) -- */
 .modal-pkmn-body {
-    position: relative; /* Garantisce che l'overlay assoluto sia relativo al body della modale */
+    position: relative;
+    /* Garantisce che l'overlay assoluto sia relativo al body della modale */
 }
 
 .move-swap-overlay-inline {
@@ -482,8 +491,13 @@
 }
 
 @keyframes slideUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
 }
 
 .animate-slide-up {
