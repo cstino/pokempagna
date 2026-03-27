@@ -34,6 +34,12 @@ export default function Party() {
     const [filteredPokeList, setFilteredPokeList] = useState([]);
     const [currentTypeFilter, setCurrentTypeFilter] = useState('all');
     const [sortOrder, setSortOrder] = useState('id'); // 'id' | 'name'
+    
+    // Stati per le Mosse (Master Edit)
+    const [allAvailableMoves, setAllAvailableMoves] = useState([]);
+    const [selectedPkmnMoveIds, setSelectedPkmnMoveIds] = useState([]); // Array di ID mosse assegnate
+    const [moveSearch, setMoveSearch] = useState('');
+    const [moveTypeFilter, setMoveTypeFilter] = useState('all');
 
     // Stato per la conferma personalizzata
     const [confirmModal, setConfirmModal] = useState(null); // { title, message, onConfirm, type }
@@ -42,6 +48,7 @@ export default function Party() {
         if (!profile?.campagna_corrente_id) return;
 
         caricaGiocatori();
+        caricaTutteLeMosse();
 
         // 🔔 REALTIME: Ascolta i cambiamenti della tabella giocatori per questa campagna
         const channel = supabase
@@ -91,6 +98,14 @@ export default function Party() {
         } finally {
             setLoading(false);
         }
+    }
+
+    async function caricaTutteLeMosse() {
+        try {
+            const { data, error } = await supabase.from('mosse_disponibili').select('*').order('nome');
+            if (error) throw error;
+            setAllAvailableMoves(data || []);
+        } catch (err) { console.error("Errore caricamento mosse:", err); }
     }
 
     const openEditModal = (player) => {
@@ -299,6 +314,71 @@ export default function Party() {
             ...prev,
             [stat]: stat === 'soprannome' ? value : (parseInt(value) || 0)
         }));
+    };
+
+    const translateType = (t) => {
+        const types = {
+            'normal': 'Normale', 'fire': 'Fuoco', 'water': 'Acqua', 'grass': 'Erba',
+            'electric': 'Elettro', 'ice': 'Ghiaccio', 'fighting': 'Lotta', 'poison': 'Veleno',
+            'ground': 'Terra', 'flying': 'Volante', 'psychic': 'Psico', 'bug': 'Coleottero',
+            'rock': 'Roccia', 'ghost': 'Spettro', 'dragon': 'Drago', 'steel': 'Acciaio',
+            'fairy': 'Folletto', 'dark': 'Buio'
+        };
+        return types[t.toLowerCase()] || t;
+    };
+
+    // Al click su "Modifica" Pokémon (nella lista della squadra/box)
+    const startEditingPkmn = async (pkmn) => {
+        setEditingPkmn(pkmn);
+        // Carica le mosse assegnate a questo specifico pokemon_giocatore_id
+        try {
+            const { data, error } = await supabase
+                .from('mosse_pokemon')
+                .select('mossa_id')
+                .eq('pokemon_giocatore_id', pkmn.id);
+            if (error) throw error;
+            setSelectedPkmnMoveIds(data.map(m => m.mossa_id));
+        } catch (err) { console.error("Errore recupero mosse assegnate:", err); }
+    };
+
+    const toggleMoveAssignment = async (moveId, isChecked) => {
+        if (!editingPkmn) return;
+        try {
+            if (isChecked) {
+                // Trova i dettagli della mossa scelti
+                const moveDetails = allAvailableMoves.find(m => m.id === moveId);
+                if (!moveDetails) return;
+
+                // Aggiungi mossa
+                const { error } = await supabase.from('mosse_pokemon').insert({
+                    pokemon_giocatore_id: editingPkmn.id,
+                    mossa_id: moveId,
+                    nome: moveDetails.nome,
+                    tipo: moveDetails.tipo,
+                    pp_max: moveDetails.pp_max || 20,
+                    pp_attuale: moveDetails.pp_max || 20,
+                    attiva: false // Default non attiva, la attiva il giocatore
+                });
+                if (error) {
+                    console.error("Errore Supabase Insert:", error);
+                    throw error;
+                }
+                setSelectedPkmnMoveIds(prev => [...prev, moveId]);
+            } else {
+                // Rimuovi mossa
+                const { error } = await supabase.from('mosse_pokemon')
+                    .delete()
+                    .eq('pokemon_giocatore_id', editingPkmn.id)
+                    .eq('mossa_id', moveId);
+                if (error) {
+                    console.error("Errore Supabase Delete:", error);
+                    throw error;
+                }
+                setSelectedPkmnMoveIds(prev => prev.filter(id => id !== moveId));
+            }
+        } catch (err) { 
+            console.error("Errore toggle mossa (Catch):", err); 
+        }
     };
 
     const salvaPokeStats = async () => {
@@ -799,7 +879,64 @@ export default function Party() {
                                                 </div>
                                             </div>
 
-                                            <button className="btn-confirm-add" onClick={salvaPokeStats} disabled={saving}>
+                                            <div className="pkmn-moves-master-section">
+                                                <h4 className="edit-section-title"><Zap size={16} /> Mosse Conosciute</h4>
+                                                
+                                                <div className="move-filters-row">
+                                                    <div className="search-input-wrapper">
+                                                        <Search size={14} />
+                                                        <input 
+                                                            type="text" 
+                                                            placeholder="Cerca mossa..." 
+                                                            value={moveSearch}
+                                                            onChange={(e) => setMoveSearch(e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <select 
+                                                        className="filter-select-master"
+                                                        value={moveTypeFilter}
+                                                        onChange={(e) => setMoveTypeFilter(e.target.value)}
+                                                    >
+                                                        <option value="all">Tutti i Tipi</option>
+                                                        {Array.from(new Set(allAvailableMoves.map(m => m.tipo))).sort().map(t => (
+                                                            <option key={t} value={t}>{t}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                <div className="moves-selection-grid">
+                                                    {allAvailableMoves
+                                                        .filter(m => {
+                                                            const matchesSearch = m.nome.toLowerCase().includes(moveSearch.toLowerCase());
+                                                            const matchesType = moveTypeFilter === 'all' || m.tipo === moveTypeFilter;
+                                                            return matchesSearch && matchesType;
+                                                        })
+                                                        .map(move => (
+                                                            <label key={move.id} className={`move-checkbox-card ${selectedPkmnMoveIds.includes(move.id) ? 'checked' : ''}`}>
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    checked={selectedPkmnMoveIds.includes(move.id)}
+                                                                    onChange={(e) => toggleMoveAssignment(move.id, e.target.checked)}
+                                                                />
+                                                                <div className="move-check-content">
+                                                                    <div className="move-check-header">
+                                                                        <span className="move-check-name">{move.nome}</span>
+                                                                        <span className="type-tag-move" style={{ borderLeftColor: `var(--type-${move.tipo.toLowerCase()})` }}>
+                                                                            {translateType(move.tipo)}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="move-check-details">
+                                                                        <span>POT {move.potenza || '-'}</span>
+                                                                        <span>PP {move.pp_max}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </label>
+                                                        ))
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            <button className="btn-confirm-add" onClick={salvaPokeStats} disabled={saving} style={{ marginTop: '20px' }}>
                                                 {saving ? <Loader2 size={18} className="spin" /> : <Save size={18} />}
                                                 Salva Statistiche
                                             </button>
@@ -902,7 +1039,7 @@ export default function Party() {
                                                                     const hpPct = (poke.hp_attuale / poke.hp_max) * 100;
                                                                     const hpCol = hpPct > 50 ? '#34d399' : hpPct > 20 ? '#fbbf24' : '#ef4444';
                                                                     return (
-                                                                        <div key={poke.id} className="pkmn-card-squadra master-card-premium clickable" onClick={() => setEditingPkmn(poke)}>
+                                                                        <div key={poke.id} className="pkmn-card-squadra master-card-premium clickable" onClick={() => startEditingPkmn(poke)}>
                                                                             <div className="pkmn-type-badge">{poke.tipo1?.toUpperCase()}</div>
                                                                             <div className="pkmn-lvl-badge">Nv.{poke.livello}</div>
                                                                             <img className="pkmn-image" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`} alt={poke.soprannome} />
@@ -940,7 +1077,7 @@ export default function Party() {
                                                                     const hpPct = (poke.hp_attuale / poke.hp_max) * 100;
                                                                     const hpCol = hpPct > 50 ? '#34d399' : hpPct > 20 ? '#fbbf24' : '#ef4444';
                                                                     return (
-                                                                        <div key={poke.id} className="pkmn-card-squadra compact-box-card-v3 clickable" onClick={() => setEditingPkmn(poke)}>
+                                                                        <div key={poke.id} className="pkmn-card-squadra compact-box-card-v3 clickable" onClick={() => startEditingPkmn(poke)}>
                                                                             <div className="pkmn-lvl-badge" style={{ fontSize: '0.6rem' }}>Nv.{poke.livello}</div>
                                                                             <img className="pkmn-image-mini" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.pokemon_id}.png`} alt={poke.soprannome} />
                                                                             <div className="pkmn-name-mini">{poke.soprannome?.toUpperCase()}</div>

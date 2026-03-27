@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Star, Loader2, Trophy, Ruler, Weight, Shield, Zap, Heart, Info, ArrowRightLeft, XCircle, AlertCircle, Box } from 'lucide-react';
+import { Star, Loader2, Trophy, Ruler, Weight, Shield, Zap, Heart, Info, ArrowRightLeft, XCircle, AlertCircle, Box, Plus, Check } from 'lucide-react';
 import gsap from 'gsap';
 import { Draggable } from 'gsap/Draggable';
 import './Squadra.css';
@@ -15,6 +15,7 @@ export default function Squadra() {
     const [slots, setSlots] = useState(3);
     const [selectedPkmn, setSelectedPkmn] = useState(null);
     const [moves, setMoves] = useState([]);
+    const [showingSwapFor, setShowingSwapFor] = useState(null); // indice 0-3 del slot
     const [errorMsg, setErrorMsg] = useState("");
 
     const scrollContainerRef = useRef(null);
@@ -58,9 +59,42 @@ export default function Squadra() {
                 .select('*')
                 .eq('pokemon_giocatore_id', pkmnId);
             if (error) throw error;
+            // Ordiniamo per far sì che le attive siano coerenti, o usiamo un campo posizione se esistesse.
+            // Per ora usiamo il flag 'attiva' e la data di creazione o ID per la stabilità.
             setMoves(data || []);
         } catch (err) {
             console.error("Errore recupero mosse:", err);
+        }
+    };
+
+    const handleMoveSwap = async (newMoveId, slotIdx) => {
+        if (!selectedPkmn) return;
+        
+        try {
+            const activeMoves = moves.filter(m => m.attiva);
+            const currentMoveAtSlot = activeMoves[slotIdx];
+
+            // 1. Disattiva la mossa attuale in quello slot (se esiste)
+            if (currentMoveAtSlot) {
+                await supabase
+                    .from('mosse_pokemon')
+                    .update({ attiva: false })
+                    .eq('id', currentMoveAtSlot.id);
+            }
+
+            // 2. Attiva la nuova mossa
+            const { error } = await supabase
+                .from('mosse_pokemon')
+                .update({ attiva: true })
+                .eq('id', newMoveId);
+
+            if (error) throw error;
+
+            setShowingSwapFor(null);
+            fetchMoves(selectedPkmn.id);
+        } catch (err) {
+            console.error("Errore swap mosse:", err);
+            showError("Errore durante lo scambio mossa");
         }
     };
 
@@ -240,19 +274,77 @@ export default function Squadra() {
 
                             {/* MOSSE */}
                             <div className="pkmn-moves-container">
-                                <h4 className="stats-title">Mosse Conosciute</h4>
+                                <h4 className="stats-title">Set Mosse (4 Slot Attivi)</h4>
                                 <div className="pkmn-moves-grid">
-                                    {moves.length > 0 ? moves.map(m => (
-                                        <div key={m.id} className="move-item-squadra">
-                                            <span className="move-name-squadra">{m.nome}</span>
-                                            <div className="move-details-squadra">
-                                                <span>{m.tipo}</span>
-                                                <span>PP {m.pp_attuale}/{m.pp_max}</span>
+                                    {[0, 1, 2, 3].map(idx => {
+                                        const activeMoves = moves.filter(m => m.attiva);
+                                        const move = activeMoves[idx];
+                                        
+                                        return (
+                                            <div key={idx} className={`move-slot-v2 ${!move ? 'empty' : ''}`}>
+                                                {move ? (
+                                                    <div className="move-active-content">
+                                                        <div className="move-info-main">
+                                                            <span className="move-name-v2">{move.nome}</span>
+                                                            <div className="move-meta-v2">
+                                                                <span className="move-type-mini" style={{ color: `var(--type-${move.tipo?.toLowerCase()})` }}>
+                                                                    {move.tipo}
+                                                                </span>
+                                                                <span className="move-pp-mini">PP {move.pp_attuale}/{move.pp_max}</span>
+                                                            </div>
+                                                        </div>
+                                                        <button 
+                                                            className="btn-move-swap" 
+                                                            onClick={() => setShowingSwapFor(idx)}
+                                                            title="Cambia mossa"
+                                                        >
+                                                            <ArrowRightLeft size={16} />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="move-empty-placeholder" onClick={() => setShowingSwapFor(idx)}>
+                                                        <Plus size={14} />
+                                                        <span>Slot Vuoto</span>
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    )) : <p style={{ opacity: 0.3, fontSize: '0.8rem' }}>Nessuna mossa conosciuta</p>}
+                                        );
+                                    })}
                                 </div>
                             </div>
+
+                            {/* PANEL PER SWAP MOSSE INACTIVE - ORA DENTRO IL BODY */}
+                            {showingSwapFor !== null && (
+                                <div className="move-swap-overlay-inline animate-fade-in">
+                                    <div className="move-swap-panel-inline animate-slide-up">
+                                        <div className="swap-panel-header">
+                                            <h3>Cambia Mossa</h3>
+                                            <button className="btn-close-swap" onClick={() => setShowingSwapFor(null)}><XCircle size={20} /></button>
+                                        </div>
+                                        <div className="inactive-moves-list">
+                                            {moves.filter(m => !m.attiva).length > 0 ? (
+                                                moves.filter(m => !m.attiva).map(m => (
+                                                    <div key={m.id} className="inactive-move-card" onClick={() => handleMoveSwap(m.id, showingSwapFor)}>
+                                                        <div className="move-info-main">
+                                                            <span className="move-name-v2">{m.nome}</span>
+                                                            <div className="move-meta-v2">
+                                                                <span className="move-type-mini" style={{ color: `var(--type-${m.tipo?.toLowerCase()})` }}>{m.tipo}</span>
+                                                                <span className="move-pp-mini">PP {m.pp_attuale}/{m.pp_max}</span>
+                                                            </div>
+                                                        </div>
+                                                        <Check size={18} className="swap-check-icon" />
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="empty-swap-state">
+                                                    <AlertCircle size={32} opacity={0.3} />
+                                                    <p>Il Pokémon non conosce altre mosse.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

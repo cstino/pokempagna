@@ -1731,3 +1731,136 @@
     font-weight: 900 !important;
     color: #1e293b !important;
 }
+
+/* -- Move Management in Master Edit -- */
+.pkmn-moves-master-section {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--border-master);
+}
+
+.move-filters-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: var(--space-lg);
+}
+
+.search-input-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-input-wrapper svg {
+    position: absolute;
+    left: 12px;
+    color: var(--text-muted);
+}
+
+.search-input-wrapper input {
+    width: 100%;
+    background: var(--input-bg-master) !important;
+    border: 1px solid var(--border-master) !important;
+    border-radius: 10px !important;
+    padding: 10px 12px 10px 36px !important;
+    font-size: 0.9rem !important;
+    color: var(--text-master) !important;
+    font-weight: 500 !important;
+}
+
+.filter-select-master {
+    background: var(--input-bg-master);
+    border: 1px solid var(--border-master);
+    border-radius: 10px;
+    padding: 0 12px;
+    color: var(--text-master);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.moves-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: #a78bfa transparent;
+}
+
+.move-checkbox-card {
+    background: var(--input-bg-master);
+    border: 1px solid var(--border-master);
+    border-radius: 14px;
+    padding: 12px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.move-checkbox-card input {
+    width: 18px;
+    height: 18px;
+    accent-color: #a78bfa;
+    cursor: pointer;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.move-checkbox-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(167, 139, 250, 0.3);
+    transform: translateY(-2px);
+}
+
+.move-checkbox-card.checked {
+    background: rgba(167, 139, 250, 0.1);
+    border-color: #a78bfa;
+    box-shadow: 0 0 15px rgba(167, 139, 250, 0.15);
+}
+
+.move-check-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.move-check-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.move-check-name {
+    font-size: 0.85rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: var(--text-master);
+    flex: 1;
+}
+
+.type-tag-move {
+    font-size: 0.65rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    background: rgba(0, 0, 0, 0.05);
+    border-left: 3px solid transparent;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.move-check-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 800;
+}
