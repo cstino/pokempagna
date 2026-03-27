@@ -37,6 +37,24 @@
     margin-bottom: var(--space-xl);
 }
 
+.page-title {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: var(--text-master);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+    color: var(--text-master);
+    opacity: 0.7;
+    font-size: 1rem;
+    margin-top: 4px;
+}
+
 .btn-refresh {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);

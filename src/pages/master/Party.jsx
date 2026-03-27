@@ -34,7 +34,7 @@ export default function Party() {
     const [filteredPokeList, setFilteredPokeList] = useState([]);
     const [currentTypeFilter, setCurrentTypeFilter] = useState('all');
     const [sortOrder, setSortOrder] = useState('id'); // 'id' | 'name'
-    
+
     // Stati per le Mosse (Master Edit)
     const [allAvailableMoves, setAllAvailableMoves] = useState([]);
     const [selectedPkmnMoveIds, setSelectedPkmnMoveIds] = useState([]); // Array di ID mosse assegnate
@@ -376,8 +376,8 @@ export default function Party() {
                 }
                 setSelectedPkmnMoveIds(prev => prev.filter(id => id !== moveId));
             }
-        } catch (err) { 
-            console.error("Errore toggle mossa (Catch):", err); 
+        } catch (err) {
+            console.error("Errore toggle mossa (Catch):", err);
         }
     };
 
@@ -507,11 +507,11 @@ export default function Party() {
         <div className="party-page animate-fade-in">
             <div className="page-header">
                 <div>
-                    <h1 className="page-title" style={{ color: 'var(--text-master)' }}>
+                    <h1 className="page-title">
                         <Users size={32} color="#a78bfa" />
                         Gestione Party
                     </h1>
-                    <p className="page-subtitle" style={{ color: 'var(--text-master)', opacity: 0.7 }}>Monitora e modifica le statistiche dei tuoi allenatori</p>
+                    <p className="page-subtitle">Monitora e modifica le statistiche dei tuoi allenatori</p>
                 </div>
                 <button className="btn-refresh" onClick={caricaGiocatori} title="Aggiorna Lista">
                     <TrendingUp size={16} />
@@ -881,18 +881,18 @@ export default function Party() {
 
                                             <div className="pkmn-moves-master-section">
                                                 <h4 className="edit-section-title"><Zap size={16} /> Mosse Conosciute</h4>
-                                                
+
                                                 <div className="move-filters-row">
                                                     <div className="search-input-wrapper">
                                                         <Search size={14} />
-                                                        <input 
-                                                            type="text" 
-                                                            placeholder="Cerca mossa..." 
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Cerca mossa..."
                                                             value={moveSearch}
                                                             onChange={(e) => setMoveSearch(e.target.value)}
                                                         />
                                                     </div>
-                                                    <select 
+                                                    <select
                                                         className="filter-select-master"
                                                         value={moveTypeFilter}
                                                         onChange={(e) => setMoveTypeFilter(e.target.value)}
@@ -913,8 +913,8 @@ export default function Party() {
                                                         })
                                                         .map(move => (
                                                             <label key={move.id} className={`move-checkbox-card ${selectedPkmnMoveIds.includes(move.id) ? 'checked' : ''}`}>
-                                                                <input 
-                                                                    type="checkbox" 
+                                                                <input
+                                                                    type="checkbox"
                                                                     checked={selectedPkmnMoveIds.includes(move.id)}
                                                                     onChange={(e) => toggleMoveAssignment(move.id, e.target.checked)}
                                                                 />

@@ -331,41 +331,45 @@
 .move-info-main {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    justify-content: center;
+    height: 42px;
+    /* Aumentata leggermente per evitare tagli */
     flex: 1;
     min-width: 0;
-    /* Fondamentale per far funzionare ellipsis nel flex */
-    padding-right: 8px;
-    /* Margine di sicurezza dall'icona */
+    padding-right: 12px;
 }
 
 .move-name-v2 {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
+    line-height: 1.1;
     font-weight: 900;
     color: white;
     text-transform: uppercase;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    margin-bottom: 2px;
 }
 
 .move-meta-v2 {
     display: flex;
-    gap: 8px;
+    justify-content: space-between;
     align-items: center;
+    width: 100%;
 }
 
 .move-type-mini {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .move-pp-mini {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     color: var(--text-muted);
     font-family: monospace;
+    font-weight: 800;
 }
 
 .btn-move-swap {
@@ -534,4 +538,116 @@
         transform: translateY(0);
         opacity: 1;
     }
+}
+
+/* --- MOVE INFO POPUP (Long Press) --- */
+.move-info-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    border-radius: 32px;
+    /* Stesso raggio della modale */
+}
+
+.move-info-card-pop {
+    background: rgba(30, 41, 59, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    padding: 24px;
+    width: 100%;
+    max-width: 280px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+}
+
+.pop-header-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+}
+
+.pop-header-title h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 900;
+    text-transform: uppercase;
+    color: white;
+    font-size: 1.15rem;
+    letter-spacing: 0.5px;
+}
+
+.close-pop {
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+
+.move-pop-meta {
+    display: flex;
+    gap: 10px;
+    margin-bottom: var(--space-lg);
+}
+
+.type-tag {
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 0.65rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.cat-tag {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 0.65rem;
+    font-weight: 900;
+    color: var(--text-muted);
+}
+
+.move-pop-desc {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: var(--space-md);
+    font-style: italic;
+}
+
+.move-pop-footer {
+    font-size: 0.6rem;
+    text-align: center;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: var(--space-md);
+}
+
+/* Animazione di apparizione */
+@keyframes popIn {
+    from {
+        transform: scale(0.92);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.animate-pop-in {
+    animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

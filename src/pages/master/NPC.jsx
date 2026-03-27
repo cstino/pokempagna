@@ -399,16 +399,19 @@ export default function NPC() {
 
     return (
         <div className="party-page animate-fade-in">
-            <header className="party-header">
+            <div className="page-header">
                 <div>
-                    <h1>Gestione NPC</h1>
-                    <p>Crea e gestisci i personaggi non giocanti della tua campagna</p>
+                    <h1 className="page-title">
+                        <Users size={32} color="#818cf8" />
+                        Gestione NPC
+                    </h1>
+                    <p className="page-subtitle">Crea e gestisci i personaggi non giocanti della tua campagna</p>
                 </div>
-                <button className="btn-save" onClick={creaNPC} disabled={saving} style={{ marginTop: '20px' }}>
+                <button className="btn-save" onClick={creaNPC} disabled={saving}>
                     {saving ? <Loader2 className="spin" /> : <Plus size={18} />}
                     Nuovo NPC
                 </button>
-            </header>
+            </div>
 
             {loading ? (
                 <div className="flex-center p-xl"><Loader2 className="spin" size={40} /></div>

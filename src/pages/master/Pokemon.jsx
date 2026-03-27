@@ -195,7 +195,10 @@ export default function PokemonMaster() {
         <div className="pokemon-master-page animate-fade-in">
             <div className="page-header">
                 <div>
-                    <h1 className="page-title"><TrendingUp size={32} /> Enciclopedia Pokémon</h1>
+                    <h1 className="page-title">
+                        <TrendingUp size={32} color="var(--accent-primary-light)" />
+                        Enciclopedia Pokémon
+                    </h1>
                     <p className="page-subtitle">Gestisci i Pokémon base della tua campagna</p>
                 </div>
                 <button className="btn-save" onClick={() => openEditModal()}>

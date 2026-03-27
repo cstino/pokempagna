@@ -140,15 +140,18 @@ export default function OggettiMaster() {
 
     return (
         <div className="party-page animate-fade-in">
-            <header className="party-header">
+            <div className="page-header">
                 <div>
-                    <h1>Magazzino Oggetti</h1>
-                    <p>Gestisci gli strumenti e gli oggetti della tua campagna</p>
+                    <h1 className="page-title">
+                        <Package size={32} color="#f59e0b" />
+                        Magazzino Oggetti
+                    </h1>
+                    <p className="page-subtitle">Gestisci gli strumenti e gli oggetti della tua campagna</p>
                 </div>
                 <button className="btn-save" onClick={() => openEditModal()}>
                     <Plus size={18} /> Nuovo Oggetto
                 </button>
-            </header>
+            </div>
 
             <div className="search-bar-container-master" style={{ margin: '20px 0' }}>
                 <Search className="search-icon" size={20} />

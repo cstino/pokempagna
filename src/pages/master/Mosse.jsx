@@ -113,15 +113,18 @@ export default function MosseMaster() {
 
     return (
         <div className="party-page animate-fade-in">
-            <header className="party-header">
+            <div className="page-header">
                 <div>
-                    <h1>Libreria Mosse</h1>
-                    <p>Gestisci le mosse disponibili nella tua campagna</p>
+                    <h1 className="page-title">
+                        <Zap size={32} color="#f59e0b" />
+                        Libreria Mosse
+                    </h1>
+                    <p className="page-subtitle">Gestisci le mosse disponibili nella tua campagna</p>
                 </div>
                 <button className="btn-save" onClick={() => openEditModal()}>
                     <Plus size={18} /> Nuova Mossa
                 </button>
-            </header>
+            </div>
 
             <div className="search-bar-container-master" style={{ margin: '20px 0' }}>
                 <Search className="search-icon" size={20} />

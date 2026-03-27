@@ -16,6 +16,8 @@ export default function Squadra() {
     const [selectedPkmn, setSelectedPkmn] = useState(null);
     const [moves, setMoves] = useState([]);
     const [showingSwapFor, setShowingSwapFor] = useState(null); // indice 0-3 del slot
+    const [longPressedMove, setLongPressedMove] = useState(null);
+    const longPressTimerRef = useRef(null);
     const [errorMsg, setErrorMsg] = useState("");
 
     const scrollContainerRef = useRef(null);
@@ -56,7 +58,13 @@ export default function Squadra() {
         try {
             const { data, error } = await supabase
                 .from('mosse_pokemon')
-                .select('*')
+                .select(`
+                    *,
+                    info:mosse_disponibili (
+                        descrizione,
+                        categoria
+                    )
+                `)
                 .eq('pokemon_giocatore_id', pkmnId);
             if (error) throw error;
             // Ordiniamo per far sì che le attive siano coerenti, o usiamo un campo posizione se esistesse.
@@ -69,7 +77,7 @@ export default function Squadra() {
 
     const handleMoveSwap = async (newMoveId, slotIdx) => {
         if (!selectedPkmn) return;
-        
+
         try {
             const activeMoves = moves.filter(m => m.attiva);
             const currentMoveAtSlot = activeMoves[slotIdx];
@@ -157,6 +165,18 @@ export default function Squadra() {
     pokemon.forEach(p => {
         if (p.posizione_squadra >= slots) panchinaList.push(p);
     });
+
+    const translateType = (t) => {
+        if (!t) return '???';
+        const types = {
+            'normal': 'Normale', 'fire': 'Fuoco', 'water': 'Acqua', 'grass': 'Erba',
+            'electric': 'Elettro', 'ice': 'Ghiaccio', 'fighting': 'Lotta', 'poison': 'Veleno',
+            'ground': 'Terra', 'flying': 'Volante', 'psychic': 'Psico', 'bug': 'Coleottero',
+            'rock': 'Roccia', 'ghost': 'Spettro', 'dragon': 'Drago', 'steel': 'Acciaio',
+            'fairy': 'Folletto', 'dark': 'Buio'
+        };
+        return types[t.toLowerCase()] || t;
+    };
 
     if (loading) return (
         <div className="squadra-page flex-center">
@@ -253,6 +273,38 @@ export default function Squadra() {
                                 )}
                             </div>
 
+                            {/* POPUP INFO MOSSA (Long Press) */}
+                            {longPressedMove && (
+                                <div className="move-info-overlay" onClick={() => setLongPressedMove(null)}>
+                                    <div className="move-info-card-pop animate-pop-in" onClick={e => e.stopPropagation()}>
+                                        <div className="pop-header-title">
+                                            <h3>{longPressedMove.nome}</h3>
+                                            <XCircle size={20} className="close-pop" onClick={() => setLongPressedMove(null)} />
+                                        </div>
+
+                                        {longPressedMove.info && (
+                                            <>
+                                                <div className="move-pop-meta">
+                                                    <span className="type-tag" style={{ background: `var(--type-${longPressedMove.tipo.toLowerCase()})` }}>
+                                                        {translateType(longPressedMove.tipo)}
+                                                    </span>
+                                                    <span className="cat-tag">
+                                                        {longPressedMove.info.categoria.toUpperCase()}
+                                                    </span>
+                                                </div>
+                                                <div className="move-pop-desc">
+                                                    {longPressedMove.info.descrizione || "Nessuna descrizione disponibile per questa mossa."}
+                                                </div>
+                                            </>
+                                        )}
+
+                                        <div className="move-pop-footer">
+                                            Tocca altrove per chiudere
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* STATISTICHE (Stile Pokedex - 2 Colonne) */}
                             <div className="stats-container-modal">
                                 <h4 className="stats-title">Statistiche Base</h4>
@@ -279,23 +331,30 @@ export default function Squadra() {
                                     {[0, 1, 2, 3].map(idx => {
                                         const activeMoves = moves.filter(m => m.attiva);
                                         const move = activeMoves[idx];
-                                        
+
                                         return (
-                                            <div key={idx} className={`move-slot-v2 ${!move ? 'empty' : ''}`}>
+                                            <div
+                                                key={idx}
+                                                className={`move-slot-v2 ${!move ? 'empty' : ''}`}
+                                                onClick={() => move && setLongPressedMove(move)}
+                                            >
                                                 {move ? (
                                                     <div className="move-active-content">
                                                         <div className="move-info-main">
                                                             <span className="move-name-v2">{move.nome}</span>
                                                             <div className="move-meta-v2">
                                                                 <span className="move-type-mini" style={{ color: `var(--type-${move.tipo?.toLowerCase()})` }}>
-                                                                    {move.tipo}
+                                                                    {translateType(move.tipo)}
                                                                 </span>
-                                                                <span className="move-pp-mini">PP {move.pp_attuale}/{move.pp_max}</span>
+                                                                <span className="move-pp-mini">{move.pp_attuale}/{move.pp_max}</span>
                                                             </div>
                                                         </div>
-                                                        <button 
-                                                            className="btn-move-swap" 
-                                                            onClick={() => setShowingSwapFor(idx)}
+                                                        <button
+                                                            className="btn-move-swap"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setShowingSwapFor(idx);
+                                                            }}
                                                             title="Cambia mossa"
                                                         >
                                                             <ArrowRightLeft size={16} />
