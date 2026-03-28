@@ -23,6 +23,10 @@
     --input-bg-master: rgba(0, 0, 0, 0.25);
 }
 
+.party-page.npc-mode .page-title svg {
+    color: #818cf8 !important;
+}
+
 .party-page {
     padding-bottom: var(--space-3xl);
     background: transparent !important;
@@ -625,6 +629,69 @@
     object-fit: contain;
 }
 
+.pkmn-types-wrapper {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    gap: 6px;
+    z-index: 2;
+}
+
+.pkmn-type-circle {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2), inset 0 0 10px rgba(255,255,255,0.2);
+    border: 1.5px solid rgba(255,255,255,0.8);
+    cursor: default;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.type-icon-img {
+    width: 16px;
+    height: 16px;
+    filter: brightness(0) invert(1); /* Rende l'icona bianca pura */
+    object-fit: contain;
+}
+
+.pkmn-type-circle:hover {
+    transform: scale(1.15) rotate(5deg);
+}
+
+.pkmn-types-wrapper-mini {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: flex;
+    gap: 4px;
+    z-index: 2;
+}
+
+.pkmn-type-circle-mini {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15), inset 0 0 6px rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.7);
+    cursor: default;
+}
+
+.type-icon-img-mini {
+    width: 12px;
+    height: 12px;
+    filter: brightness(0) invert(1);
+    object-fit: contain;
+}
+
 .qty-badge {
     position: absolute;
     top: -8px;
@@ -652,13 +719,6 @@
     letter-spacing: 0.5px;
 }
 
-/* Pokemon Grid Master */
-.pokemon-grid-master {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    padding-top: 8px;
-}
 
 .pkmn-card-master {
     background: rgba(255, 255, 255, 0.03);
@@ -1099,6 +1159,116 @@
 .empty-selection-placeholder p {
     font-size: 0.8rem;
     font-style: italic;
+}
+
+/* --- IDENTITÀ PKMN MODALE --- */
+.pkmn-edit-identity {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+}
+
+.species-name-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--accent-primary-light);
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+}
+
+.input-field-soprannome label {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.input-field-soprannome input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 2px solid rgba(0,0,0,0.05);
+    background: rgba(255,255,255,0.7);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+.pkmn-identity-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    height: 38px; /* Altezza fissa per bloccare gli HP */
+    margin-bottom: 2px;
+}
+
+.pkmn-race-title {
+    margin: 0 !important;
+    line-height: 1;
+    font-size: 1.15rem !important;
+    z-index: 2;
+}
+
+.pkmn-nickname-subtitle {
+    position: absolute;
+    bottom: -6px; /* Abbassato di qualche punto */
+    font-size: 0.75rem;
+    font-weight: 300;
+    color: var(--text-secondary);
+    font-style: italic;
+    opacity: 0.8;
+    letter-spacing: 0.02em;
+}
+
+.compact-box-card-v3 {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid rgba(0,0,0,0.05);
+    width: 140px;
+    height: 180px; /* Accorciata per evitare spazio vuoto */
+    position: relative;
+}
+
+.compact-box-card-v3 .pkmn-image-mini {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 5px;
+}
+
+.pkmn-identity-stack-mini {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    height: 38px; /* Fissa per allineare gli HP */
+    margin: 2px 0 8px 0;
+}
+
+.pkmn-name-mini {
+    font-size: 0.85rem;
+    font-weight: 900;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.pkmn-nickname-mini {
+    position: absolute;
+    bottom: -14px; /* Abbassato a -14px come richiesto */
+    font-size: 0.65rem;
+    font-weight: 300;
+    color: var(--text-secondary);
+    font-style: italic;
+    opacity: 0.8;
 }
 
 @media (max-width: 800px) {
@@ -1654,42 +1824,6 @@
     background: #fee2e2;
 }
 
-/* Compact Box Card V3 */
-.compact-box-card-v3 {
-    width: 140px !important;
-    height: 180px !important;
-    background: white !important;
-    border: 1px solid #f1f5f9 !important;
-    border-radius: 16px !important;
-    padding: 10px !important;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    cursor: pointer;
-    transition: 0.3s;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
-}
-
-.pkmn-image-mini {
-    width: 80px;
-    height: 80px;
-    object-fit: contain;
-    margin: 15px 0 5px;
-}
-
-.pkmn-name-mini {
-    font-size: 0.75rem;
-    font-weight: 900;
-    color: #475569;
-}
-
-/* Grid a 4 colonne */
-.pokemon-grid-master.grid-4-cols {
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 20px !important;
-}
-
 /* Titoli Premium SQUADRA / BOX */
 .title-premium-master {
     font-size: 1.4rem !important;
@@ -1797,6 +1931,7 @@
     font-weight: 700;
 }
 
+
 .moves-selection-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -1885,4 +2020,408 @@
     font-size: 0.65rem;
     color: var(--text-muted);
     font-weight: 800;
+}
+
+.pokemon-grid-master {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 220px); /* Larghezza fissa per evitare espansione */
+    gap: 8px;
+    margin-bottom: 30px;
+    justify-content: flex-start;
+}
+
+.box-grid-v3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 160px); /* Colonne fisse per evitare espansione */
+    gap: 8px; /* Distanza minima come richiesto */
+    margin-bottom: 30px;
+    justify-content: flex-start;
+}
+
+.type-badge-mini {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #ffffff !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    margin-right: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pkmn-types-mini {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+/* --- MASTER POKEMON TABS --- */
+.tab-control-master {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 6px;
+    border-radius: 14px;
+    width: fit-content;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-master);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.6;
+}
+
+.tab-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    opacity: 1;
+}
+
+.tab-btn.active {
+    background: var(--accent-primary) !important;
+    color: white !important;
+    opacity: 1;
+    box-shadow: 0 4px 15px rgba(236, 0, 140, 0.3);
+}
+
+.btn-icon.accent {
+    background: rgba(0, 242, 255, 0.1) !important;
+    color: #00f2ff !important;
+    border: 1px solid rgba(0, 242, 255, 0.3) !important;
+}
+
+.btn-icon.accent:hover {
+    background: #00f2ff !important;
+    color: #000 !important;
+    transform: scale(1.1);
+}
+
+.empty-state-pokedex {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 20px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    margin: 20px 0;
+}
+
+.empty-state-pokedex h3 {
+    margin: 15px 0 5px;
+    color: var(--text-master);
+}
+
+/* --- MASTER UPLOADER --- */
+.master-upload-container {
+    margin-top: 8px;
+    width: 100%;
+}
+
+.master-upload-preview-box {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 2px dashed var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.master-upload-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.btn-remove-upload {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(239, 68, 68, 0.8);
+    border: none;
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+    z-index: 10;
+}
+
+.btn-remove-upload:hover {
+    background: #ef4444;
+    transform: scale(1.1);
+}
+
+.master-upload-placeholder {
+    width: 100%;
+    height: 120px;
+    background: var(--bg-secondary);
+    border: 2px dashed var(--border-subtle);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-muted);
+}
+
+.master-upload-placeholder:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Nuova Sezione Upload NPC V2 (Isolamento Totale) */
+.avatar-upload-section-v2 {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    background: rgba(255, 255, 255, 0.03);
+    padding: var(--space-md);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    margin-top: 10px;
+}
+
+.upload-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin: 4px 0;
+}
+
+.upload-divider::before,
+.upload-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.btn-upload-v2 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+    background: #f1f5f9;
+    border: 2px dashed #cbd5e1;
+    border-radius: 10px;
+    color: #475569;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.btn-upload-v2:hover {
+    background: #e2e8f0;
+    border-color: #818cf8;
+    color: #818cf8;
+}
+
+/* ==========================================================================
+   INTERFACCIA NPC V3 - NOME EDITABILE E CARICAMENTO IMMAGINE
+   ========================================================================== */
+.npc-name-edit-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.edit-npc-name-input-hero {
+    background: transparent;
+    border: none;
+    color: var(--text-master);
+    font-size: 1.5rem; /* Ridotto leggermente */
+    font-weight: 800;
+    padding: 0;
+    margin: 0;
+    width: auto; /* Auto-width */
+    max-width: 260px; /* Limite per non invadere i tab */
+    outline: none;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    padding-left: 2px;
+    letter-spacing: -0.5px;
+    text-overflow: ellipsis;
+}
+
+.edit-npc-name-input-hero:hover {
+    background: rgba(0,0,0,0.03);
+}
+
+.edit-npc-name-input-hero:focus {
+    background: white;
+    box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.1);
+    border-bottom: 2px solid var(--accent-primary);
+}
+
+.avatar-interaction-v3 {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-top: 15px;
+    padding: 20px;
+    background: rgba(255,255,255,0.4);
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 16px;
+}
+
+.avatar-preview-box-v3 {
+    width: 140px;
+    height: 140px;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    background: var(--bg-secondary);
+    border: 2px dashed var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.avatar-preview-box-v3.clickable:hover {
+    border-color: var(--accent-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.preview-image-v3 {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.avatar-placeholder-v3 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-muted);
+}
+
+.avatar-placeholder-v3 span {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.avatar-overlay-v3 {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    gap: 8px;
+    backdrop-filter: blur(2px);
+    pointer-events: none; /* FISSA LO SFARFALLIO */
+}
+
+.avatar-preview-box-v3:hover .avatar-overlay-v3 {
+    opacity: 1;
+}
+
+.avatar-overlay-v3 span {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.avatar-help-text-v3 {
+    flex: 1;
+}
+
+.avatar-help-text-v3 p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+
+.btn-upload-v3 {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    color: var(--accent-primary);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-upload-v3:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent-primary);
+    transform: translateY(-1px);
+}
+
+.header-avatar-trigger.clickable {
+    cursor: pointer !important;
+}
+
+.header-avatar-trigger.clickable:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(129, 140, 248, 0.3);
+}
+
+.avatar-header-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none; /* FISSA LO SFARFALLIO */
+}
+
+.header-avatar-trigger:hover .avatar-header-overlay {
+    opacity: 1;
+}
+
+.npc-modal-premium .modal-header-avatar .avatar-edit-overlay {
+    display: none !important;
 }

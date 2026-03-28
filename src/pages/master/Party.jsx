@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Users, User, Shield, Zap, Medal, Edit2, Loader2, X, Check, Save, Heart, TrendingUp, Plus, Minus, Package, Trash2, Search, Info, Layout } from 'lucide-react';
+import { getTypeColor, getTypeLabel, getTypeEmoji } from '../../lib/typeColors';
 import './Party.css';
 
 export default function Party() {
@@ -256,22 +257,20 @@ export default function Party() {
             }
         });
     };
-    // 🏁 Inizializzazione Pokédex Library
+    // 🏁 Inizializzazione Pokédex Library (Sincronizzata con Libreria Campagna)
     const caricaPokedexLibrary = async () => {
-        if (fullPokeList.length > 0) return;
         setSearching(true);
         try {
-            const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1025');
-            const data = await res.json();
-            const list = data.results.map((p, idx) => ({
-                id: idx + 1,
-                name: p.name,
-                url: p.url
-            }));
-            setFullPokeList(list);
-            setFilteredPokeList(list);
+            const { data: list, error } = await supabase
+                .from('pokemon_campagna')
+                .select('*')
+                .order('id', { ascending: true });
+
+            if (error) throw error;
+            setFullPokeList(list || []);
+            setFilteredPokeList(list || []);
         } catch (err) {
-            console.error("Errore caricamento pokedex:", err);
+            console.error("Errore caricamento libreria campagna:", err);
         } finally {
             setSearching(false);
         }
@@ -283,12 +282,12 @@ export default function Party() {
 
         // 1. Filtro Nome
         if (searchQuery) {
-            list = list.filter(p => p.name.includes(searchQuery.toLowerCase().trim()));
+            list = list.filter(p => p.nome.toLowerCase().includes(searchQuery.toLowerCase().trim()));
         }
 
         // 2. Ordinamento
         if (sortOrder === 'name') {
-            list.sort((a, b) => a.name.localeCompare(b.name));
+            list.sort((a, b) => a.nome.localeCompare(b.nome));
         } else {
             list.sort((a, b) => a.id - b.id);
         }
@@ -297,16 +296,21 @@ export default function Party() {
     }, [searchQuery, sortOrder, fullPokeList]);
 
     const selectFromLibrary = async (p) => {
-        setSearching(true);
-        try {
-            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${p.id}`);
-            const data = await res.json();
-            setSearchResult(data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setSearching(false);
-        }
+        // Estrai National ID dallo sprite_url (es. .../pokemon/9.png -> 9)
+        const nationalIdFromUrl = p.sprite_url ? p.sprite_url.split('/').pop().split('.')[0] : p.id;
+
+        setSearchResult({
+            ...p,
+            pokemon_id: nationalIdFromUrl, // Assicuriamo che porti l'ID nazionale corretto
+            immagine_url: p.immagine_url || p.sprite_url,
+            hp_base: p.hp_base,
+            atk_base: p.atk_base,
+            def_base: p.def_base,
+            spatk_base: p.spatk_base,
+            spdef_base: p.spdef_base,
+            speed_base: p.speed_base
+        });
+        setSelectedPkmnMoveIds([]); // Reset mosse per il nuovo Pokémon
     };
 
     const handlePokeStatChange = (stat, value) => {
@@ -322,7 +326,8 @@ export default function Party() {
             'electric': 'Elettro', 'ice': 'Ghiaccio', 'fighting': 'Lotta', 'poison': 'Veleno',
             'ground': 'Terra', 'flying': 'Volante', 'psychic': 'Psico', 'bug': 'Coleottero',
             'rock': 'Roccia', 'ghost': 'Spettro', 'dragon': 'Drago', 'steel': 'Acciaio',
-            'fairy': 'Folletto', 'dark': 'Buio'
+            'fairy': 'Folletto', 'dark': 'Buio', 'suono': 'Suono', 'sconosciuto': 'Sconosciuto',
+            'sound': 'Suono', 'unknown': 'Sconosciuto'
         };
         return types[t.toLowerCase()] || t;
     };
@@ -343,41 +348,39 @@ export default function Party() {
 
     const toggleMoveAssignment = async (moveId, isChecked) => {
         if (!editingPkmn) return;
+
+        // Se è un nuovo Pokémon (senza ID), aggiorniamo solo lo stato locale
+        if (!editingPkmn.id) {
+            if (isChecked) {
+                setSelectedPkmnMoveIds(prev => [...prev, moveId]);
+            } else {
+                setSelectedPkmnMoveIds(prev => prev.filter(id => id !== moveId));
+            }
+            return;
+        }
+
+        // Se il Pokémon esiste già, salviamo direttamente nel DB
         try {
             if (isChecked) {
-                // Trova i dettagli della mossa scelti
                 const moveDetails = allAvailableMoves.find(m => m.id === moveId);
-                if (!moveDetails) return;
-
-                // Aggiungi mossa
                 const { error } = await supabase.from('mosse_pokemon').insert({
                     pokemon_giocatore_id: editingPkmn.id,
                     mossa_id: moveId,
-                    nome: moveDetails.nome,
-                    tipo: moveDetails.tipo,
-                    pp_max: moveDetails.pp_max || 20,
                     pp_attuale: moveDetails.pp_max || 20,
-                    attiva: false // Default non attiva, la attiva il giocatore
+                    attiva: true
                 });
-                if (error) {
-                    console.error("Errore Supabase Insert:", error);
-                    throw error;
-                }
+                if (error) throw error;
                 setSelectedPkmnMoveIds(prev => [...prev, moveId]);
             } else {
-                // Rimuovi mossa
                 const { error } = await supabase.from('mosse_pokemon')
                     .delete()
                     .eq('pokemon_giocatore_id', editingPkmn.id)
                     .eq('mossa_id', moveId);
-                if (error) {
-                    console.error("Errore Supabase Delete:", error);
-                    throw error;
-                }
+                if (error) throw error;
                 setSelectedPkmnMoveIds(prev => prev.filter(id => id !== moveId));
             }
         } catch (err) {
-            console.error("Errore toggle mossa (Catch):", err);
+            console.error("Errore toggle mossa:", err);
         }
     };
 
@@ -385,22 +388,61 @@ export default function Party() {
         if (!editingPkmn) return;
         setSaving(true);
         try {
-            const { error } = await supabase
-                .from('pokemon_giocatore')
-                .update({
-                    soprannome: editingPkmn.soprannome,
-                    livello: editingPkmn.livello,
-                    hp_attuale: editingPkmn.hp_attuale,
-                    hp_max: editingPkmn.hp_max,
-                    attacco: editingPkmn.attacco,
-                    difesa: editingPkmn.difesa,
-                    attacco_speciale: editingPkmn.attacco_speciale,
-                    difesa_speciale: editingPkmn.difesa_speciale,
-                    velocita: editingPkmn.velocita
-                })
-                .eq('id', editingPkmn.id);
+            const pkmnData = {
+                giocatore_id: editForm.id,
+                pokemon_id: editingPkmn.pokemon_id,
+                nome: editingPkmn.name?.toUpperCase() || editingPkmn.nome?.toUpperCase(),
+                soprannome: editingPkmn.soprannome || editingPkmn.name?.toUpperCase() || editingPkmn.nome?.toUpperCase(),
+                livello: editingPkmn.livello,
+                hp_attuale: editingPkmn.hp_attuale,
+                hp_max: editingPkmn.hp_max,
+                attacco: editingPkmn.attacco,
+                difesa: editingPkmn.difesa,
+                attacco_speciale: editingPkmn.attacco_speciale,
+                difesa_speciale: editingPkmn.difesa_speciale,
+                velocita: editingPkmn.velocita,
+                tipo1: editingPkmn.tipo1,
+                tipo2: editingPkmn.tipo2,
+                posizione_squadra: editingPkmn.posizione_squadra || 99
+            };
 
-            if (error) throw error;
+            if (editingPkmn.id) {
+                // UPDATE
+                const { error } = await supabase
+                    .from('pokemon_giocatore')
+                    .update(pkmnData)
+                    .eq('id', editingPkmn.id);
+                if (error) throw error;
+            } else {
+                // INSERT (Nuovo Pokémon)
+                const { data: newPkmn, error } = await supabase
+                    .from('pokemon_giocatore')
+                    .insert(pkmnData)
+                    .select('id')
+                    .single();
+                
+                if (error) throw error;
+
+                // Se abbiamo mosse selezionate, salviamole ora che abbiamo l'ID
+                if (newPkmn && selectedPkmnMoveIds.length > 0) {
+                    const movesToInsert = selectedPkmnMoveIds.map(moveId => {
+                        const mDetails = allAvailableMoves.find(m => m.id === moveId);
+                        return {
+                            pokemon_giocatore_id: newPkmn.id,
+                            mossa_id: moveId,
+                            pp_attuale: mDetails?.pp_max || 20,
+                            attiva: true
+                        };
+                    });
+                    
+                    const { error: movesError } = await supabase
+                        .from('mosse_pokemon')
+                        .insert(movesToInsert);
+                    
+                    if (movesError) console.error("Errore salvataggio mosse iniziali:", movesError);
+                }
+            }
+
             caricaDatiExtra(editForm.id);
             setEditingPkmn(null);
         } catch (err) {
@@ -437,6 +479,7 @@ export default function Party() {
                 .insert({
                     giocatore_id: editForm.id,
                     pokemon_id: searchResult.id,
+                    nome: searchResult.name.toUpperCase(),
                     soprannome: searchResult.name.toUpperCase(),
                     livello: 5,
                     hp_attuale: searchResult.stats[0].base_stat,
@@ -826,21 +869,25 @@ export default function Party() {
                                             {showAddItem || editingPkmn ? 'Annulla' : 'Nuovo Pkmn'}
                                         </button>
                                     </div>
-
+                                    
                                     {editingPkmn ? (
                                         <div className="pokemon-edit-form animate-slide-up">
                                             <div className="pkmn-edit-header">
                                                 <img
-                                                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${editingPkmn.pokemon_id}.png`}
-                                                    alt={editingPkmn.soprannome}
+                                                    src={editingPkmn.immagine_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${editingPkmn.pokemon_id}.png`}
+                                                    alt={editingPkmn.soprannome || editingPkmn.nome}
                                                 />
-                                                <div className="input-field">
-                                                    <label>Soprannome</label>
-                                                    <input
-                                                        type="text"
-                                                        value={editingPkmn.soprannome}
-                                                        onChange={(e) => handlePokeStatChange('soprannome', e.target.value)}
-                                                    />
+                                                <div className="pkmn-edit-identity">
+                                                    <span className="species-name-label">RAZZA: {(editingPkmn.nome || 'Sconosciuta').toUpperCase()}</span>
+                                                    <div className="input-field-soprannome">
+                                                        <label>Soprannome</label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Metti un soprannome..."
+                                                            value={editingPkmn.soprannome || ''}
+                                                            onChange={(e) => handlePokeStatChange('soprannome', e.target.value)}
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -981,10 +1028,10 @@ export default function Party() {
                                                                 onClick={() => selectFromLibrary(p)}
                                                             >
                                                                 <img
-                                                                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`}
-                                                                    alt={p.name}
+                                                                    src={p.sprite_url}
+                                                                    alt={p.nome}
                                                                 />
-                                                                <span>{p.name.toUpperCase()}</span>
+                                                                <span>{p.nome.toUpperCase()}</span>
                                                             </div>
                                                         ))
                                                     )}
@@ -995,21 +1042,54 @@ export default function Party() {
                                                     {searchResult ? (
                                                         <div className="search-result-card selection-mode animate-fade-in">
                                                             <img
-                                                                src={searchResult.sprites.other['official-artwork'].front_default}
-                                                                alt={searchResult.name}
+                                                                src={searchResult.immagine_url}
+                                                                alt={searchResult.nome}
                                                             />
                                                             <div className="result-info">
-                                                                <h3>#{searchResult.id} {searchResult.name.toUpperCase()}</h3>
+                                                                <h3>#{searchResult.id} {searchResult.nome.toUpperCase()}</h3>
                                                                 <div className="pkmn-types">
-                                                                    {searchResult.types.map(t => (
-                                                                        <span key={t.type.name} className="type-tag" style={{ borderLeftColor: `var(--type-${t.type.name})` }}>
-                                                                            {t.type.name}
+                                                                    <span className="type-tag" style={{ borderLeftColor: `var(--type-${searchResult.tipo1.toLowerCase()})` }}>
+                                                                        {translateType(searchResult.tipo1)}
+                                                                    </span>
+                                                    {searchResult.tipo2 && (
+                                                                        <span className="type-tag" style={{ borderLeftColor: `var(--type-${searchResult.tipo2.toLowerCase()})` }}>
+                                                                            {translateType(searchResult.tipo2)}
                                                                         </span>
-                                                                    ))}
+                                                                    )}
                                                                 </div>
-                                                                <button className="btn-confirm-add" style={{ marginTop: '15px' }} onClick={aggiungiPokemon} disabled={saving}>
-                                                                    {saving ? <Loader2 size={18} className="spin" /> : <Plus size={18} />}
-                                                                    Assegna all'Allenatore
+                                                                <button 
+                                                                    className="btn-confirm-add" 
+                                                                    style={{ marginTop: '15px' }} 
+                                                                    onClick={() => {
+                                                                        // Reset preventivo per evitare ghosting di dati vecchi
+                                                                        setEditingPkmn(null);
+                                                                        
+                                                                        setTimeout(() => {
+                                                                            setEditingPkmn({
+                                                                                pokemon_id: searchResult.pokemon_id,
+                                                                                immagine_url: searchResult.immagine_url,
+                                                                                nome: searchResult.nome.toUpperCase(),
+                                                                                soprannome: searchResult.nome.toUpperCase(),
+                                                                                livello: 5,
+                                                                                hp_attuale: searchResult.hp_base,
+                                                                                hp_max: searchResult.hp_base,
+                                                                                attacco: searchResult.atk_base,
+                                                                                difesa: searchResult.def_base,
+                                                                                attacco_speciale: searchResult.spatk_base,
+                                                                                difesa_speciale: searchResult.spdef_base,
+                                                                                velocita: searchResult.speed_base,
+                                                                                tipo1: searchResult.tipo1.toLowerCase(),
+                                                                                tipo2: searchResult.tipo2 ? searchResult.tipo2.toLowerCase() : null,
+                                                                                posizione_squadra: 99
+                                                                            });
+                                                                            setSearchResult(null);
+                                                                            setSearchQuery('');
+                                                                            setShowAddItem(false);
+                                                                        }, 50);
+                                                                    }}
+                                                                >
+                                                                    <Edit2 size={18} />
+                                                                    Configura e Assegna
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -1030,25 +1110,50 @@ export default function Party() {
                                                 <>
                                                     {/* SQUADRA */}
                                                     <div className="squadra-section-master">
-                                                        <h5 className="title-premium-master team-title">SQUADRA</h5>
+                                                    <h5 className="title-premium-master team-title">SQUADRA</h5>
                                                         <div className="pokemon-grid-master grid-4-cols">
                                                             {playerPokemon.filter(p => p.posizione_squadra < (editForm.slot_squadra || 3)).length === 0 ? (
                                                                 <p className="empty-text">Nessun Pokémon in squadra.</p>
                                                             ) : (
                                                                 playerPokemon.filter(p => p.posizione_squadra < (editForm.slot_squadra || 3)).map(poke => {
-                                                                    const hpPct = (poke.hp_attuale / poke.hp_max) * 100;
+                                                                    const hpPct = ((poke.hp_attuale || poke.hp || 0) / (poke.hp_max || 100)) * 100;
                                                                     const hpCol = hpPct > 50 ? '#34d399' : hpPct > 20 ? '#fbbf24' : '#ef4444';
+                                                                    
+                                                                    const itToEn = {
+                                                                        'normale': 'normal', 'fuoco': 'fire', 'acqua': 'water', 'erba': 'grass',
+                                                                        'elettro': 'electric', 'ghiaccio': 'ice', 'lotta': 'fighting', 'veleno': 'poison',
+                                                                        'terra': 'ground', 'volante': 'flying', 'psico': 'psychic', 'coleottero': 'bug',
+                                                                        'roccia': 'rock', 'spettro': 'ghost', 'drago': 'dragon', 'acciaio': 'steel',
+                                                                        'folletto': 'fairy', 'buio': 'dark', 'suono': 'sound', 'sconosciuto': 'unknown'
+                                                                    };
+                                                                    const t1En = itToEn[poke.tipo1?.toLowerCase()] || poke.tipo1?.toLowerCase();
+                                                                    const t2En = itToEn[poke.tipo2?.toLowerCase()] || poke.tipo2?.toLowerCase();
+
                                                                     return (
                                                                         <div key={poke.id} className="pkmn-card-squadra master-card-premium clickable" onClick={() => startEditingPkmn(poke)}>
-                                                                            <div className="pkmn-type-badge">{poke.tipo1?.toUpperCase()}</div>
+                                                                            <div className="pkmn-types-wrapper">
+                                                                                <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(t1En) }} title={getTypeLabel(t1En)}>
+                                                                                    <img src={t1En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t1En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t1En}.svg`} alt={t1En} className="type-icon-img" />
+                                                                                </div>
+                                                                                {poke.tipo2 && (
+                                                                                    <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(t2En) }} title={getTypeLabel(t2En)}>
+                                                                                        <img src={t2En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t2En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t2En}.svg`} alt={t2En} className="type-icon-img" />
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
                                                                             <div className="pkmn-lvl-badge">Nv.{poke.livello}</div>
-                                                                            <img className="pkmn-image" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`} alt={poke.soprannome} />
+                                                                            <img className="pkmn-image" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`} alt={poke.soprannome || poke.nome} />
                                                                             <div className="pkmn-card-details">
-                                                                                <h3>{poke.soprannome?.toUpperCase()}</h3>
+                                                                                <div className="pkmn-identity-stack">
+                                                                                    <h3 className="pkmn-race-title">{poke.nome?.toUpperCase()}</h3>
+                                                                                    {poke.soprannome && poke.soprannome !== poke.nome && (
+                                                                                        <span className="pkmn-nickname-subtitle">{poke.soprannome}</span>
+                                                                                    )}
+                                                                                </div>
                                                                                 <div className="hp-section">
                                                                                     <div className="hp-info">
                                                                                         <span>HP</span>
-                                                                                        <span>{poke.hp_attuale}/{poke.hp_max}</span>
+                                                                                        <span>{poke.hp_attuale || poke.hp || 0}/{poke.hp_max || 100}</span>
                                                                                     </div>
                                                                                     <div className="hp-bar-bg">
                                                                                         <div className="hp-bar-fill" style={{ width: `${hpPct}%`, backgroundColor: hpCol }}></div>
@@ -1069,22 +1174,48 @@ export default function Party() {
                                                     {/* BOX */}
                                                     <div className="box-section-master" style={{ marginTop: '50px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '30px' }}>
                                                         <h5 className="title-premium-master box-title">BOX</h5>
-                                                        <div className="pokemon-grid-master grid-4-cols">
+                                                        <div className="box-grid-v3">
                                                             {playerPokemon.filter(p => p.posizione_squadra >= (editForm.slot_squadra || 3)).length === 0 ? (
                                                                 <p className="empty-text">Il box è vuoto.</p>
                                                             ) : (
                                                                 playerPokemon.filter(p => p.posizione_squadra >= (editForm.slot_squadra || 3)).map(poke => {
-                                                                    const hpPct = (poke.hp_attuale / poke.hp_max) * 100;
+                                                                    const hpPct = ((poke.hp_attuale || poke.hp || 0) / (poke.hp_max || 100)) * 100;
                                                                     const hpCol = hpPct > 50 ? '#34d399' : hpPct > 20 ? '#fbbf24' : '#ef4444';
+                                                                    
+                                                                    const itToEn = {
+                                                                        'normale': 'normal', 'fuoco': 'fire', 'acqua': 'water', 'erba': 'grass',
+                                                                        'elettro': 'electric', 'ghiaccio': 'ice', 'lotta': 'fighting', 'veleno': 'poison',
+                                                                        'terra': 'ground', 'volante': 'flying', 'psico': 'psychic', 'coleottero': 'bug',
+                                                                        'roccia': 'rock', 'spettro': 'ghost', 'drago': 'dragon', 'acciaio': 'steel',
+                                                                        'folletto': 'fairy', 'buio': 'dark', 'suono': 'sound', 'sconosciuto': 'unknown'
+                                                                    };
+                                                                    const t1En = itToEn[poke.tipo1?.toLowerCase()] || poke.tipo1?.toLowerCase();
+                                                                    const t2En = itToEn[poke.tipo2?.toLowerCase()] || poke.tipo2?.toLowerCase();
+
                                                                     return (
                                                                         <div key={poke.id} className="pkmn-card-squadra compact-box-card-v3 clickable" onClick={() => startEditingPkmn(poke)}>
+                                                                            <div className="pkmn-types-wrapper-mini">
+                                                                                <div className="pkmn-type-circle-mini" style={{ backgroundColor: getTypeColor(t1En) }} title={getTypeLabel(t1En)}>
+                                                                                    <img src={t1En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t1En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t1En}.svg`} alt={t1En} className="type-icon-img-mini" />
+                                                                                </div>
+                                                                                {poke.tipo2 && (
+                                                                                    <div className="pkmn-type-circle-mini" style={{ backgroundColor: getTypeColor(t2En) }} title={getTypeLabel(t2En)}>
+                                                                                        <img src={t2En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t2En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t2En}.svg`} alt={t2En} className="type-icon-img-mini" />
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
                                                                             <div className="pkmn-lvl-badge" style={{ fontSize: '0.6rem' }}>Nv.{poke.livello}</div>
-                                                                            <img className="pkmn-image-mini" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.pokemon_id}.png`} alt={poke.soprannome} />
-                                                                            <div className="pkmn-name-mini">{poke.soprannome?.toUpperCase()}</div>
+                                                                            <img className="pkmn-image-mini" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.pokemon_id}.png`} alt={poke.nome} />
+                                                                            <div className="pkmn-identity-stack-mini">
+                                                                                <div className="pkmn-name-mini">{poke.nome?.toUpperCase()}</div>
+                                                                                {poke.soprannome && poke.soprannome !== poke.nome && (
+                                                                                    <div className="pkmn-nickname-mini">{poke.soprannome}</div>
+                                                                                )}
+                                                                            </div>
                                                                             <div className="hp-section mini-hp">
                                                                                 <div className="hp-info">
                                                                                     <span>HP</span>
-                                                                                    <span>{poke.hp_attuale}/{poke.hp_max}</span>
+                                                                                    <span>{poke.hp_attuale || poke.hp || 0}/{poke.hp_max || 100}</span>
                                                                                 </div>
                                                                                 <div className="hp-bar-bg mini-bar">
                                                                                     <div className="hp-bar-fill" style={{ width: `${hpPct}%`, backgroundColor: hpCol }}></div>
@@ -1122,12 +1253,14 @@ export default function Party() {
                             )}
                         </div>
 
-                        <div className="modal-footer">
-                            <button className="btn-cancel" onClick={() => setIsEditing(false)}>Annulla</button>
-                            <button className="btn-save" onClick={saveChanges} disabled={saving}>
-                                {saving ? <Loader2 size={18} className="spin" /> : <><Save size={18} /> Salva Modifiche</>}
-                            </button>
-                        </div>
+                        {!editingPkmn && !showAddItem && (
+                            <div className="modal-footer">
+                                <button className="btn-cancel" onClick={() => setIsEditing(false)}>Annulla</button>
+                                <button className="btn-save" onClick={saveChanges} disabled={saving}>
+                                    {saving ? <Loader2 size={18} className="spin" /> : <><Save size={18} /> Salva Modifiche</>}
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
