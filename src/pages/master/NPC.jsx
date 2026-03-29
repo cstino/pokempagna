@@ -397,38 +397,45 @@ export default function NPC() {
     const toggleMoveAssignment = async (moveId, isChecked) => {
         if (!editingPkmn) return;
 
-        // Se è un nuovo Pokémon (senza ID), aggiorniamo solo lo stato locale
-        if (!editingPkmn.id) {
-            if (isChecked) {
-                setSelectedPkmnMoveIds(prev => [...prev, moveId]);
-            } else {
-                setSelectedPkmnMoveIds(prev => prev.filter(id => id !== moveId));
-            }
-            return;
+        // AGGIORNAMENTO OTTIMISTICO: cambiamo subito lo stato della UI
+        if (isChecked) {
+            setSelectedPkmnMoveIds(prev => [...prev, moveId]);
+        } else {
+            setSelectedPkmnMoveIds(prev => prev.filter(id => id !== moveId));
         }
 
-        // Se il Pokémon esiste già, salviamo direttamente nel DB
+        // Se è un nuovo Pokémon, abbiamo finito (salverà tutto salvaPokeStats)
+        if (!editingPkmn.id) return;
+
+        // Se il Pokémon esiste già, sincronizziamo col DB in background
         try {
             if (isChecked) {
                 const moveDetails = allAvailableMoves.find(m => m.id === moveId);
                 const { error } = await supabase.from('mosse_pokemon').insert({
                     pokemon_giocatore_id: editingPkmn.id,
                     mossa_id: moveId,
-                    pp_attuale: moveDetails.pp_max || 20,
-                    attiva: true // Per NPC le attiviamo di default
+                    pp_attuale: moveDetails?.pp_max || 20,
+                    attiva: true
                 });
-                if (error) throw error;
-                setSelectedPkmnMoveIds(prev => [...prev, moveId]);
+                if (error) {
+                    // Rollback in caso di errore
+                    setSelectedPkmnMoveIds(prev => prev.filter(id => id !== moveId));
+                    throw error;
+                }
             } else {
                 const { error } = await supabase.from('mosse_pokemon')
                     .delete()
                     .eq('pokemon_giocatore_id', editingPkmn.id)
                     .eq('mossa_id', moveId);
-                if (error) throw error;
-                setSelectedPkmnMoveIds(prev => prev.filter(id => id !== moveId));
+                if (error) {
+                    // Rollback in caso di errore
+                    setSelectedPkmnMoveIds(prev => [...prev, moveId]);
+                    throw error;
+                }
             }
         } catch (err) {
-            console.error("Errore toggle mossa:", err);
+            console.error("Errore sincronizzazione mossa DB:", err);
+            // Non allertiamo l'utente per non interrompere il flusso, il log basterà per il debug
         }
     };
 
