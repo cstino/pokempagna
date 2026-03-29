@@ -4,86 +4,189 @@ import './BattleAnimations.css';
 
 /**
  * BattleAnimations Component
- * Gestisce effetti grafici per attacchi (Stile Classic Toon)
- * @param {Object} startPos - { x, y } punto di partenza
- * @param {Object} endPos - { x, y } punto di arrivo
- * @param {string} type - 'flamethrower' | 'leafblade' | 'doublekick' | 'watergun'
+ * Gestisce effetti grafici per attacchi (Stile Classic Toon) a 3 Livelli di potenza.
+ * Tutte le animazioni avvengono direttamente sul bersaglio (endPos).
+ * @param {Object} startPos - { x, y } (Opzionale ora, mantenuto per compatibilità)
+ * @param {Object} endPos - { x, y } punto di impatto
+ * @param {string} type - 'fire_1' | 'fire_2' | 'fire_3' etc.
  */
-export default function BattleAnimations({ startPos = { x: 100, y: 300 }, endPos = { x: 600, y: 300 }, trigger, type = 'flamethrower' }) {
+export default function BattleAnimations({ startPos, endPos = { x: 600, y: 300 }, trigger, type = 'fire_1' }) {
     const containerRef = useRef(null);
 
     useEffect(() => {
         if (trigger) {
-            if (type === 'flamethrower') launchFlamethrower();
-            if (type === 'leafblade') launchLeafBlade();
-            if (type === 'doublekick') launchDoubleKick();
-            if (type === 'watergun') launchWaterGun();
+            const [baseType, levelStr] = type.split('_');
+            const level = parseInt(levelStr) || 1;
+
+            if (baseType === 'fire') launchFire(level);
+            if (baseType === 'water') launchWater(level);
+            if (baseType === 'grass') launchGrass(level);
+            if (baseType === 'physical') launchPhysical(level);
         }
     }, [trigger]);
 
-    // --- FIAMME (LANCIAFIAMME) ---
-    const launchFlamethrower = () => {
+    // --- FUOCO (3 LIVELLI) ---
+    const launchFire = (level) => {
         const container = containerRef.current;
-        const particleCount = 45;
-        for (let i = 0; i < particleCount; i++) {
+        const conf = {
+            1: { count: 15, size: [15, 30], radius: 30, duration: 0.6, burst: 1.5, colors: ['#ff4d00', '#ff9500'] },
+            2: { count: 35, size: [25, 55], radius: 60, duration: 0.9, burst: 3.0, colors: ['#ff4d00', '#ff9500', '#ffcc00'] },
+            3: { count: 80, size: [40, 90], radius: 120, duration: 1.4, burst: 5.5, colors: ['#ff4d00', '#ff9500', '#ffcc00', '#ffffff'] }
+        }[level] || { count: 15, size: [15, 30], radius: 30, duration: 0.6, burst: 1.5, colors: ['#ff4d00', '#ff9500'] };
+
+        for (let i = 0; i < conf.count; i++) {
             const dot = document.createElement('div');
             dot.className = 'fire-particle toon-blob';
             container.appendChild(dot);
-            const size = gsap.utils.random(25, 55);
-            gsap.set(dot, { x: startPos.x, y: startPos.y, width: size, height: size, background: gsap.utils.random(['#ff4d00', '#ff9500', '#ffcc00']), opacity: 1, scale: 0 });
+            
+            const size = gsap.utils.random(conf.size[0], conf.size[1]);
+            gsap.set(dot, { 
+                x: endPos.x + gsap.utils.random(-15, 15), 
+                y: endPos.y + gsap.utils.random(-15, 15), 
+                width: size, height: size, 
+                background: gsap.utils.random(conf.colors),
+                opacity: 1, scale: 0 
+            });
+
             const tl = gsap.timeline({ onComplete: () => dot.remove() });
-            tl.to(dot, { duration: 0.1, scale: 1, ease: "back.out(2)" })
-                .to(dot, { duration: gsap.utils.random(0.6, 1.2), x: endPos.x + gsap.utils.random(-35, 35), y: endPos.y + gsap.utils.random(-35, 35), ease: "power2.out", delay: i * 0.02 }, 0)
-                .to(dot, { duration: 0.4, scale: 0, opacity: 0, ease: "power2.in" }, "-=0.4");
+            tl.to(dot, { duration: 0.2, scale: 1, ease: "back.out(2)" })
+              .to(dot, { 
+                  duration: gsap.utils.random(conf.duration * 0.7, conf.duration), 
+                  x: endPos.x + gsap.utils.random(-conf.radius, conf.radius), 
+                  y: endPos.y + gsap.utils.random(-conf.radius, conf.radius), 
+                  ease: "power2.out",
+                  scale: 0.2,
+                  opacity: 0
+              }, "-=0.1");
         }
-        setTimeout(() => { createToonBurst(endPos.x, endPos.y, '#ff9500', 3); }, 600);
+        setTimeout(() => { createToonBurst(endPos.x, endPos.y, '#ff9500', conf.burst); }, 200);
     };
 
-    // --- ACQUA (PISTOLACQUA) ---
-    const launchWaterGun = () => {
+    // --- ACQUA (3 LIVELLI) ---
+    const launchWater = (level) => {
         const container = containerRef.current;
-        const particleCount = 40;
+        const conf = {
+            1: { count: 12, size: [15, 25], radius: 40, burst: 1.2 },
+            2: { count: 30, size: [25, 45], radius: 70, burst: 2.8 },
+            3: { count: 65, size: [40, 80], radius: 130, burst: 5.0 }
+        }[level] || { count: 12, size: [15, 25], radius: 40, burst: 1.2 };
 
-        for (let i = 0; i < particleCount; i++) {
+        for (let i = 0; i < conf.count; i++) {
             const drop = document.createElement('div');
             drop.className = 'water-particle toon-blob';
             container.appendChild(drop);
-
-            const size = gsap.utils.random(20, 45);
+            const size = gsap.utils.random(conf.size[0], conf.size[1]);
+            
             gsap.set(drop, {
-                x: startPos.x,
-                y: startPos.y,
-                width: size,
-                height: size,
+                x: endPos.x + gsap.utils.random(-10, 10),
+                y: endPos.y + gsap.utils.random(-10, 10),
+                width: size, height: size,
                 background: gsap.utils.random(['#3b82f6', '#60a5fa', '#93c5fd']),
-                opacity: 0.8,
-                scale: 0
+                opacity: 0.8, scale: 0
             });
 
-            const tl = gsap.timeline({ onComplete: () => drop.remove() });
-
-            tl.to(drop, { duration: 0.1, scale: 1.2, ease: "expo.out" })
+            gsap.timeline({ onComplete: () => drop.remove() })
+                .to(drop, { duration: 0.15, scale: 1.2, ease: "expo.out" })
                 .to(drop, {
-                    duration: gsap.utils.random(0.5, 0.9),
-                    x: endPos.x + gsap.utils.random(-20, 20),
-                    y: endPos.y + gsap.utils.random(-20, 20),
-                    ease: "power2.inOut",
-                    delay: i * 0.015
-                }, 0)
-                .to(drop, { duration: 0.3, scale: 0, opacity: 0 }, "-=0.3");
+                    duration: gsap.utils.random(0.4, 0.8),
+                    x: endPos.x + gsap.utils.random(-conf.radius, conf.radius),
+                    y: endPos.y + gsap.utils.random(-conf.radius, conf.radius),
+                    ease: "back.out(1)",
+                    scale: 0, opacity: 0
+                });
         }
+        setTimeout(() => { createToonBurst(endPos.x, endPos.y, '#60a5fa', conf.burst); }, 100);
+    };
 
-        setTimeout(() => {
-            // Splash finale
-            createToonBurst(endPos.x, endPos.y, '#60a5fa', 2.5);
-            // Qualche goccia che schizza via
-            for (let j = 0; j < 8; j++) createSplashDrop(endPos.x, endPos.y);
-        }, 500);
+    // --- ERBA (3 LIVELLI) ---
+    const launchGrass = (level) => {
+        const container = containerRef.current;
+        const conf = {
+            1: { count: 10, radius: 50, burst: 1.5 },
+            2: { count: 25, radius: 90, burst: 3.0 },
+            3: { count: 50, radius: 150, burst: 5.2 }
+        }[level];
+
+        for (let i = 0; i < conf.count; i++) {
+            const leaf = document.createElement('div');
+            leaf.className = 'leaf-particle';
+            container.appendChild(leaf);
+            
+            gsap.set(leaf, { 
+                x: endPos.x, y: endPos.y, 
+                scale: 0, 
+                rotate: gsap.utils.random(0, 360),
+                opacity: 1 
+            });
+
+            gsap.timeline({ onComplete: () => leaf.remove() })
+                .to(leaf, { duration: 0.2, scale: gsap.utils.random(1, 1.5), ease: "back.out" })
+                .to(leaf, { 
+                    duration: gsap.utils.random(0.6, 1.2), 
+                    x: endPos.x + gsap.utils.random(-conf.radius, conf.radius), 
+                    y: endPos.y + gsap.utils.random(-conf.radius, conf.radius), 
+                    rotate: "+=720",
+                    opacity: 0, scale: 0
+                });
+        }
+        
+        if (level >= 2) {
+            setTimeout(() => {
+                const slash = document.createElement('div');
+                slash.className = 'toon-slash-effect';
+                container.appendChild(slash);
+                gsap.set(slash, { x: endPos.x, y: endPos.y, scaleX: 0, scaleY: 0.1, rotate: gsap.utils.random(0, 180) });
+                gsap.timeline({ onComplete: () => slash.remove() })
+                    .to(slash, { duration: 0.1, scaleX: level * 2, scaleY: 1.5, ease: "power4.out" })
+                    .to(slash, { duration: 0.2, opacity: 0, scaleY: 0, ease: "power4.in" });
+            }, 300);
+        }
+    };
+
+    // --- FISICO (3 LIVELLI) ---
+    const launchPhysical = (level) => {
+        const container = containerRef.current;
+        const hitCount = level === 1 ? 1 : level === 2 ? 3 : 6;
+        
+        for(let h=0; h<hitCount; h++) {
+            setTimeout(() => {
+                const impact = document.createElement('div');
+                impact.className = 'kick-impact-effect';
+                container.appendChild(impact);
+                
+                const offsetX = gsap.utils.random(-30, 30) * (level - 1);
+                const offsetY = gsap.utils.random(-30, 30) * (level - 1);
+
+                gsap.set(impact, { x: endPos.x + offsetX, y: endPos.y + offsetY, scale: 0, opacity: 1 });
+                gsap.to(impact, {
+                    duration: 0.2, scale: 1.5 + (level * 0.5), ease: "back.out(2)",
+                    onComplete: () => { gsap.to(impact, { duration: 0.1, opacity: 0, scale: impact.scale * 0.8, onComplete: () => impact.remove() }); }
+                });
+
+                // Linee di impatto
+                const lineCount = 4 + (level * 2);
+                for (let i = 0; i < lineCount; i++) {
+                    const line = document.createElement('div');
+                    line.className = 'kick-line';
+                    container.appendChild(line);
+                    const angle = (i / lineCount) * Math.PI * 2;
+                    gsap.set(line, { x: endPos.x + offsetX, y: endPos.y + offsetY, rotate: (i / lineCount) * 360, scaleX: 0 });
+                    gsap.to(line, { 
+                        duration: 0.3, 
+                        scaleX: 1 + (level * 0.3), 
+                        x: endPos.x + offsetX + Math.cos(angle) * (60 * level), 
+                        y: endPos.y + offsetY + Math.sin(angle) * (60 * level), 
+                        opacity: 0, ease: "power2.out", onComplete: () => line.remove() 
+                    });
+                }
+            }, h * (250 / level));
+        }
     };
 
     // --- UTILITIES ---
     const createToonBurst = (x, y, color, finalScale) => {
         const container = containerRef.current;
+        if (!container) return;
         const burst = document.createElement('div');
         burst.className = 'toon-burst-effect';
         burst.style.backgroundColor = color;
@@ -92,74 +195,6 @@ export default function BattleAnimations({ startPos = { x: 100, y: 300 }, endPos
         gsap.timeline({ onComplete: () => burst.remove() })
             .to(burst, { duration: 0.15, scale: finalScale, ease: "expo.out" })
             .to(burst, { duration: 0.2, scale: 0, opacity: 0, ease: "power2.in" });
-    };
-
-    const createSplashDrop = (x, y) => {
-        const container = containerRef.current;
-        const drop = document.createElement('div');
-        drop.className = 'water-particle';
-        container.appendChild(drop);
-        const size = gsap.utils.random(5, 15);
-        gsap.set(drop, { x, y, width: size, height: size, background: '#93c5fd', opacity: 1 });
-        gsap.to(drop, {
-            duration: 0.4,
-            x: `+=${gsap.utils.random(-100, 100)}`,
-            y: `+=${gsap.utils.random(-100, 100)}`,
-            scale: 0,
-            opacity: 0,
-            ease: "power2.out",
-            onComplete: () => drop.remove()
-        });
-    };
-
-    // --- ALTRE MOSSE ---
-    const launchDoubleKick = () => {
-        const container = containerRef.current;
-        const kicks = [0, 250];
-        kicks.forEach((delay) => {
-            setTimeout(() => {
-                const impact = document.createElement('div');
-                impact.className = 'kick-impact-effect';
-                container.appendChild(impact);
-                gsap.set(impact, { x: endPos.x, y: endPos.y, scale: 0, opacity: 1 });
-                gsap.to(impact, {
-                    duration: 0.2, scale: 2.5, ease: "back.out(1.5)",
-                    onComplete: () => { gsap.to(impact, { duration: 0.1, opacity: 0, scale: 1, onComplete: () => impact.remove() }); }
-                });
-                for (let i = 0; i < 8; i++) {
-                    const line = document.createElement('div');
-                    line.className = 'kick-line';
-                    container.appendChild(line);
-                    const angle = (i / 8) * Math.PI * 2;
-                    gsap.set(line, { x: endPos.x, y: endPos.y, rotate: (i / 8) * 360, scaleX: 0 });
-                    gsap.to(line, { duration: 0.25, scaleX: 1, x: endPos.x + Math.cos(angle) * 80, y: endPos.y + Math.sin(angle) * 80, opacity: 0, ease: "power2.out", onComplete: () => line.remove() });
-                }
-            }, delay);
-        });
-    };
-
-    const launchLeafBlade = () => {
-        const container = containerRef.current;
-        const leafCount = 20;
-        for (let i = 0; i < leafCount; i++) {
-            const leaf = document.createElement('div');
-            leaf.className = 'leaf-particle';
-            container.appendChild(leaf);
-            gsap.set(leaf, { x: startPos.x, y: startPos.y + gsap.utils.random(-40, 40), scale: 0, rotateX: gsap.utils.random(0, 360), rotateY: gsap.utils.random(0, 360), rotateZ: gsap.utils.random(0, 360), opacity: 1 });
-            const tl = gsap.timeline({ onComplete: () => leaf.remove() });
-            tl.to(leaf, { duration: 0.15, scale: gsap.utils.random(1.2, 1.8), ease: "back.out" })
-                .to(leaf, { duration: 0.5, x: endPos.x, y: endPos.y, rotateZ: "+=1080", rotateX: "+=360", ease: "expo.in", delay: i * 0.025 }, 0)
-                .to(leaf, { duration: 0.2, opacity: 0, scale: 0.5 });
-        }
-        setTimeout(() => {
-            const slash = document.createElement('div');
-            slash.className = 'toon-slash-effect';
-            container.appendChild(slash);
-            gsap.set(slash, { x: endPos.x, y: endPos.y, scaleX: 0, scaleY: 0.1, rotate: 45 });
-            gsap.timeline({ onComplete: () => slash.remove() })
-                .to(slash, { duration: 0.1, scaleX: 4, scaleY: 1.2, ease: "power4.out" })
-                .to(slash, { duration: 0.2, opacity: 0, scaleY: 0, ease: "power4.in" });
-        }, 500);
     };
 
     return (
@@ -176,3 +211,4 @@ export default function BattleAnimations({ startPos = { x: 100, y: 300 }, endPos
         </div>
     );
 }
+

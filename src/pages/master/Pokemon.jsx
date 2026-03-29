@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Search, Plus, Edit2, Save, X, Loader2, Check, Info, Trash2, Heart, Shield, Zap, TrendingUp, Ruler, Weight, Upload } from 'lucide-react';
+import { getTypeColor, getTypeLabel } from '../../lib/typeColors';
 import './Party.css'; // Reusing Party.css for consistent Master dashboard styling
 
 export default function PokemonMaster() {
@@ -56,26 +57,6 @@ export default function PokemonMaster() {
         caricaDati();
     }, []);
 
-    const translateType = (t) => {
-        if (!t || typeof t !== 'string') return '';
-        const cleanT = t.trim().toUpperCase();
-        if (cleanT === 'NESSUNO' || cleanT === 'NONE' || cleanT === '') return '';
-        
-        const types = {
-            'normal': 'Normale', 'fire': 'Fuoco', 'water': 'Acqua', 'grass': 'Erba',
-            'electric': 'Elettro', 'ice': 'Ghiaccio', 'fighting': 'Lotta', 'poison': 'Veleno',
-            'ground': 'Terra', 'flying': 'Volante', 'psychic': 'Psico', 'bug': 'Coleottero',
-            'rock': 'Roccia', 'ghost': 'Spettro', 'dragon': 'Drago', 'steel': 'Acciaio',
-            'fairy': 'Folletto', 'dark': 'Buio', 'suono': 'Suono', 'sconosciuto': 'Sconosciuto',
-            'normale': 'Normale', 'fuoco': 'Fuoco', 'acqua': 'Acqua', 'erba': 'Erba',
-            'elettro': 'Elettro', 'ghiaccio': 'Ghiaccio', 'lotta': 'Lotta', 'veleno': 'Veleno',
-            'terra': 'Terra', 'volante': 'Volante', 'psico': 'Psico', 'coleottero': 'Coleottero',
-            'roccia': 'Roccia', 'spettro': 'Spettro', 'drago': 'Drago', 'buio': 'Buio',
-            'acciaio': 'Acciaio', 'folletto': 'Folletto', 'sound': 'Suono', 'unknown': 'Sconosciuto'
-        };
-        const key = cleanT.toLowerCase();
-        return types[key] || cleanT.charAt(0) + cleanT.slice(1).toLowerCase();
-    };
 
     async function caricaDati() {
         setLoading(true);
@@ -334,8 +315,8 @@ export default function PokemonMaster() {
                                         <td style={{ fontWeight: 800 }}>{p.nome}</td>
                                         <td>
                                             <div className="pkmn-types-mini">
-                                                <span className="type-badge-mini" style={{ backgroundColor: `var(--type-${p.tipo1.toLowerCase()})` }}>{translateType(p.tipo1)}</span>
-                                                {p.tipo2 && <span className="type-badge-mini" style={{ backgroundColor: `var(--type-${p.tipo2.toLowerCase()})` }}>{translateType(p.tipo2)}</span>}
+                                                <span className="type-badge-mini" style={{ backgroundColor: `var(--type-${p.tipo1.toLowerCase()})` }}>{getTypeLabel(p.tipo1)}</span>
+                                                {p.tipo2 && <span className="type-badge-mini" style={{ backgroundColor: `var(--type-${p.tipo2.toLowerCase()})` }}>{getTypeLabel(p.tipo2)}</span>}
                                             </div>
                                         </td>
                                         <td>

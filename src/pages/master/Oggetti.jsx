@@ -348,12 +348,15 @@ export default function OggettiMaster() {
                     border: 1px solid var(--border-subtle);
                 }
                 .type-badge-mini {
-                    font-size: 0.65rem;
-                    padding: 2px 8px;
-                    border-radius: 4px;
-                    background: var(--bg-secondary);
-                    color: var(--text-secondary);
-                    border: 1px solid var(--border-subtle);
+                    font-size: 0.7rem;
+                    padding: 4px 10px;
+                    border-radius: 6px;
+                    background: #f1f5f9;
+                    color: #475569;
+                    border: 1px solid #e2e8f0;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
                 }
                 .actions-cell {
                     display: flex;

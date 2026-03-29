@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Search, Plus, Edit2, Save, X, Loader2, Check, Info, Trash2, Zap } from 'lucide-react';
-import { getTypeColor } from '../../lib/typeColors';
+import { getTypeColor, getTypeLabel } from '../../lib/typeColors';
 import './Party.css';
 
 export default function MosseMaster() {
@@ -39,13 +39,14 @@ export default function MosseMaster() {
 
     const openEditModal = (m = null) => {
         if (m) {
-            setEditForm({ ...m });
+            setEditForm({ ...m, livello: m.livello || 1 });
         } else {
             setEditForm({
                 nome: '',
                 tipo: 'normale',
                 categoria: 'fisico',
                 descrizione: '',
+                livello: 1,
                 disponibile: true
             });
         }
@@ -77,7 +78,7 @@ export default function MosseMaster() {
             caricaMosse();
         } catch (err) {
             console.error("Errore salvataggio mossa:", err);
-            alert("Errore nel salvataggio.");
+            alert("Errore nel salvataggio. Assicurati di aver eseguito il comando SQL per aggiungere la colonna 'livello'.");
         } finally {
             setSaving(false);
         }
@@ -109,7 +110,7 @@ export default function MosseMaster() {
 
     const filteredMosse = mosse.filter(m =>
         m.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.tipo.toLowerCase().includes(searchTerm.toLowerCase())
+        getTypeLabel(m.tipo).toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -154,7 +155,7 @@ export default function MosseMaster() {
                                 <thead>
                                     <tr>
                                         <th>Nome</th>
-                                        <th>Descrizione</th>
+                                        <th>Livello</th>
                                         <th>Tipo</th>
                                         <th>Categoria</th>
                                         <th>Disponibile</th>
@@ -165,7 +166,14 @@ export default function MosseMaster() {
                                     {filteredMosse.map(m => (
                                         <tr key={m.id}>
                                             <td><strong>{m.nome}</strong></td>
-                                            <td className="desc-cell"><em>{m.descrizione || 'Nessuna descrizione'}</em></td>
+                                            <td>
+                                                <div className="level-indicator">
+                                                    {[1, 2, 3].map(l => (
+                                                        <div key={l} className={`level-dot ${m.livello >= l ? 'filled' : ''}`}></div>
+                                                    ))}
+                                                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>Lv.{m.livello || 1}</span>
+                                                </div>
+                                            </td>
                                             <td><span className="type-badge-mini" style={{ 
                                                 textTransform: 'uppercase',
                                                 background: getTypeColor(m.tipo),
@@ -173,7 +181,7 @@ export default function MosseMaster() {
                                                 border: 'none',
                                                 fontWeight: 'bold',
                                                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                            }}>{m.tipo}</span></td>
+                                            }}>{getTypeLabel(m.tipo)}</span></td>
                                             <td><span className="type-badge-mini" style={{ 
                                                 textTransform: 'capitalize',
                                                 background: m.categoria === 'fisico' ? '#ef4444' : 
@@ -223,6 +231,20 @@ export default function MosseMaster() {
                                         <input type="text" value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} />
                                     </div>
                                     <div className="input-field">
+                                        <label>Livello Animazione (Power Level)</label>
+                                        <div className="level-selector-row">
+                                            {[1, 2, 3].map(l => (
+                                                <button 
+                                                    key={l}
+                                                    className={`level-btn ${editForm.livello === l ? 'active' : ''}`}
+                                                    onClick={() => setEditForm({ ...editForm, livello: l })}
+                                                >
+                                                    Lv {l}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="input-field">
                                         <label>Tipo</label>
                                         <select value={editForm.tipo} onChange={(e) => setEditForm({ ...editForm, tipo: e.target.value })}>
                                             <option value="normale">NORMALE</option>
@@ -243,6 +265,8 @@ export default function MosseMaster() {
                                             <option value="buio">BUIO</option>
                                             <option value="acciaio">ACCIAIO</option>
                                             <option value="folletto">FOLLETTO</option>
+                                            <option value="suono">SUONO</option>
+                                            <option value="sconosciuto">SCONOSCIUTO</option>
                                         </select>
                                     </div>
                                     <div className="input-field">
@@ -287,6 +311,49 @@ export default function MosseMaster() {
             )}
 
             <style>{`
+                .level-indicator {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+                .level-dot {
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    background: var(--bg-secondary);
+                    border: 1px solid var(--border-subtle);
+                }
+                .level-dot.filled {
+                    background: #f59e0b;
+                    border-color: #d97706;
+                    box-shadow: 0 0 5px rgba(245, 158, 11, 0.4);
+                }
+                .level-selector-row {
+                    display: flex;
+                    gap: 8px;
+                    margin-top: 4px;
+                }
+                .level-btn {
+                    flex: 1;
+                    padding: 8px;
+                    border-radius: 8px;
+                    border: 1px solid var(--border-subtle);
+                    background: var(--bg-secondary);
+                    color: var(--text-muted);
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    font-weight: 500;
+                    font-size: 0.85rem;
+                }
+                .level-btn:hover {
+                    background: var(--bg-card-hover);
+                }
+                .level-btn.active {
+                    background: #f59e0b;
+                    color: white;
+                    border-color: #d97706;
+                    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+                }
                 .master-list-table-container {
                     background: var(--bg-card);
                     border-radius: 12px;

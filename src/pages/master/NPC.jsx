@@ -370,18 +370,6 @@ export default function NPC() {
         }));
     };
 
-    const translateType = (t) => {
-        const types = {
-            'normal': 'Normale', 'fire': 'Fuoco', 'water': 'Acqua', 'grass': 'Erba',
-            'electric': 'Elettro', 'ice': 'Ghiaccio', 'fighting': 'Lotta', 'poison': 'Veleno',
-            'ground': 'Terra', 'flying': 'Volante', 'psychic': 'Psico', 'bug': 'Coleottero',
-            'rock': 'Roccia', 'ghost': 'Spettro', 'dragon': 'Drago', 'steel': 'Acciaio',
-            'fairy': 'Folletto', 'dark': 'Buio', 'suono': 'Suono', 'sconosciuto': 'Sconosciuto',
-            'sound': 'Suono', 'unknown': 'Sconosciuto'
-        };
-        return types[t.toLowerCase()] || t;
-    };
-
     const startEditingPkmn = async (pkmn) => {
         setEditingPkmn(pkmn);
         try {
@@ -967,11 +955,16 @@ export default function NPC() {
                                                     <div className="search-input-wrapper"><Search size={14} /><input type="text" placeholder="Cerca..." value={moveSearch} onChange={(e) => setMoveSearch(e.target.value)} /></div>
                                                     <select className="filter-select-master" value={moveTypeFilter} onChange={(e) => setMoveTypeFilter(e.target.value)}>
                                                         <option value="all">Tutti</option>
-                                                        {Array.from(new Set(allAvailableMoves.map(m => m.tipo))).sort().map(t => (<option key={t} value={t}>{t}</option>))}
+                                                        {Array.from(new Set(allAvailableMoves.map(m => m.tipo?.toLowerCase()))).map(type => (
+                                                            <option key={type} value={type}>{getTypeLabel(type)}</option>
+                                                        ))}
                                                     </select>
                                                 </div>
                                                 <div className="moves-selection-grid">
-                                                    {allAvailableMoves.filter(m => (m.nome.toLowerCase().includes(moveSearch.toLowerCase()) && (moveTypeFilter === 'all' || m.tipo === moveTypeFilter))).map(move => {
+                                                    {allAvailableMoves.filter(m => (
+                                                        (m.nome.toLowerCase().includes(moveSearch.toLowerCase()) || getTypeLabel(m.tipo).toLowerCase().includes(moveSearch.toLowerCase())) && 
+                                                        (moveTypeFilter === 'all' || m.tipo === moveTypeFilter)
+                                                    )).map(move => {
                                                         const isChecked = selectedPkmnMoveIds.includes(move.id);
                                                         return (
                                                             <div 
@@ -989,7 +982,7 @@ export default function NPC() {
                                                                 <div className="move-check-content">
                                                                     <div className="move-check-header">
                                                                         <span className="move-check-name">{move.nome}</span>
-                                                                        <span className="type-tag-move" style={{ borderLeftColor: `var(--type-${move.tipo.toLowerCase()})` }}>{translateType(move.tipo)}</span>
+                                                                        <span className="type-tag-move" style={{ borderLeftColor: getTypeColor(move.tipo) }}>{getTypeLabel(move.tipo)}</span>
                                                                     </div>
                                                                     <div className="move-check-details"><span>POT {move.potenza || '-'}</span><span>PP {move.pp_max}</span></div>
                                                                 </div>
@@ -1027,8 +1020,8 @@ export default function NPC() {
                                                             <div className="result-info">
                                                                 <h3>#{searchResult.id} {searchResult.nome.toUpperCase()}</h3>
                                                                 <div className="pkmn-types">
-                                                                    <span className="type-tag" style={{ borderLeftColor: `var(--type-${searchResult.tipo1.toLowerCase()})` }}>{translateType(searchResult.tipo1)}</span>
-                                                                    {searchResult.tipo2 && <span className="type-tag" style={{ borderLeftColor: `var(--type-${searchResult.tipo2.toLowerCase()})` }}>{translateType(searchResult.tipo2)}</span>}
+                                                                    <span className="type-tag" style={{ borderLeftColor: getTypeColor(searchResult.tipo1) }}>{getTypeLabel(searchResult.tipo1)}</span>
+                                                                    {searchResult.tipo2 && <span className="type-tag" style={{ borderLeftColor: getTypeColor(searchResult.tipo2) }}>{getTypeLabel(searchResult.tipo2)}</span>}
                                                                 </div>
                                                                 <button className="btn-confirm-add" style={{ marginTop: '15px' }} onClick={() => {
                                                                     setEditingPkmn({

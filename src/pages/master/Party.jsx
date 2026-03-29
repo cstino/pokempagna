@@ -320,18 +320,6 @@ export default function Party() {
         }));
     };
 
-    const translateType = (t) => {
-        const types = {
-            'normal': 'Normale', 'fire': 'Fuoco', 'water': 'Acqua', 'grass': 'Erba',
-            'electric': 'Elettro', 'ice': 'Ghiaccio', 'fighting': 'Lotta', 'poison': 'Veleno',
-            'ground': 'Terra', 'flying': 'Volante', 'psychic': 'Psico', 'bug': 'Coleottero',
-            'rock': 'Roccia', 'ghost': 'Spettro', 'dragon': 'Drago', 'steel': 'Acciaio',
-            'fairy': 'Folletto', 'dark': 'Buio', 'suono': 'Suono', 'sconosciuto': 'Sconosciuto',
-            'sound': 'Suono', 'unknown': 'Sconosciuto'
-        };
-        return types[t.toLowerCase()] || t;
-    };
-
     // Al click su "Modifica" Pokémon (nella lista della squadra/box)
     const startEditingPkmn = async (pkmn) => {
         setEditingPkmn(pkmn);
@@ -931,14 +919,10 @@ export default function Party() {
                                                             onChange={(e) => setMoveSearch(e.target.value)}
                                                         />
                                                     </div>
-                                                    <select
-                                                        className="filter-select-master"
-                                                        value={moveTypeFilter}
-                                                        onChange={(e) => setMoveTypeFilter(e.target.value)}
-                                                    >
+                                                    <select value={moveTypeFilter} onChange={(e) => setMoveTypeFilter(e.target.value)}>
                                                         <option value="all">Tutti i Tipi</option>
-                                                        {Array.from(new Set(allAvailableMoves.map(m => m.tipo))).sort().map(t => (
-                                                            <option key={t} value={t}>{t}</option>
+                                                        {Array.from(new Set(allAvailableMoves.map(m => m.tipo?.toLowerCase()))).map(type => (
+                                                            <option key={type} value={type}>{getTypeLabel(type)}</option>
                                                         ))}
                                                     </select>
                                                 </div>
@@ -946,7 +930,8 @@ export default function Party() {
                                                 <div className="moves-selection-grid">
                                                     {allAvailableMoves
                                                         .filter(m => {
-                                                            const matchesSearch = m.nome.toLowerCase().includes(moveSearch.toLowerCase());
+                                                            const matchesSearch = m.nome.toLowerCase().includes(moveSearch.toLowerCase()) || 
+                                                                               getTypeLabel(m.tipo).toLowerCase().includes(moveSearch.toLowerCase());
                                                             const matchesType = moveTypeFilter === 'all' || m.tipo === moveTypeFilter;
                                                             return matchesSearch && matchesType;
                                                         })
@@ -968,8 +953,8 @@ export default function Party() {
                                                                     <div className="move-check-content">
                                                                         <div className="move-check-header">
                                                                             <span className="move-check-name">{move.nome}</span>
-                                                                            <span className="type-tag-move" style={{ borderLeftColor: `var(--type-${move.tipo.toLowerCase()})` }}>
-                                                                                {translateType(move.tipo)}
+                                                                            <span className="type-tag-move" style={{ borderLeftColor: getTypeColor(move.tipo) }}>
+                                                                                {getTypeLabel(move.tipo)}
                                                                             </span>
                                                                         </div>
                                                                         <div className="move-check-details">
@@ -1118,26 +1103,15 @@ export default function Party() {
                                                                 playerPokemon.filter(p => p.posizione_squadra < (editForm.slot_squadra || 3)).map(poke => {
                                                                     const hpPct = ((poke.hp_attuale || poke.hp || 0) / (poke.hp_max || 100)) * 100;
                                                                     const hpCol = hpPct > 50 ? '#34d399' : hpPct > 20 ? '#fbbf24' : '#ef4444';
-                                                                    
-                                                                    const itToEn = {
-                                                                        'normale': 'normal', 'fuoco': 'fire', 'acqua': 'water', 'erba': 'grass',
-                                                                        'elettro': 'electric', 'ghiaccio': 'ice', 'lotta': 'fighting', 'veleno': 'poison',
-                                                                        'terra': 'ground', 'volante': 'flying', 'psico': 'psychic', 'coleottero': 'bug',
-                                                                        'roccia': 'rock', 'spettro': 'ghost', 'drago': 'dragon', 'acciaio': 'steel',
-                                                                        'folletto': 'fairy', 'buio': 'dark', 'suono': 'sound', 'sconosciuto': 'unknown'
-                                                                    };
-                                                                    const t1En = itToEn[poke.tipo1?.toLowerCase()] || poke.tipo1?.toLowerCase();
-                                                                    const t2En = itToEn[poke.tipo2?.toLowerCase()] || poke.tipo2?.toLowerCase();
-
                                                                     return (
                                                                         <div key={poke.id} className="pkmn-card-squadra master-card-premium clickable" onClick={() => startEditingPkmn(poke)}>
                                                                             <div className="pkmn-types-wrapper">
-                                                                                <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(t1En) }} title={getTypeLabel(t1En)}>
-                                                                                    <img src={t1En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t1En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t1En}.svg`} alt={t1En} className="type-icon-img" />
+                                                                                <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(poke.tipo1) }} title={getTypeLabel(poke.tipo1)}>
+                                                                                    <img src={(poke.tipo1?.toLowerCase() === 'sound' || poke.tipo1?.toLowerCase() === 'suono') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : (poke.tipo1?.toLowerCase() === 'unknown' || poke.tipo1?.toLowerCase() === 'sconosciuto') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${(poke.tipo1?.toLowerCase() === 'fuoco' ? 'fire' : poke.tipo1?.toLowerCase() === 'acqua' ? 'water' : poke.tipo1?.toLowerCase() === 'erba' ? 'grass' : poke.tipo1?.toLowerCase() === 'elettro' ? 'electric' : poke.tipo1?.toLowerCase() === 'ghiaccio' ? 'ice' : poke.tipo1?.toLowerCase() === 'lotta' ? 'fighting' : poke.tipo1?.toLowerCase() === 'veleno' ? 'poison' : poke.tipo1?.toLowerCase() === 'terra' ? 'ground' : poke.tipo1?.toLowerCase() === 'volante' ? 'flying' : poke.tipo1?.toLowerCase() === 'psico' ? 'psychic' : poke.tipo1?.toLowerCase() === 'coleottero' ? 'bug' : poke.tipo1?.toLowerCase() === 'roccia' ? 'rock' : poke.tipo1?.toLowerCase() === 'spettro' ? 'ghost' : poke.tipo1?.toLowerCase() === 'drago' ? 'dragon' : poke.tipo1?.toLowerCase() === 'acciaio' ? 'steel' : poke.tipo1?.toLowerCase() === 'folletto' ? 'fairy' : poke.tipo1?.toLowerCase() === 'buio' ? 'dark' : poke.tipo1?.toLowerCase() === 'normale' ? 'normal' : poke.tipo1?.toLowerCase())}.svg`} alt={poke.tipo1} className="type-icon-img" />
                                                                                 </div>
                                                                                 {poke.tipo2 && (
-                                                                                    <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(t2En) }} title={getTypeLabel(t2En)}>
-                                                                                        <img src={t2En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t2En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t2En}.svg`} alt={t2En} className="type-icon-img" />
+                                                                                    <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(poke.tipo2) }} title={getTypeLabel(poke.tipo2)}>
+                                                                                        <img src={(poke.tipo2?.toLowerCase() === 'sound' || poke.tipo2?.toLowerCase() === 'suono') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : (poke.tipo2?.toLowerCase() === 'unknown' || poke.tipo2?.toLowerCase() === 'sconosciuto') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${(poke.tipo2?.toLowerCase() === 'fuoco' ? 'fire' : poke.tipo2?.toLowerCase() === 'acqua' ? 'water' : poke.tipo2?.toLowerCase() === 'erba' ? 'grass' : poke.tipo2?.toLowerCase() === 'elettro' ? 'electric' : poke.tipo2?.toLowerCase() === 'ghiaccio' ? 'ice' : poke.tipo2?.toLowerCase() === 'lotta' ? 'fighting' : poke.tipo2?.toLowerCase() === 'veleno' ? 'poison' : poke.tipo2?.toLowerCase() === 'terra' ? 'ground' : poke.tipo2?.toLowerCase() === 'volante' ? 'flying' : poke.tipo2?.toLowerCase() === 'psico' ? 'psychic' : poke.tipo2?.toLowerCase() === 'coleottero' ? 'bug' : poke.tipo2?.toLowerCase() === 'roccia' ? 'rock' : poke.tipo2?.toLowerCase() === 'spettro' ? 'ghost' : poke.tipo2?.toLowerCase() === 'drago' ? 'dragon' : poke.tipo2?.toLowerCase() === 'acciaio' ? 'steel' : poke.tipo2?.toLowerCase() === 'folletto' ? 'fairy' : poke.tipo2?.toLowerCase() === 'buio' ? 'dark' : poke.tipo2?.toLowerCase() === 'normale' ? 'normal' : poke.tipo2?.toLowerCase())}.svg`} alt={poke.tipo2} className="type-icon-img" />
                                                                                     </div>
                                                                                 )}
                                                                             </div>
@@ -1182,25 +1156,15 @@ export default function Party() {
                                                                     const hpPct = ((poke.hp_attuale || poke.hp || 0) / (poke.hp_max || 100)) * 100;
                                                                     const hpCol = hpPct > 50 ? '#34d399' : hpPct > 20 ? '#fbbf24' : '#ef4444';
                                                                     
-                                                                    const itToEn = {
-                                                                        'normale': 'normal', 'fuoco': 'fire', 'acqua': 'water', 'erba': 'grass',
-                                                                        'elettro': 'electric', 'ghiaccio': 'ice', 'lotta': 'fighting', 'veleno': 'poison',
-                                                                        'terra': 'ground', 'volante': 'flying', 'psico': 'psychic', 'coleottero': 'bug',
-                                                                        'roccia': 'rock', 'spettro': 'ghost', 'drago': 'dragon', 'acciaio': 'steel',
-                                                                        'folletto': 'fairy', 'buio': 'dark', 'suono': 'sound', 'sconosciuto': 'unknown'
-                                                                    };
-                                                                    const t1En = itToEn[poke.tipo1?.toLowerCase()] || poke.tipo1?.toLowerCase();
-                                                                    const t2En = itToEn[poke.tipo2?.toLowerCase()] || poke.tipo2?.toLowerCase();
-
                                                                     return (
                                                                         <div key={poke.id} className="pkmn-card-squadra compact-box-card-v3 clickable" onClick={() => startEditingPkmn(poke)}>
                                                                             <div className="pkmn-types-wrapper-mini">
-                                                                                <div className="pkmn-type-circle-mini" style={{ backgroundColor: getTypeColor(t1En) }} title={getTypeLabel(t1En)}>
-                                                                                    <img src={t1En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t1En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t1En}.svg`} alt={t1En} className="type-icon-img-mini" />
+                                                                                <div className="pkmn-type-circle-mini" style={{ backgroundColor: getTypeColor(poke.tipo1) }} title={getTypeLabel(poke.tipo1)}>
+                                                                                    <img src={(poke.tipo1?.toLowerCase() === 'sound' || poke.tipo1?.toLowerCase() === 'suono') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : (poke.tipo1?.toLowerCase() === 'unknown' || poke.tipo1?.toLowerCase() === 'sconosciuto') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${(poke.tipo1?.toLowerCase() === 'fuoco' ? 'fire' : poke.tipo1?.toLowerCase() === 'acqua' ? 'water' : poke.tipo1?.toLowerCase() === 'erba' ? 'grass' : poke.tipo1?.toLowerCase() === 'elettro' ? 'electric' : poke.tipo1?.toLowerCase() === 'ghiaccio' ? 'ice' : poke.tipo1?.toLowerCase() === 'lotta' ? 'fighting' : poke.tipo1?.toLowerCase() === 'veleno' ? 'poison' : poke.tipo1?.toLowerCase() === 'terra' ? 'ground' : poke.tipo1?.toLowerCase() === 'volante' ? 'flying' : poke.tipo1?.toLowerCase() === 'psico' ? 'psychic' : poke.tipo1?.toLowerCase() === 'coleottero' ? 'bug' : poke.tipo1?.toLowerCase() === 'roccia' ? 'rock' : poke.tipo1?.toLowerCase() === 'spettro' ? 'ghost' : poke.tipo1?.toLowerCase() === 'drago' ? 'dragon' : poke.tipo1?.toLowerCase() === 'acciaio' ? 'steel' : poke.tipo1?.toLowerCase() === 'folletto' ? 'fairy' : poke.tipo1?.toLowerCase() === 'buio' ? 'dark' : poke.tipo1?.toLowerCase() === 'normale' ? 'normal' : poke.tipo1?.toLowerCase())}.svg`} alt={poke.tipo1} className="type-icon-img-mini" />
                                                                                 </div>
                                                                                 {poke.tipo2 && (
-                                                                                    <div className="pkmn-type-circle-mini" style={{ backgroundColor: getTypeColor(t2En) }} title={getTypeLabel(t2En)}>
-                                                                                        <img src={t2En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t2En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t2En}.svg`} alt={t2En} className="type-icon-img-mini" />
+                                                                                    <div className="pkmn-type-circle-mini" style={{ backgroundColor: getTypeColor(poke.tipo2) }} title={getTypeLabel(poke.tipo2)}>
+                                                                                        <img src={(poke.tipo2?.toLowerCase() === 'sound' || poke.tipo2?.toLowerCase() === 'suono') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : (poke.tipo2?.toLowerCase() === 'unknown' || poke.tipo2?.toLowerCase() === 'sconosciuto') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${(poke.tipo2?.toLowerCase() === 'fuoco' ? 'fire' : poke.tipo2?.toLowerCase() === 'acqua' ? 'water' : poke.tipo2?.toLowerCase() === 'erba' ? 'grass' : poke.tipo2?.toLowerCase() === 'elettro' ? 'electric' : poke.tipo2?.toLowerCase() === 'ghiaccio' ? 'ice' : poke.tipo2?.toLowerCase() === 'lotta' ? 'fighting' : poke.tipo2?.toLowerCase() === 'veleno' ? 'poison' : poke.tipo2?.toLowerCase() === 'terra' ? 'ground' : poke.tipo2?.toLowerCase() === 'volante' ? 'flying' : poke.tipo2?.toLowerCase() === 'psico' ? 'psychic' : poke.tipo2?.toLowerCase() === 'coleottero' ? 'bug' : poke.tipo2?.toLowerCase() === 'roccia' ? 'rock' : poke.tipo2?.toLowerCase() === 'spettro' ? 'ghost' : poke.tipo2?.toLowerCase() === 'drago' ? 'dragon' : poke.tipo2?.toLowerCase() === 'acciaio' ? 'steel' : poke.tipo2?.toLowerCase() === 'folletto' ? 'fairy' : poke.tipo2?.toLowerCase() === 'buio' ? 'dark' : poke.tipo2?.toLowerCase() === 'normale' ? 'normal' : poke.tipo2?.toLowerCase())}.svg`} alt={poke.tipo2} className="type-icon-img-mini" />
                                                                                     </div>
                                                                                 )}
                                                                             </div>
