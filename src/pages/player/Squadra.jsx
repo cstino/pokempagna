@@ -442,7 +442,7 @@ function PkmnCard({ pkmn, isBench, onClick, getHPColor }) {
     return (
         <div className={`pkmn-card-squadra ${isBench ? 'bench-card' : ''}`} onClick={onClick}>
             <div className="pkmn-type-badge">{pkmn.tipo1 || '???'}</div>
-            <div className="pkmn-lvl-badge">Nv.{pkmn.livello}</div>
+            <div className="pkmn-lvl-badge">Lv.{pkmn.livello}</div>
             <div className="pkmn-image-container">
                 <img
                     className="pkmn-image"

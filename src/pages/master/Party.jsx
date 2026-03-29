@@ -357,10 +357,18 @@ export default function Party() {
                 hp_attuale: editingPkmn.hp_attuale,
                 hp_max: editingPkmn.hp_max,
                 attacco: editingPkmn.attacco,
+                attacco_attuale: editingPkmn.attacco_attuale || editingPkmn.attacco,
                 difesa: editingPkmn.difesa,
+                difesa_attuale: editingPkmn.difesa_attuale || editingPkmn.difesa,
                 attacco_speciale: editingPkmn.attacco_speciale,
+                attacco_speciale_attuale: editingPkmn.attacco_speciale_attuale || editingPkmn.attacco_speciale,
                 difesa_speciale: editingPkmn.difesa_speciale,
+                difesa_speciale_attuale: editingPkmn.difesa_speciale_attuale || editingPkmn.difesa_speciale,
                 velocita: editingPkmn.velocita,
+                velocita_attuale: editingPkmn.velocita_attuale || editingPkmn.velocita,
+                strumento_tenuto: editingPkmn.strumento_tenuto || '',
+                note: editingPkmn.note || '',
+                danni_totali: parseInt(editingPkmn.danni_totali) || 0,
                 tipo1: editingPkmn.tipo1,
                 tipo2: editingPkmn.tipo2,
                 posizione_squadra: (editingPkmn.posizione_squadra !== undefined && editingPkmn.posizione_squadra !== null) ? editingPkmn.posizione_squadra : 99
@@ -853,60 +861,136 @@ export default function Party() {
                                     {editingPkmn ? (
                                         <div className="pokemon-edit-form animate-slide-up">
                                             <div className="pkmn-edit-header">
-                                                <img
-                                                    src={editingPkmn.immagine_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${editingPkmn.pokemon_id}.png`}
-                                                    alt={editingPkmn.soprannome || editingPkmn.nome}
-                                                />
+                                                    <img
+                                                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${editingPkmn.pokemon_id}.png`}
+                                                        alt={editingPkmn.soprannome || editingPkmn.nome}
+                                                        onError={(e) => { e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'; }}
+                                                    />
                                                 <div className="pkmn-edit-identity">
                                                     <span className="species-name-label">RAZZA: {(editingPkmn.nome || 'Sconosciuta').toUpperCase()}</span>
                                                     <div className="input-field-soprannome">
                                                         <label>Soprannome</label>
                                                         <input
-                                                            type="text"
-                                                            placeholder="Metti un soprannome..."
-                                                            value={editingPkmn.soprannome || ''}
-                                                            onChange={(e) => handlePokeStatChange('soprannome', e.target.value)}
+                                                    type="text"
+                                                    placeholder="Metti un soprannome..."
+                                                    value={editingPkmn.soprannome || ''}
+                                                    onChange={(e) => handlePokeStatChange('soprannome', e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="pkmn-header-edit-row" style={{ display: 'flex', gap: '15px', marginBottom: '25px', alignItems: 'flex-end' }}>
+                                        <div className="input-field" style={{ flex: 1 }}>
+                                            <label>SOPRANNOME</label>
+                                            <input 
+                                                type="text" 
+                                                value={editingPkmn.soprannome} 
+                                                onChange={(e) => handlePokeStatChange('soprannome', e.target.value)} 
+                                            />
+                                        </div>
+                                        <div className="input-field" style={{ width: '80px' }}>
+                                            <label>Lv.</label>
+                                            <input 
+                                                type="number" 
+                                                value={editingPkmn.livello} 
+                                                onChange={(e) => handlePokeStatChange('livello', e.target.value)} 
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="pkmn-stats-grid-master">
+                                        {/* RIGA 1: VITALITÀ & RAPIDITÀ */}
+                                        <div className="stats-thematic-row vitalita-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '15px', borderRadius: '16px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)', marginBottom: '15px' }}>
+                                            <div className="input-field">
+                                                <label style={{ color: '#10b981' }}>HP Attuali</label>
+                                                <input type="number" value={editingPkmn.hp_attuale} onChange={(e) => handlePokeStatChange('hp_attuale', e.target.value)} />
+                                            </div>
+                                            <div className="input-field">
+                                                <label style={{ color: '#10b981' }}>HP Max</label>
+                                                <input type="number" value={editingPkmn.hp_max} onChange={(e) => handlePokeStatChange('hp_max', e.target.value)} />
+                                            </div>
+                                            <div className="input-field">
+                                                <label style={{ color: '#10b981', opacity: 0.7 }}>Vel. Base</label>
+                                                <input type="number" value={editingPkmn.velocita} onChange={(e) => handlePokeStatChange('velocita', e.target.value)} />
+                                            </div>
+                                            <div className="input-field">
+                                                <label style={{ color: '#fbbf24', fontWeight: 'bold' }}>Vel. Attuale</label>
+                                                <input type="number" value={editingPkmn.velocita_attuale || editingPkmn.velocita} onChange={(e) => handlePokeStatChange('velocita_attuale', e.target.value)} />
+                                            </div>
+                                        </div>
+
+                                        {/* RIGA 2: POTENZA OFFENSIVA */}
+                                        <div className="stats-thematic-row attacco-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '15px', borderRadius: '16px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', marginBottom: '15px' }}>
+                                            <div className="input-field">
+                                                <label style={{ color: '#ef4444', opacity: 0.7 }}>Atk Base</label>
+                                                <input type="number" value={editingPkmn.attacco} onChange={(e) => handlePokeStatChange('attacco', e.target.value)} />
+                                            </div>
+                                            <div className="input-field">
+                                                <label style={{ color: '#fbbf24', fontWeight: 'bold' }}>Atk Attuale</label>
+                                                <input type="number" value={editingPkmn.attacco_attuale || editingPkmn.attacco} onChange={(e) => handlePokeStatChange('attacco_attuale', e.target.value)} />
+                                            </div>
+                                            <div className="input-field">
+                                                <label style={{ color: '#ef4444', opacity: 0.7 }}>S.Atk Base</label>
+                                                <input type="number" value={editingPkmn.attacco_speciale} onChange={(e) => handlePokeStatChange('attacco_speciale', e.target.value)} />
+                                            </div>
+                                            <div className="input-field">
+                                                <label style={{ color: '#fbbf24', fontWeight: 'bold' }}>S.Atk Attuale</label>
+                                                <input type="number" value={editingPkmn.attacco_speciale_attuale || editingPkmn.attacco_speciale} onChange={(e) => handlePokeStatChange('attacco_speciale_attuale', e.target.value)} />
+                                            </div>
+                                        </div>
+
+                                        {/* RIGA 3: RESISTENZA DIFENSIVA */}
+                                        <div className="stats-thematic-row difesa-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '15px', borderRadius: '16px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
+                                            <div className="input-field">
+                                                <label style={{ color: '#3b82f6', opacity: 0.7 }}>Def Base</label>
+                                                <input type="number" value={editingPkmn.difesa} onChange={(e) => handlePokeStatChange('difesa', e.target.value)} />
+                                            </div>
+                                            <div className="input-field">
+                                                <label style={{ color: '#fbbf24', fontWeight: 'bold' }}>Def Attuale</label>
+                                                <input type="number" value={editingPkmn.difesa_attuale || editingPkmn.difesa} onChange={(e) => handlePokeStatChange('difesa_attuale', e.target.value)} />
+                                            </div>
+                                            <div className="input-field">
+                                                <label style={{ color: '#3b82f6', opacity: 0.7 }}>S.Def Base</label>
+                                                <input type="number" value={editingPkmn.difesa_speciale} onChange={(e) => handlePokeStatChange('difesa_speciale', e.target.value)} />
+                                            </div>
+                                            <div className="input-field">
+                                                <label style={{ color: '#fbbf24', fontWeight: 'bold' }}>S.Def Attuale</label>
+                                                <input type="number" value={editingPkmn.difesa_speciale_attuale || editingPkmn.difesa_speciale} onChange={(e) => handlePokeStatChange('difesa_speciale_attuale', e.target.value)} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                            <div className="strategia-master-row" style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                                <div>
+                                                    <h4 className="edit-section-title"><Info size={16} /> Strumento Tenuto</h4>
+                                                    <div className="input-field full-width">
+                                                        <input 
+                                                            type="text" 
+                                                            placeholder="Nessuno strumento..." 
+                                                            value={editingPkmn.strumento_tenuto || ''} 
+                                                            onChange={(e) => handlePokeStatChange('strumento_tenuto', e.target.value)} 
+                                                            style={{ borderRadius: '12px' }}
                                                         />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <h4 className="edit-section-title"><Zap size={16} /> Progressione EXP</h4>
+                                                    <div className="input-field full-width">
+                                                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                                            <input 
+                                                                type="number" 
+                                                                value={editingPkmn.danni_totali || 0} 
+                                                                onChange={(e) => handlePokeStatChange('danni_totali', e.target.value)} 
+                                                                style={{ borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', color: '#fbbf24' }}
+                                                            />
+                                                            <span style={{ opacity: 0.5, fontSize: '0.8rem' }}>Danni Totali Inflitti</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div className="edit-grid-3">
-                                                <div className="input-field">
-                                                    <label>Livello</label>
-                                                    <input type="number" value={editingPkmn.livello} onChange={(e) => handlePokeStatChange('livello', e.target.value)} />
-                                                </div>
-                                                <div className="input-field">
-                                                    <label>HP Attuali</label>
-                                                    <input type="number" value={editingPkmn.hp_attuale} onChange={(e) => handlePokeStatChange('hp_attuale', e.target.value)} />
-                                                </div>
-                                                <div className="input-field">
-                                                    <label>HP Max</label>
-                                                    <input type="number" value={editingPkmn.hp_max} onChange={(e) => handlePokeStatChange('hp_max', e.target.value)} />
-                                                </div>
-                                                <div className="input-field">
-                                                    <label>Attacco</label>
-                                                    <input type="number" value={editingPkmn.attacco} onChange={(e) => handlePokeStatChange('attacco', e.target.value)} />
-                                                </div>
-                                                <div className="input-field">
-                                                    <label>Difesa</label>
-                                                    <input type="number" value={editingPkmn.difesa} onChange={(e) => handlePokeStatChange('difesa', e.target.value)} />
-                                                </div>
-                                                <div className="input-field">
-                                                    <label>Velocità</label>
-                                                    <input type="number" value={editingPkmn.velocita} onChange={(e) => handlePokeStatChange('velocita', e.target.value)} />
-                                                </div>
-                                                <div className="input-field">
-                                                    <label>Att. Spec.</label>
-                                                    <input type="number" value={editingPkmn.attacco_speciale} onChange={(e) => handlePokeStatChange('attacco_speciale', e.target.value)} />
-                                                </div>
-                                                <div className="input-field">
-                                                    <label>Dif. Spec.</label>
-                                                    <input type="number" value={editingPkmn.difesa_speciale} onChange={(e) => handlePokeStatChange('difesa_speciale', e.target.value)} />
-                                                </div>
-                                            </div>
-
-                                            <div className="pkmn-moves-master-section">
+                                            <div className="pkmn-moves-master-section" style={{ marginTop: '20px' }}>
                                                 <h4 className="edit-section-title"><Zap size={16} /> Mosse Conosciute</h4>
 
                                                 <div className="move-filters-row">
@@ -958,14 +1042,32 @@ export default function Party() {
                                                                             </span>
                                                                         </div>
                                                                         <div className="move-check-details">
-                                                                            <span>POT {move.potenza || '-'}</span>
-                                                                            <span>PP {move.pp_max}</span>
+                                                                            <span>POT <strong style={{ color: '#fbbf24' }}>{move.danni || move.potenza || '-'}</strong></span>
+                                                                            <span>PP <strong style={{ color: '#fbbf24' }}>{move.pp_max}</strong></span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
                                                             );
                                                         })}
                                                 </div>
+                                            </div>
+                                            <div className="note-master-section" style={{ marginTop: '20px', width: '100%' }}>
+                                                <h4 className="edit-section-title"><Info size={16} /> Note & Cronaca della Campagna</h4>
+                                                <textarea 
+                                                    placeholder="Note narrative, effetti particolari, segnaposti..." 
+                                                    value={editingPkmn.note || ''} 
+                                                    onChange={(e) => handlePokeStatChange('note', e.target.value)} 
+                                                    style={{ 
+                                                        width: '100%', 
+                                                        height: '100px', 
+                                                        borderRadius: '12px', 
+                                                        background: 'rgba(255,255,255,0.03)',
+                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                        color: 'white',
+                                                        padding: '12px',
+                                                        marginTop: '10px'
+                                                    }}
+                                                />
                                             </div>
 
                                             <button className="btn-confirm-add" onClick={salvaPokeStats} disabled={saving} style={{ marginTop: '20px' }}>
@@ -1013,8 +1115,11 @@ export default function Party() {
                                                                 onClick={() => selectFromLibrary(p)}
                                                             >
                                                                 <img
-                                                                    src={p.sprite_url}
+                                                                    src={p.immagine_url?.includes('sprites/pokemon/') && !p.immagine_url.includes('other/official-artwork') 
+                                                                        ? p.immagine_url.replace('sprites/pokemon/', 'sprites/pokemon/other/official-artwork/') 
+                                                                        : p.immagine_url}
                                                                     alt={p.nome}
+                                                                    onError={(e) => { e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'; e.target.style.opacity = '0.3'; }}
                                                                 />
                                                                 <span>{p.nome.toUpperCase()}</span>
                                                             </div>
@@ -1034,11 +1139,11 @@ export default function Party() {
                                                                 <h3>#{searchResult.id} {searchResult.nome.toUpperCase()}</h3>
                                                                 <div className="pkmn-types">
                                                                     <span className="type-tag" style={{ borderLeftColor: `var(--type-${searchResult.tipo1.toLowerCase()})` }}>
-                                                                        {translateType(searchResult.tipo1)}
+                                                                        {getTypeLabel(searchResult.tipo1)}
                                                                     </span>
-                                                    {searchResult.tipo2 && (
+                                                                    {searchResult.tipo2 && (
                                                                         <span className="type-tag" style={{ borderLeftColor: `var(--type-${searchResult.tipo2.toLowerCase()})` }}>
-                                                                            {translateType(searchResult.tipo2)}
+                                                                            {getTypeLabel(searchResult.tipo2)}
                                                                         </span>
                                                                     )}
                                                                 </div>
@@ -1115,7 +1220,7 @@ export default function Party() {
                                                                                     </div>
                                                                                 )}
                                                                             </div>
-                                                                            <div className="pkmn-lvl-badge">Nv.{poke.livello}</div>
+                                                                            <div className="pkmn-lvl-badge">Lv.{poke.livello}</div>
                                                                             <img className="pkmn-image" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`} alt={poke.soprannome || poke.nome} />
                                                                             <div className="pkmn-card-details">
                                                                                 <div className="pkmn-identity-stack">
@@ -1168,8 +1273,13 @@ export default function Party() {
                                                                                     </div>
                                                                                 )}
                                                                             </div>
-                                                                            <div className="pkmn-lvl-badge" style={{ fontSize: '0.6rem' }}>Nv.{poke.livello}</div>
-                                                                            <img className="pkmn-image-mini" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.pokemon_id}.png`} alt={poke.nome} />
+                                                                            <div className="pkmn-lvl-badge" style={{ fontSize: '0.6rem' }}>Lv.{poke.livello}</div>
+                                                                            <img 
+                                                                                className="pkmn-image-mini" 
+                                                                                src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`} 
+                                                                                alt={poke.nome} 
+                                                                                onError={(e) => { e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'; }}
+                                                                            />
                                                                             <div className="pkmn-identity-stack-mini">
                                                                                 <div className="pkmn-name-mini">{poke.nome?.toUpperCase()}</div>
                                                                                 {poke.soprannome && poke.soprannome !== poke.nome && (

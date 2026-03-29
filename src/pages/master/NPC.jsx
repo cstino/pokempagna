@@ -922,7 +922,9 @@ export default function NPC() {
                                         <div className="pokemon-edit-form animate-slide-up">
                                             <div className="pkmn-edit-header">
                                                 <img
-                                                    src={editingPkmn.immagine_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${editingPkmn.pokemon_id}.png`}
+                                                    src={(editingPkmn.immagine_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${editingPkmn.pokemon_id}.png`).includes('sprites/pokemon/') && !(editingPkmn.immagine_url || '').includes('other/official-artwork') 
+                                                        ? (editingPkmn.immagine_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${editingPkmn.pokemon_id}.png`).replace('sprites/pokemon/', 'sprites/pokemon/other/official-artwork/')
+                                                        : (editingPkmn.immagine_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${editingPkmn.pokemon_id}.png`)}
                                                     alt={editingPkmn.soprannome || editingPkmn.nome}
                                                 />
                                                 <div className="pkmn-edit-identity">
@@ -1008,7 +1010,13 @@ export default function NPC() {
                                                 <div className="pokemon-library-scroll">
                                                     {searching && fullPokeList.length === 0 ? <Loader2 className="spin" /> : filteredPokeList.map(p => (
                                                         <div key={p.id} className={`library-item-pkmn ${searchResult?.id === p.id ? 'selected' : ''}`} onClick={() => selectFromLibrary(p)}>
-                                                            <img src={p.sprite_url} alt={p.nome} />
+                                                            <img 
+                                                                src={p.immagine_url?.includes('sprites/pokemon/') && !p.immagine_url.includes('other/official-artwork') 
+                                                                    ? p.immagine_url.replace('sprites/pokemon/', 'sprites/pokemon/other/official-artwork/') 
+                                                                    : p.immagine_url} 
+                                                                alt={p.nome} 
+                                                                onError={(e) => { e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'; e.target.style.opacity = '0.3'; }}
+                                                            />
                                                             <span>{p.nome.toUpperCase()}</span>
                                                         </div>
                                                     ))}
@@ -1062,7 +1070,7 @@ export default function NPC() {
                                                                             <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(t1En) }} title={getTypeLabel(t1En)}><img src={t1En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t1En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t1En}.svg`} alt={t1En} className="type-icon-img" /></div>
                                                                             {poke.tipo2 && <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(t2En) }} title={getTypeLabel(t2En)}><img src={t2En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t2En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t2En}.svg`} alt={t2En} className="type-icon-img" /></div>}
                                                                         </div>
-                                                                        <div className="pkmn-lvl-badge">Nv.{poke.livello}</div>
+                                                                        <div className="pkmn-lvl-badge">Lv.{poke.livello}</div>
                                                                         <img className="pkmn-image" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`} alt={poke.soprannome} />
                                                                         <div className="pkmn-card-details">
                                                                             <div className="pkmn-identity-stack"><h3 className="pkmn-race-title">{poke.nome?.toUpperCase()}</h3>{poke.soprannome && poke.soprannome !== poke.nome && <span className="pkmn-nickname-subtitle">{poke.soprannome}</span>}</div>
@@ -1089,8 +1097,13 @@ export default function NPC() {
                                                                             <div className="pkmn-type-circle-mini" style={{ backgroundColor: getTypeColor(t1En) }} title={getTypeLabel(t1En)}><img src={t1En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t1En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t1En}.svg`} alt={t1En} className="type-icon-img-mini" /></div>
                                                                             {poke.tipo2 && <div className="pkmn-type-circle-mini" style={{ backgroundColor: getTypeColor(t2En) }} title={getTypeLabel(t2En)}><img src={t2En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t2En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t2En}.svg`} alt={t2En} className="type-icon-img-mini" /></div>}
                                                                         </div>
-                                                                        <div className="pkmn-lvl-badge" style={{ fontSize: '0.6rem' }}>Nv.{poke.livello}</div>
-                                                                        <img className="pkmn-image-mini" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.pokemon_id}.png`} alt={poke.nome} />
+                                                                        <div className="pkmn-lvl-badge" style={{ fontSize: '0.6rem' }}>Lv.{poke.livello}</div>
+                                                                        <img 
+                                                                            className="pkmn-image-mini" 
+                                                                            src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`}
+                                                                            alt={poke.nome} 
+                                                                            onError={(e) => { e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'; }}
+                                                                        />
                                                                         <div className="pkmn-identity-stack-mini"><div className="pkmn-name-mini">{poke.nome?.toUpperCase()}</div>{poke.soprannome && poke.soprannome !== poke.nome && <div className="pkmn-nickname-mini">{poke.soprannome}</div>}</div>
                                                                         <div className="hp-section mini-hp"><div className="hp-info"><span>HP</span><span>{poke.hp_attuale}/{poke.hp_max}</span></div><div className="hp-bar-bg mini-bar"><div className="hp-bar-fill" style={{ width: `${hpPct}%`, backgroundColor: hpCol }}></div></div></div>
                                                                         <div className="pkmn-card-actions-overlay-v3"><button className="btn-v3" title="Squadra" onClick={(e) => { e.stopPropagation(); const sCount = npcPokemon.filter(p => p.posizione_squadra < (editForm.slot_squadra || 6)).length; spostaPokemon(poke.id, sCount); }}><Plus size={18} /></button><button className="btn-v3 del" onClick={(e) => { e.stopPropagation(); rimuoviPokemon(poke.id, editForm.id); }}><Trash2 size={18} /></button></div>

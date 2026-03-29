@@ -3,6 +3,24 @@ import { supabase } from '../../lib/supabase';
 import { Search, Plus, Edit2, Save, X, Loader2, Check, Info, Trash2, Package, Upload } from 'lucide-react';
 import './Party.css';
 
+const CATEGORIZED_SPRITES = {
+    'BALL': [
+        'poke-ball', 'great-ball', 'ultra-ball', 'master-ball', 'premier-ball', 'heal-ball', 'net-ball', 'nest-ball', 'dive-ball', 'luxury-ball', 'quick-ball', 'dusk-ball', 'timer-ball', 'repeat-ball', 'cherish-ball', 'love-ball', 'friend-ball', 'moon-ball', 'level-ball', 'lure-ball', 'heavy-ball', 'fast-ball', 'sport-ball', 'safari-ball', 'beast-ball', 'dream-ball'
+    ],
+    'MEDICINA': [
+        'potion', 'super-potion', 'hyper-potion', 'max-potion', 'full-restore', 'revive', 'max-revive', 'antidote', 'paralyze-heal', 'burn-heal', 'ice-heal', 'awakening', 'full-heal', 'ether', 'max-ether', 'elixir', 'max-elixir', 'berry-juice', 'sacred-ash', 'hp-up', 'protein', 'iron', 'calcium', 'zinc', 'carbos', 'rare-candy', 'pp-up', 'pp-max'
+    ],
+    'PIETRE': [
+        'fire-stone', 'water-stone', 'thunder-stone', 'leaf-stone', 'moon-stone', 'sun-stone', 'shiny-stone', 'dusk-stone', 'dawn-stone', 'ice-stone', 'oval-stone', 'everstone'
+    ],
+    'EVO': [
+        'kings-rock', 'metal-coat', 'up-grade', 'protector', 'electirizer', 'magmarizer', 'dubious-disc', 'reaper-cloth', 'prism-scale', 'sachet', 'whipped-dream', 'razor-claw', 'razor-fang', 'sweet-apple', 'tart-apple', 'cracked-pot', 'chipped-pot', 'galarica-cuff', 'galarica-wreath', 'black-augurite', 'peat-block'
+    ],
+    'VARIE': [
+        'leftovers', 'life-orb', 'rocky-helmet', 'eviolite', 'focus-sash', 'expert-belt', 'choice-band', 'choice-specs', 'choice-scarf', 'assault-vest', 'soothe-bell', 'amulet-coin', 'exp-share', 'destiny-knot', 'power-weight', 'power-bracer', 'power-belt', 'power-lens', 'power-band', 'power-anklet'
+    ]
+};
+
 export default function OggettiMaster() {
     const [oggetti, setOggetti] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -11,6 +29,8 @@ export default function OggettiMaster() {
     const [saving, setSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [uploading, setUploading] = useState(false);
+    const [spriteSearch, setSpriteSearch] = useState('');
+    const [selectedSpriteCategory, setSelectedSpriteCategory] = useState('BALL');
 
     const BUCKET_NAME = 'oggetti_immagini';
 
@@ -133,6 +153,20 @@ export default function OggettiMaster() {
         }
     }
 
+    const getCategoryStyle = (cat) => {
+        const c = cat?.toUpperCase() || 'STRUMENTO';
+        const colors = {
+            'STRUMENTO': { bg: '#3b82f6', text: '#fff' },
+            'POKÉBALL': { bg: '#ef4444', text: '#fff' },
+            'CURATIVO': { bg: '#ec4899', text: '#fff' },
+            'CURA': { bg: '#ec4899', text: '#fff' },
+            'CHIAVE': { bg: '#f59e0b', text: '#fff' },
+            'MT/MO': { bg: '#8b5cf6', text: '#fff' },
+            'EVOLUTIVO': { bg: '#10b981', text: '#fff' }
+        };
+        return colors[c] || { bg: '#64748b', text: '#fff' };
+    };
+
     const filteredOggetti = oggetti.filter(o =>
         o.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         o.categoria.toLowerCase().includes(searchTerm.toLowerCase())
@@ -197,7 +231,20 @@ export default function OggettiMaster() {
                                             </td>
                                             <td><strong>{o.nome}</strong></td>
                                             <td className="desc-cell"><em>{o.descrizione || 'Nessuna descrizione'}</em></td>
-                                            <td><span className="type-badge-mini">{o.categoria}</span></td>
+                                            <td>
+                                                <span 
+                                                    className="type-badge-mini" 
+                                                    style={{ 
+                                                        backgroundColor: getCategoryStyle(o.categoria).bg,
+                                                        color: getCategoryStyle(o.categoria).text,
+                                                        border: 'none',
+                                                        fontWeight: 'bold',
+                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                    }}
+                                                >
+                                                    {o.categoria}
+                                                </span>
+                                            </td>
                                             <td>{o.utilizzabile_in_battaglia ? <Check size={18} color="#10b981" /> : <X size={18} color="#ef4444" />}</td>
                                             <td className="actions-cell-column">
                                                 <div className="actions-cell">
@@ -240,6 +287,66 @@ export default function OggettiMaster() {
                                             <option value="MT/MO">MT/MO</option>
                                         </select>
                                     </div>
+
+                                    {/* 🎨 LIBRERIA SPRITE UFFICIALE */}
+                                    {!editForm.immagine_url && (
+                                        <div className="input-field" style={{ gridColumn: 'span 2' }}>
+                                            <label>Scegli da Libreria Ufficiale</label>
+                                            <div className="sprite-library-container">
+                                                <div className="sprite-library-header">
+                                                    <div className="sprite-category-tabs">
+                                                        {['BALL', 'MEDICINA', 'PIETRE', 'EVO', 'VARIE'].map(cat => (
+                                                            <button 
+                                                                key={cat}
+                                                                className={`sprite-tab ${selectedSpriteCategory === cat ? 'active' : ''}`}
+                                                                onClick={() => { setSelectedSpriteCategory(cat); setSpriteSearch(''); }}
+                                                            >
+                                                                {cat}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    <div className="sprite-search-mini">
+                                                        <Search size={14} />
+                                                        <input 
+                                                            type="text" 
+                                                            placeholder="Cerca sprite..." 
+                                                            value={spriteSearch}
+                                                            onChange={(e) => setSpriteSearch(e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="sprite-grid-box">
+                                                    {(spriteSearch.length > 0 ? 
+                                                        [spriteSearch.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')] : 
+                                                        CATEGORIZED_SPRITES[selectedSpriteCategory] || []
+                                                    ).map(sprite => (
+                                                        <div 
+                                                            key={sprite} 
+                                                            className="sprite-item-card"
+                                                            onClick={() => setEditForm({ ...editForm, immagine_url: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${sprite}.png` })}
+                                                        >
+                                                            <div className="sprite-preview-inner">
+                                                                <img 
+                                                                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${sprite}.png`} 
+                                                                    alt={sprite} 
+                                                                    onError={(e) => {
+                                                                        e.target.style.display = 'none';
+                                                                        e.target.nextSibling.style.display = 'flex';
+                                                                    }}
+                                                                />
+                                                                <div className="sprite-placeholder-fallback" style={{ display: 'none' }}>
+                                                                    <Package size={16} />
+                                                                </div>
+                                                            </div>
+                                                            <span className="sprite-name-tooltip">{sprite.replace(/-/g, ' ')}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <p className="sprite-hint">Clicca su un'icona per selezionarla. Nome in inglese (es. 'thunder-stone')</p>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="input-field" style={{ gridColumn: 'span 2' }}>
                                         <label>Immagine Oggetto</label>
                                         <div className="master-upload-container">
@@ -348,13 +455,12 @@ export default function OggettiMaster() {
                     border: 1px solid var(--border-subtle);
                 }
                 .type-badge-mini {
-                    font-size: 0.7rem;
+                    font-size: 0.65rem;
                     padding: 4px 10px;
-                    border-radius: 6px;
-                    background: #f1f5f9;
-                    color: #475569;
-                    border: 1px solid #e2e8f0;
-                    font-weight: 600;
+                    border-radius: 20px;
+                    display: inline-block;
+                    line-height: 1;
+                    text-align: center;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                 }
@@ -486,6 +592,137 @@ export default function OggettiMaster() {
                     outline: none;
                     border-color: var(--accent-primary);
                     box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.2);
+                }
+
+                /* 🟢 SPRITE LIBRARY STYLES */
+                .sprite-library-container {
+                    background: var(--bg-secondary);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 12px;
+                    padding: 12px;
+                    margin-top: 8px;
+                }
+                .sprite-library-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 12px;
+                    gap: 10px;
+                    flex-wrap: wrap;
+                }
+                .sprite-category-tabs {
+                    display: flex;
+                    gap: 4px;
+                }
+                .sprite-tab {
+                    padding: 4px 8px;
+                    font-size: 0.65rem;
+                    font-weight: bold;
+                    border-radius: 6px;
+                    border: 1px solid var(--border-subtle);
+                    background: transparent;
+                    color: var(--text-muted);
+                    cursor: pointer;
+                    transition: 0.2s;
+                    text-transform: uppercase;
+                }
+                .sprite-tab.active {
+                    background: var(--accent-primary);
+                    color: white;
+                    border-color: var(--accent-primary);
+                }
+                .sprite-search-mini {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 4px 10px;
+                    background: var(--bg-card);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 20px;
+                    flex-grow: 1;
+                    max-width: 200px;
+                }
+                .sprite-search-mini input {
+                    background: transparent;
+                    border: none;
+                    color: var(--text-primary);
+                    font-size: 0.75rem;
+                    width: 100%;
+                    outline: none;
+                }
+                .sprite-grid-box {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+                    gap: 8px;
+                    max-height: 180px;
+                    overflow-y: auto;
+                    padding: 5px;
+                    background: var(--bg-card);
+                    border-radius: 8px;
+                    border: 1px solid rgba(0,0,0,0.05);
+                }
+                .sprite-item-card {
+                    width: 45px;
+                    height: 45px;
+                    background: var(--bg-secondary);
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    border: 1px solid transparent;
+                    position: relative;
+                }
+                .sprite-item-card:hover {
+                    background: var(--bg-card-hover);
+                    border-color: var(--accent-primary);
+                    transform: scale(1.1);
+                    z-index: 2;
+                }
+                .sprite-item-card img {
+                    width: 32px;
+                    height: 32px;
+                    object-fit: contain;
+                }
+                .sprite-preview-inner {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .sprite-placeholder-fallback {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--text-muted);
+                    opacity: 0.5;
+                }
+                .sprite-name-tooltip {
+                    position: absolute;
+                    bottom: -20px;
+                    background: #1e293b;
+                    color: white;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-size: 0.6rem;
+                    white-space: nowrap;
+                    opacity: 0;
+                    pointer-events: none;
+                    transition: 0.2s;
+                }
+                .sprite-item-card:hover .sprite-name-tooltip {
+                    opacity: 1;
+                    bottom: -10px;
+                }
+                .sprite-hint {
+                    margin-top: 8px;
+                    font-size: 0.7rem;
+                    color: var(--text-muted);
+                    font-style: italic;
                 }
             `}</style>
         </div>

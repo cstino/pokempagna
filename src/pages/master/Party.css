@@ -1669,8 +1669,8 @@
 
 /* --- MASTER POKEMON CARD PREMIUM (TCG STYLE) --- */
 .master-card-premium {
-    background: #ffffff !important;
-    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    background: var(--bg-card-master) !important;
+    border: 1px solid var(--border-master) !important;
     border-radius: 20px !important;
     padding: 12px 12px 15px !important;
     position: relative;
@@ -1688,8 +1688,8 @@
 
 .master-card-premium:hover {
     transform: translateY(-8px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
-    border-color: rgba(167, 139, 250, 0.3) !important;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    border-color: rgba(167, 139, 250, 0.4) !important;
 }
 
 .master-card-premium .pkmn-lvl-badge {
@@ -1776,20 +1776,24 @@
     transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
-/* Overlay azioni V3 (Master) */
+/* Overlay azioni V3 (Master) - CORRETTO PER DARK THEME */
 .pkmn-card-actions-overlay-v3 {
     position: absolute;
     inset: 0;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(5px);
+    background: rgba(15, 23, 42, 0.85); /* Sfondo scuro trasparente */
+    backdrop-filter: blur(8px);
     display: flex;
     gap: 20px;
     align-items: center;
     justify-content: center;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.25s ease;
     border-radius: 20px;
     z-index: 10;
+}
+
+:root.light .pkmn-card-actions-overlay-v3 {
+    background: rgba(255, 255, 255, 0.9);
 }
 
 .master-card-premium:hover .pkmn-card-actions-overlay-v3,
@@ -1805,24 +1809,35 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f1f5f9;
-    color: #475569;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
     cursor: pointer;
     transition: all 0.2s;
 }
 
+:root.light .btn-v3 {
+    background: #f1f5f9;
+    color: #475569;
+}
+
 .btn-v3:hover {
     transform: scale(1.15);
-    background: #e2e8f0;
+    background: rgba(167, 139, 250, 0.3) !important; /* Viola Master all'hover */
+    color: white !important;
 }
 
 .btn-v3.del {
-    background: #fef2f2;
-    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #ef4444 !important;
+}
+
+:root.light .btn-v3.del {
+    background: #fef2f2 !important;
 }
 
 .btn-v3.del:hover {
-    background: #fee2e2;
+    background: #ef4444 !important;
+    color: white !important;
 }
 
 /* Titoli Premium SQUADRA / BOX */
@@ -2438,4 +2453,71 @@
 
 .npc-modal-premium .modal-header-avatar .avatar-edit-overlay {
     display: none !important;
+}
+
+/* ============================================
+   🌓 THEME OPTIMIZATIONS (Pokémon Cards)
+   ============================================ */
+
+/* REGOLA BASE (FORZA SCURO) - Per eliminare il bianco flash all'hover */
+.pkmn-card-squadra,
+.master-card-premium,
+.compact-box-card-v3 {
+    background: #1e293b !important;
+}
+
+.pkmn-card-squadra:hover,
+.master-card-premium:hover,
+.compact-box-card-v3:hover {
+    background: #25334a !important;
+    filter: brightness(1.2);
+    border-color: rgba(167, 139, 250, 0.4) !important;
+}
+
+/* 🌑 DARK MODE SPECIFIC (Testi) */
+:root.dark .pkmn-card-squadra *:not(.pkmn-card-actions-overlay-v3),
+:root.dark .master-card-premium *:not(.pkmn-card-actions-overlay-v3),
+:root.dark .compact-box-card-v3 *:not(.pkmn-card-actions-overlay-v3),
+:root.dark .pokemon-edit-form label,
+:root.dark .species-name-label,
+:root.dark .btn-save-hero {
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    opacity: 1 !important;
+}
+
+/* Assicurati che l'overlay ignori la forzatura sopra per restare nascosto */
+:root.dark .pkmn-card-actions-overlay-v3 {
+    opacity: 0 !important;
+}
+
+:root.dark .pkmn-card-squadra:hover .pkmn-card-actions-overlay-v3,
+:root.dark .master-card-premium:hover .pkmn-card-actions-overlay-v3,
+:root.dark .compact-box-card-v3:hover .pkmn-card-actions-overlay-v3 {
+    opacity: 1 !important;
+}
+
+/* 🌞 LIGHT MODE OVERRIDE (Ripristino bianco solo nel tema chiaro) */
+:root.light .pkmn-card-squadra,
+:root.light .master-card-premium,
+:root.light .compact-box-card-v3 {
+    background: #ffffff !important;
+}
+
+:root.light .pkmn-card-squadra:hover,
+:root.light .master-card-premium:hover,
+:root.light .compact-box-card-v3:hover {
+    background: #f8fafc !important;
+    filter: none;
+}
+
+:root.light .pkmn-card-squadra *,
+:root.light .master-card-premium *,
+:root.light .compact-box-card-v3 * {
+    color: #0f172a !important;
+    text-shadow: none !important;
+}
+
+:root.light .pkmn-lvl-badge {
+    color: #818cf8 !important;
 }

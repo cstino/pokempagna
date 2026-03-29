@@ -14,6 +14,7 @@ export default function PokemonMaster() {
     const [editForm, setEditForm] = useState(null);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [tipiDisponibili, setTipiDisponibili] = useState([]);
 
     const BUCKET_NAME = 'pokemon_immagini';
 
@@ -60,8 +61,18 @@ export default function PokemonMaster() {
 
     async function caricaDati() {
         setLoading(true);
-        await Promise.all([caricaPokemonNational(), caricaPokemonCampaign()]);
+        await Promise.all([caricaPokemonNational(), caricaPokemonCampaign(), caricaTipi()]);
         setLoading(false);
+    }
+
+    async function caricaTipi() {
+        try {
+            const { data, error } = await supabase.from('tipi_pokemon').select('*').order('nome_it');
+            if (error) throw error;
+            setTipiDisponibili(data || []);
+        } catch (err) {
+            console.error("Errore caricamento tipi:", err);
+        }
     }
 
     async function caricaPokemonNational() {
@@ -128,7 +139,14 @@ export default function PokemonMaster() {
                 immagine_url: editForm.immagine_url || null,
                 sprite_url: editForm.sprite_url || null,
                 descrizione: editForm.descrizione || '',
-                visibile_pokedex: Boolean(editForm.visibile_pokedex === false ? false : true)
+                visibile_pokedex: Boolean(editForm.visibile_pokedex === false ? false : true),
+                altezza: editForm.altezza || '',
+                peso: editForm.peso || '',
+                debolezze: editForm.debolezze || '',
+                debolezze_x4: editForm.debolezze_x4 || '',
+                resistenze: editForm.resistenze || '',
+                resistenze_x4: editForm.resistenze_x4 || '',
+                immunita: editForm.immunita || ''
             };
 
             // 🛡️ Upsert millimetrico: se l'ID esiste aggiorna, altrimenti inserisce
@@ -169,13 +187,56 @@ export default function PokemonMaster() {
             spatk_base: p.spatk_base,
             spdef_base: p.spdef_base,
             speed_base: p.speed_base,
-            immagine_url: p.immagine_url,
+            immagine_url: p.immagine_url?.includes('sprites/pokemon/') && !p.immagine_url.includes('other/official-artwork') 
+                ? p.immagine_url.replace('sprites/pokemon/', 'sprites/pokemon/other/official-artwork/') 
+                : p.immagine_url,
             sprite_url: p.sprite_url,
             descrizione: p.descrizione,
-            visibile_pokedex: true
+            visibile_pokedex: true,
+            altezza: p.altezza || '',
+            peso: p.peso || '',
+            debolezze: p.debolezze || '',
+            debolezze_x4: p.debolezze_x4 || '',
+            resistenze: p.resistenze || '',
+            resistenze_x4: p.resistenze_x4 || '',
+            immunita: p.immunita || ''
         });
         setIsEditing(true);
     }
+
+    const toggleTipoInStringa = (category, typeNameIt) => {
+        const currentVal = editForm[category] || '';
+        // Helper per normalizzare i tipi (gestisce mix IT/EN e maiuscole/minuscole)
+        const normalize = (t) => {
+            const label = getTypeLabel(t.trim());
+            return label ? label.toUpperCase() : t.trim().toUpperCase();
+        };
+
+        let activeTypes = currentVal.split(',')
+            .map(t => t.trim())
+            .filter(Boolean)
+            .map(normalize);
+
+        const target = typeNameIt.toUpperCase();
+        const index = activeTypes.indexOf(target);
+
+        if (index > -1) {
+            activeTypes.splice(index, 1);
+        } else {
+            activeTypes.push(target);
+        }
+
+        setEditForm({ ...editForm, [category]: activeTypes.join(', ') });
+    };
+
+    const isTipoAttivo = (category, typeNameIt) => {
+        const currentVal = editForm[category] || '';
+        return currentVal.split(',')
+            .some(t => {
+                const label = getTypeLabel(t.trim());
+                return (label || t.trim()).toUpperCase() === typeNameIt.toUpperCase();
+            });
+    };
 
     const openEditModal = (p = null) => {
         if (p) {
@@ -198,7 +259,14 @@ export default function PokemonMaster() {
                 descrizione: '',
                 immagine_url: '',
                 sprite_url: '',
-                visibile_pokedex: true
+                visibile_pokedex: true,
+                altezza: '',
+                peso: '',
+                debolezze: '',
+                debolezze_x4: '',
+                resistenze: '',
+                resistenze_x4: '',
+                immunita: ''
             });
         }
         setIsEditing(true);
@@ -310,7 +378,13 @@ export default function PokemonMaster() {
                                     <tr key={p.id}>
                                         <td style={{ opacity: 0.5, fontFamily: 'monospace' }}>#{p.id}</td>
                                         <td>
-                                            <img src={p.immagine_url} alt={p.nome} className="master-list-img" />
+                                            <img 
+                                                src={p.immagine_url?.includes('sprites/pokemon/') && !p.immagine_url.includes('other/official-artwork') 
+                                                    ? p.immagine_url.replace('sprites/pokemon/', 'sprites/pokemon/other/official-artwork/') 
+                                                    : p.immagine_url} 
+                                                alt={p.nome} 
+                                                className="master-list-img" 
+                                            />
                                         </td>
                                         <td style={{ fontWeight: 800 }}>{p.nome}</td>
                                         <td>
@@ -355,7 +429,7 @@ export default function PokemonMaster() {
                     </div>
                 )}
 
-            {isEditing && editForm && (
+{isEditing && editForm && (
                 <div className="modal-overlay">
                     <div className="master-edit-modal npc-modal-premium animate-slide-up">
                         <div className="modal-header">
@@ -366,79 +440,24 @@ export default function PokemonMaster() {
                         <div className="modal-body-scroll">
                             <div className="edit-section">
                                 <h4 className="edit-section-title"><Info size={16} /> Informazioni Base</h4>
-                                <div className="edit-grid-3">
-                                    <div className="input-field">
-                                        <label>Nome</label>
-                                        <input type="text" value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} />
-                                    </div>
-                                    <div className="input-field">
-                                        <label>Tipo 1</label>
-                                        <select value={editForm.tipo1} onChange={(e) => setEditForm({ ...editForm, tipo1: e.target.value })}>
-                                            <option value="NORMALE">NORMALE</option>
-                                            <option value="FUOCO">FUOCO</option>
-                                            <option value="ACQUA">ACQUA</option>
-                                            <option value="ERBA">ERBA</option>
-                                            <option value="ELETTRO">ELETTRO</option>
-                                            <option value="GHIACCIO">GHIACCIO</option>
-                                            <option value="LOTTA">LOTTA</option>
-                                            <option value="VELENO">VELENO</option>
-                                            <option value="TERRA">TERRA</option>
-                                            <option value="VOLANTE">VOLANTE</option>
-                                            <option value="PSICO">PSICO</option>
-                                            <option value="COLEOTTERO">COLEOTTERO</option>
-                                            <option value="ROCCIA">ROCCIA</option>
-                                            <option value="SPETTRO">SPETTRO</option>
-                                            <option value="DRAGO">DRAGO</option>
-                                            <option value="BUIO">BUIO</option>
-                                            <option value="ACCIAIO">ACCIAIO</option>
-                                            <option value="FOLLETTO">FOLLETTO</option>
-                                            <option value="SUONO">SUONO</option>
-                                            <option value="SCONOSCIUTO">SCONOSCIUTO</option>
-                                        </select>
-                                    </div>
-                                    <div className="input-field">
-                                        <label>Tipo 2</label>
-                                        <select value={editForm.tipo2 || ''} onChange={(e) => setEditForm({ ...editForm, tipo2: e.target.value || null })}>
-                                            <option value="">Nessuno</option>
-                                            <option value="NORMALE">NORMALE</option>
-                                            <option value="FUOCO">FUOCO</option>
-                                            <option value="ACQUA">ACQUA</option>
-                                            <option value="ERBA">ERBA</option>
-                                            <option value="ELETTRO">ELETTRO</option>
-                                            <option value="GHIACCIO">GHIACCIO</option>
-                                            <option value="LOTTA">LOTTA</option>
-                                            <option value="VELENO">VELENO</option>
-                                            <option value="TERRA">TERRA</option>
-                                            <option value="VOLANTE">VOLANTE</option>
-                                            <option value="PSICO">PSICO</option>
-                                            <option value="COLEOTTERO">COLEOTTERO</option>
-                                            <option value="ROCCIA">ROCCIA</option>
-                                            <option value="SPETTRO">SPETTRO</option>
-                                            <option value="DRAGO">DRAGO</option>
-                                            <option value="BUIO">BUIO</option>
-                                            <option value="ACCIAIO">ACCIAIO</option>
-                                            <option value="FOLLETTO">FOLLETTO</option>
-                                            <option value="SUONO">SUONO</option>
-                                            <option value="SCONOSCIUTO">SCONOSCIUTO</option>
-                                        </select>
-                                    </div>
-                                    <div className="input-field" style={{ gridColumn: 'span 3' }}>
-                                        <label>Immagine Pokémon</label>
-                                        <div className="master-upload-container">
+                                
+                                {/* RIGA 1: IMMAGINE */}
+                                <div className="edit-image-top-section" style={{ display: 'flex', justifyContent: 'center', marginBottom: '25px', width: '100%' }}>
+                                    <div className="input-field" style={{ width: '200px', margin: '0 auto' }}>
+                                        <label style={{ textAlign: 'center' }}>Immagine Pokémon</label>
+                                        <div className="upload-container" style={{ margin: '0 auto' }}>
                                             {editForm.immagine_url ? (
-                                                <div className="master-upload-preview-box">
-                                                    <img src={editForm.immagine_url} alt="Anteprima" className="master-upload-preview" />
-                                                    <button className="btn-remove-upload" onClick={() => setEditForm({ ...editForm, immagine_url: '' })}>
-                                                        <X size={14} />
-                                                    </button>
+                                                <div className="preview-container">
+                                                    <img src={editForm.immagine_url} alt="Anteprima" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }} />
+                                                    <button className="remove-img" onClick={() => setEditForm({ ...editForm, immagine_url: '' })}><X size={14} /></button>
                                                 </div>
                                             ) : (
-                                                <label className="master-upload-placeholder">
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        style={{ display: 'none' }}
-                                                        onChange={handleFileUpload}
+                                                <label className="upload-placeholder">
+                                                    <input 
+                                                        type="file" 
+                                                        accept="image/*" 
+                                                        onChange={handleFileUpload} 
+                                                        style={{ display: 'none' }} 
                                                         disabled={uploading}
                                                     />
                                                     {uploading ? (
@@ -446,17 +465,176 @@ export default function PokemonMaster() {
                                                     ) : (
                                                         <>
                                                             <Upload size={24} />
-                                                            <span>Seleziona Immagine dal Tuo PC</span>
+                                                            <span>Upload</span>
                                                         </>
                                                     )}
                                                 </label>
                                             )}
                                         </div>
                                     </div>
-                                    <div className="input-field" style={{ gridColumn: 'span 3' }}>
-                                        <label>Descrizione Pokédex</label>
-                                        <textarea value={editForm.descrizione || ''} onChange={(e) => setEditForm({ ...editForm, descrizione: e.target.value })} />
+                                </div>
+
+                                {/* RIGA 2: IDENTITÀ FISICA */}
+                                <div className="edit-grid-3" style={{ marginBottom: '15px' }}>
+                                    <div className="input-field">
+                                        <label>Nome</label>
+                                        <input type="text" value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} />
                                     </div>
+                                    <div className="input-field">
+                                        <label>Altezza (m)</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <Ruler size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+                                            <input style={{ paddingLeft: '30px' }} type="text" placeholder="Es: 1.7" value={editForm.altezza || ''} onChange={(e) => setEditForm({ ...editForm, altezza: e.target.value })} />
+                                        </div>
+                                    </div>
+                                    <div className="input-field">
+                                        <label>Peso (kg)</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <Weight size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+                                            <input style={{ paddingLeft: '30px' }} type="text" placeholder="Es: 60" value={editForm.peso || ''} onChange={(e) => setEditForm({ ...editForm, peso: e.target.value })} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* RIGA 3: ELEMENTI (TIPI) */}
+                                <div className="edit-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                    <div className="input-field">
+                                        <label>Tipo 1</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <div style={{ 
+                                                position: 'absolute', 
+                                                left: '8px', 
+                                                top: '50%', 
+                                                transform: 'translateY(-50%)', 
+                                                width: '24px', 
+                                                height: '24px', 
+                                                borderRadius: '6px', 
+                                                background: getTypeColor(editForm.tipo1),
+                                                boxShadow: `0 0 10px ${getTypeColor(editForm.tipo1)}60`,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                border: '1px solid rgba(255,255,255,0.2)',
+                                                overflow: 'hidden'
+                                            }}>
+                                                {tipiDisponibili.find(t => t.nome_it.toUpperCase() === editForm.tipo1.toUpperCase())?.icona_url ? (
+                                                    <img 
+                                                        src={tipiDisponibili.find(t => t.nome_it.toUpperCase() === editForm.tipo1.toUpperCase())?.icona_url} 
+                                                        alt={editForm.tipo1}
+                                                        style={{ width: '16px', height: '16px', objectFit: 'contain' }}
+                                                    />
+                                                ) : (
+                                                    <div style={{ fontSize: '10px', opacity: 0.5 }}>?</div>
+                                                )}
+                                            </div>
+                                            <select 
+                                                style={{ paddingLeft: '40px' }} 
+                                                value={editForm.tipo1} 
+                                                onChange={(e) => setEditForm({ ...editForm, tipo1: e.target.value })}
+                                            >
+                                                <option value="NORMALE">NORMALE</option>
+                                                <option value="FUOCO">FUOCO</option>
+                                                <option value="ACQUA">ACQUA</option>
+                                                <option value="ERBA">ERBA</option>
+                                                <option value="ELETTRO">ELETTRO</option>
+                                                <option value="GHIACCIO">GHIACCIO</option>
+                                                <option value="LOTTA">LOTTA</option>
+                                                <option value="VELENO">VELENO</option>
+                                                <option value="TERRA">TERRA</option>
+                                                <option value="VOLANTE">VOLANTE</option>
+                                                <option value="PSICO">PSICO</option>
+                                                <option value="COLEOTTERO">COLEOTTERO</option>
+                                                <option value="ROCCIA">ROCCIA</option>
+                                                <option value="SPETTRO">SPETTRO</option>
+                                                <option value="DRAGO">DRAGO</option>
+                                                <option value="BUIO">BUIO</option>
+                                                <option value="ACCIAIO">ACCIAIO</option>
+                                                <option value="FOLLETTO">FOLLETTO</option>
+                                                <option value="SUONO">SUONO</option>
+                                                <option value="SCONOSCIUTO">SCONOSCIUTO</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="input-field">
+                                        <label>Tipo 2</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <div style={{ 
+                                                position: 'absolute', 
+                                                left: '8px', 
+                                                top: '50%', 
+                                                transform: 'translateY(-50%)', 
+                                                width: '24px', 
+                                                height: '24px', 
+                                                borderRadius: '6px', 
+                                                background: editForm.tipo2 ? getTypeColor(editForm.tipo2) : 'rgba(255,255,255,0.05)',
+                                                border: editForm.tipo2 ? '1px solid rgba(255,255,255,0.2)' : '1px dashed rgba(255,255,255,0.2)',
+                                                boxShadow: editForm.tipo2 ? `0 0 10px ${getTypeColor(editForm.tipo2)}60` : 'none',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                overflow: 'hidden'
+                                            }}>
+                                                {editForm.tipo2 && tipiDisponibili.find(t => t.nome_it.toUpperCase() === editForm.tipo2.toUpperCase())?.icona_url ? (
+                                                    <img 
+                                                        src={tipiDisponibili.find(t => t.nome_it.toUpperCase() === editForm.tipo2.toUpperCase())?.icona_url} 
+                                                        alt={editForm.tipo2}
+                                                        style={{ width: '16px', height: '16px', objectFit: 'contain' }}
+                                                    />
+                                                ) : null}
+                                            </div>
+                                            <select 
+                                                style={{ paddingLeft: '40px' }} 
+                                                value={editForm.tipo2 || ''} 
+                                                onChange={(e) => setEditForm({ ...editForm, tipo2: e.target.value || null })}
+                                            >
+                                                <option value="">Nessuno</option>
+                                                <option value="NORMALE">NORMALE</option>
+                                                <option value="FUOCO">FUOCO</option>
+                                                <option value="ACQUA">ACQUA</option>
+                                                <option value="ERBA">ERBA</option>
+                                                <option value="ELETTRO">ELETTRO</option>
+                                                <option value="GHIACCIO">GHIACCIO</option>
+                                                <option value="LOTTA">LOTTA</option>
+                                                <option value="VELENO">VELENO</option>
+                                                <option value="TERRA">TERRA</option>
+                                                <option value="VOLANTE">VOLANTE</option>
+                                                <option value="PSICO">PSICO</option>
+                                                <option value="COLEOTTERO">COLEOTTERO</option>
+                                                <option value="ROCCIA">ROCCIA</option>
+                                                <option value="SPETTRO">SPETTRO</option>
+                                                <option value="DRAGO">DRAGO</option>
+                                                <option value="BUIO">BUIO</option>
+                                                <option value="ACCIAIO">ACCIAIO</option>
+                                                <option value="FOLLETTO">FOLLETTO</option>
+                                                <option value="SUONO">SUONO</option>
+                                                <option value="SCONOSCIUTO">SCONOSCIUTO</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="input-field description-narrative-box" style={{ 
+                                    gridColumn: 'span 3', 
+                                    marginTop: '30px',
+                                    background: 'rgba(255,255,255,0.03)',
+                                    padding: '15px',
+                                    borderRadius: '12px',
+                                    border: '1px solid rgba(255,255,255,0.1)'
+                                }}>
+                                    <label style={{ marginBottom: '10px', fontSize: '0.9rem', opacity: 0.8 }}>Descrizione Pokédex</label>
+                                    <textarea 
+                                        style={{ 
+                                            minHeight: '120px', 
+                                            fontSize: '0.95rem', 
+                                            lineHeight: '1.5',
+                                            background: 'transparent',
+                                            border: 'none',
+                                            padding: '10px'
+                                        }} 
+                                        placeholder="Racconta la leggenda di questo Pokémon..."
+                                        value={editForm.descrizione || ''} 
+                                        onChange={(e) => setEditForm({ ...editForm, descrizione: e.target.value })} 
+                                    />
                                 </div>
                             </div>
 
@@ -483,11 +661,54 @@ export default function PokemonMaster() {
                                         <label>Difesa Sp.</label>
                                         <input type="number" value={editForm.spdef_base} onChange={(e) => setEditForm({ ...editForm, spdef_base: parseInt(e.target.value) })} />
                                     </div>
-                                    <div className="input-field">
-                                        <label>Velocità</label>
-                                        <input type="number" value={editForm.speed_base} onChange={(e) => setEditForm({ ...editForm, speed_base: parseInt(e.target.value) })} />
-                                    </div>
                                 </div>
+                            </div>
+
+                            <div className="edit-section">
+                                <h4 className="edit-section-title"><Shield size={16} /> Affinità Tipi & Vulnerabilità</h4>
+                                
+                                {['debolezze', 'debolezze_x4', 'immunita', 'resistenze', 'resistenze_x4'].map((category) => (
+                                    <div key={category} className="affinity-category-group" style={{ marginBottom: '20px' }}>
+                                        <label style={{ 
+                                            display: 'block', 
+                                            marginBottom: '10px', 
+                                            fontSize: '0.85rem', 
+                                            fontWeight: 'bold',
+                                            textTransform: 'uppercase',
+                                            color: category.includes('debolezze') ? '#ef4444' : category.includes('resistenze') ? '#3b82f6' : '#10b981'
+                                        }}>
+                                            {category === 'debolezze' ? 'Debolezze (x2)' : 
+                                             category === 'debolezze_x4' ? 'Debolezze (x4)' : 
+                                             category === 'resistenze' ? 'Resistenze (x2)' : 
+                                             category === 'resistenze_x4' ? 'Resistenze (x4)' : 'Immunità'}
+                                        </label>
+                                        <div className="type-checkbox-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '8px' }}>
+                                            {tipiDisponibili.map(tipo => (
+                                                <div 
+                                                    key={tipo.id} 
+                                                    className={`type-checkbox-card ${isTipoAttivo(category, tipo.nome_it) ? 'active' : ''}`}
+                                                    onClick={() => toggleTipoInStringa(category, tipo.nome_it)}
+                                                    style={{
+                                                        padding: '8px',
+                                                        borderRadius: '8px',
+                                                        border: '1px solid var(--border-subtle)',
+                                                        background: isTipoAttivo(category, tipo.nome_it) ? `${tipo.colore}20` : 'var(--bg-secondary)',
+                                                        borderColor: isTipoAttivo(category, tipo.nome_it) ? tipo.colore : 'var(--border-subtle)',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        transition: 'all 0.2s',
+                                                        fontSize: '0.75rem'
+                                                    }}
+                                                >
+                                                    <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: tipo.colore }}></div>
+                                                    <span>{tipo.nome_it}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 

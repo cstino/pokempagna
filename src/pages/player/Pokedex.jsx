@@ -136,7 +136,13 @@ export default function Pokedex() {
                                         <PokeballLogo size={24} animated={false} grayscale={!caughtIds.has(pkmn.id)} />
                                     </div>
                                     <div className="pkmn-image-container">
-                                        <img src={pkmn.immagine_url} alt={pkmn.nome} className="pkmn-image" />
+                                        <img 
+                                            src={pkmn.immagine_url?.includes('sprites/pokemon/') && !pkmn.immagine_url.includes('other/official-artwork') 
+                                                ? pkmn.immagine_url.replace('sprites/pokemon/', 'sprites/pokemon/other/official-artwork/') 
+                                                : pkmn.immagine_url} 
+                                            alt={pkmn.nome} 
+                                            className="pkmn-image" 
+                                        />
                                     </div>
                                     <div className="pkmn-card-details">
                                         <h3>{pkmn.nome.toUpperCase()}</h3>
@@ -158,7 +164,13 @@ export default function Pokedex() {
                     <div className="modal-content pkmn-detail-modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-pkmn-bg" style={{ backgroundColor: getTypeColor(selectedPkmn.tipo1) + '22' }}>
                             <button className="modal-close-btn" onClick={() => setSelectedPkmn(null)}>✕</button>
-                            <img src={selectedPkmn.immagine_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${selectedPkmn.id}.png`} alt={selectedPkmn.nome} className="modal-pkmn-img" />
+                            <img 
+                                src={(selectedPkmn.immagine_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${selectedPkmn.id}.png`).includes('sprites/pokemon/') && !(selectedPkmn.immagine_url || '').includes('other/official-artwork') 
+                                    ? (selectedPkmn.immagine_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${selectedPkmn.id}.png`).replace('sprites/pokemon/', 'sprites/pokemon/other/official-artwork/') 
+                                    : (selectedPkmn.immagine_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${selectedPkmn.id}.png`)} 
+                                alt={selectedPkmn.nome} 
+                                className="modal-pkmn-img" 
+                            />
                         </div>
 
                         <div className="modal-pkmn-body">

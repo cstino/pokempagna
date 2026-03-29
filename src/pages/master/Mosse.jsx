@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Search, Plus, Edit2, Save, X, Loader2, Check, Info, Trash2, Zap } from 'lucide-react';
+import { Search, Plus, Edit2, Save, X, Loader2, Check, Info, Trash2, Zap, Upload } from 'lucide-react';
 import { getTypeColor, getTypeLabel } from '../../lib/typeColors';
 import './Party.css';
 
@@ -11,6 +11,7 @@ export default function MosseMaster() {
     const [editForm, setEditForm] = useState(null);
     const [saving, setSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         caricaMosse();
@@ -39,13 +40,31 @@ export default function MosseMaster() {
 
     const openEditModal = (m = null) => {
         if (m) {
-            setEditForm({ ...m, livello: m.livello || 1 });
+            const cat = m.categoria || m.tipologia || 'fisico';
+            setEditForm({ 
+                ...m, 
+                livello: m.livello || 1,
+                categoria: cat,
+                tipologia: cat,
+                danni: m.danni || '0',
+                accuratezza: m.accuratezza || '100',
+                priorita: m.priorita || 0,
+                bersagli: m.bersagli || 'Singolo',
+                effetto: m.effetto || '',
+                pp_max: m.pp_max || 20
+            });
         } else {
             setEditForm({
                 nome: '',
                 tipo: 'normale',
                 categoria: 'fisico',
+                tipologia: 'fisico',
+                danni: '0',
+                accuratezza: '100',
+                priorita: 0,
+                effetto: '',
                 descrizione: '',
+                pp_max: 20,
                 livello: 1,
                 disponibile: true
             });
@@ -56,29 +75,45 @@ export default function MosseMaster() {
     async function salvaMossa(asNew = false) {
         setSaving(true);
         try {
-            const payload = { ...editForm };
-            if (asNew) delete payload.id;
-
-            let error;
+            // Prendiamo il valore della categoria
+            const catValue = editForm.categoria || editForm.tipologia || 'fisico';
+            
+            // Creiamo un payload PULITO con solo quello che serve nel DB attuale
+            const payload = { 
+                nome: editForm.nome,
+                tipo: editForm.tipo,
+                categoria: catValue, // Usiamo il nome definitivo
+                danni: editForm.danni,
+                accuratezza: editForm.accuratezza,
+                priorita: parseInt(editForm.priorita) || 0,
+                bersagli: editForm.bersagli,
+                effetto: editForm.effetto,
+                descrizione: editForm.descrizione,
+                pp_max: parseInt(editForm.pp_max) || 20,
+                livello: parseInt(editForm.livello) || 1,
+                disponibile: editForm.disponibile ?? true
+            };
+            
+            let saveError;
             if (editForm.id && !asNew) {
                 const { error: err } = await supabase
                     .from('mosse_disponibili')
                     .update(payload)
                     .eq('id', editForm.id);
-                error = err;
+                saveError = err;
             } else {
                 const { error: err } = await supabase
                     .from('mosse_disponibili')
                     .insert([payload]);
-                error = err;
+                saveError = err;
             }
 
-            if (error) throw error;
+            if (saveError) throw saveError;
             setIsEditing(false);
             caricaMosse();
         } catch (err) {
             console.error("Errore salvataggio mossa:", err);
-            alert("Errore nel salvataggio. Assicurati di aver eseguito il comando SQL per aggiungere la colonna 'livello'.");
+            alert("Errore nel salvataggio. Assicurati di aver aggiornato il database con le nuove colonne (danni, accuratezza, tipologia, bersagli, effetto, pp_max).");
         } finally {
             setSaving(false);
         }
@@ -121,11 +156,60 @@ export default function MosseMaster() {
                         <Zap size={32} color="#f59e0b" />
                         Libreria Mosse
                     </h1>
-                    <p className="page-subtitle">Gestisci le mosse disponibili nella tua campagna</p>
+                    <p className="page-subtitle">Personalizza il parco mosse della tua campagna</p>
                 </div>
-                <button className="btn-save" onClick={() => openEditModal()}>
-                    <Plus size={18} /> Nuova Mossa
+                <div className="btn-group-master" style={{ display: 'flex', gap: '10px' }}>
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        style={{ display: 'none' }} 
+                        accept=".csv" 
+                        onChange={async (e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            setSaving(true);
+                            const reader = new FileReader();
+                            reader.onload = async (evt) => {
+                                try {
+                                    const text = evt.target.result;
+                                    const lines = text.split('\n');
+                                    const headers = lines[0].toLowerCase().split(/[;,]/).map(h => h.trim());
+                                    const importedData = lines.slice(1).filter(l => l.trim()).map(line => {
+                                        const values = line.split(/[;,]/).map(v => v.trim());
+                                        const m = {};
+                                        headers.forEach((h, i) => {
+                                            const v = values[i];
+                                            if (h === 'nome') m.nome = v;
+                                            else if (h === 'tipo') m.tipo = v.toLowerCase();
+                                            else if (h === 'categoria') m.categoria = v.toLowerCase();
+                                            else if (h === 'potenza') m.danni = v;
+                                            else if (h === 'accuratezza') m.accuratezza = v;
+                                            else if (h === 'priorità') m.priorita = parseInt(v) || 0;
+                                            else if (h === 'area') m.bersagli = v;
+                                            else if (h === 'pp') m.pp_max = parseInt(v) || 20;
+                                            else if (h === 'animazione') m.livello = parseInt(v) || 1;
+                                            else if (h === 'descrizione') m.descrizione = v;
+                                        });
+                                        m.disponibile = true;
+                                        return m;
+                                    });
+                                    const { error } = await supabase.from('mosse_disponibili').insert(importedData);
+                                    if (error) throw error;
+                                    alert(`Importate ${importedData.length} mosse!`);
+                                    caricaMosse();
+                                } catch (err) { alert("Errore importazione CSV"); }
+                                finally { setSaving(false); e.target.value = null; }
+                            };
+                            reader.readAsText(file);
+                        }} 
+                    />
+                    <button className="btn-save" onClick={() => fileInputRef.current.click()} style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }}>
+                        <Upload size={18} /> Importa Mosse
+                    </button>
+                    <button className="btn-save" onClick={() => openEditModal()}>
+                        <Plus size={18} /> Nuova Mossa
                 </button>
+                </div>
             </div>
 
             <div className="search-bar-container-master" style={{ margin: '20px 0' }}>
@@ -146,8 +230,8 @@ export default function MosseMaster() {
                     {filteredMosse.length === 0 ? (
                         <div className="empty-state">
                             <Zap size={48} color="rgba(255,255,255,0.2)" />
-                            <h3>Nessuna mossa trovata</h3>
-                            <p>Aggiungi la tua prima mossa personalizzata!</p>
+                            <h3>Libreria Vuota</h3>
+                            <p>Inizia ad aggiungere mosse per i tuoi Pokémon!</p>
                         </div>
                     ) : (
                         <div className="master-list-table-container">
@@ -155,10 +239,15 @@ export default function MosseMaster() {
                                 <thead>
                                     <tr>
                                         <th>Nome</th>
-                                        <th>Livello</th>
                                         <th>Tipo</th>
                                         <th>Categoria</th>
-                                        <th>Disponibile</th>
+                                        <th>Pot/Acc</th>
+                                        <th>Priorità</th>
+                                        <th>Area</th>
+                                        <th>Descrizione</th>
+                                        <th>PP</th>
+                                        <th>Anim.</th>
+                                        <th>Dispon.</th>
                                         <th>Azioni</th>
                                     </tr>
                                 </thead>
@@ -166,31 +255,54 @@ export default function MosseMaster() {
                                     {filteredMosse.map(m => (
                                         <tr key={m.id}>
                                             <td><strong>{m.nome}</strong></td>
+                                            <td><span className="type-badge-mini" style={{ 
+                                                textTransform: 'uppercase',
+                                                background: getTypeColor(m.tipo),
+                                                color: 'white',
+                                                fontWeight: 'bold'
+                                            }}>{getTypeLabel(m.tipo)}</span></td>
+                                            <td style={{ textAlign: 'center' }}>
+                                                <span className="type-badge-mini" style={{ 
+                                                    textTransform: 'capitalize',
+                                                    background: (m.categoria || m.tipologia) === 'fisico' ? '#ef4444' : 
+                                                                (m.categoria || m.tipologia) === 'speciale' ? '#3b82f6' : 
+                                                                (m.categoria || m.tipologia) === 'status' ? '#6b7280' :
+                                                                '#6b7280',
+                                                    color: 'white',
+                                                    fontWeight: 'bold'
+                                                }}>{m.categoria || m.tipologia || 'fisico'}</span>
+                                            </td>
+                                            <td>
+                                                <div style={{ fontSize: '0.85rem' }}>
+                                                    <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>{m.danni || 0}</span>
+                                                    <span style={{ opacity: 0.5, margin: '0 4px' }}>/</span>
+                                                    <span style={{ color: '#34d399' }}>{m.accuratezza || '100'}</span>
+                                                </div>
+                                            </td>
+                                            <td style={{ textAlign: 'center' }}>
+                                                <span style={{ 
+                                                    background: 'rgba(255,255,255,0.05)', 
+                                                    padding: '2px 8px', 
+                                                    borderRadius: '4px',
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: '800',
+                                                    color: m.priorita > 0 ? '#10b981' : m.priorita < 0 ? '#ef4444' : 'inherit'
+                                                }}>
+                                                    {m.priorita > 0 ? `+${m.priorita}` : m.priorita}
+                                                </span>
+                                            </td>
+                                            <td style={{ fontSize: '0.8rem', opacity: 0.8 }}>{m.bersagli || 'Singolo'}</td>
+                                            <td style={{ fontSize: '0.75rem', opacity: 0.5, maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {m.descrizione || '-'}
+                                            </td>
+                                            <td><span style={{ fontWeight: 'bold' }}>{m.pp_max || 20}</span></td>
                                             <td>
                                                 <div className="level-indicator">
                                                     {[1, 2, 3].map(l => (
                                                         <div key={l} className={`level-dot ${m.livello >= l ? 'filled' : ''}`}></div>
                                                     ))}
-                                                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>Lv.{m.livello || 1}</span>
                                                 </div>
                                             </td>
-                                            <td><span className="type-badge-mini" style={{ 
-                                                textTransform: 'uppercase',
-                                                background: getTypeColor(m.tipo),
-                                                color: 'white',
-                                                border: 'none',
-                                                fontWeight: 'bold',
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                            }}>{getTypeLabel(m.tipo)}</span></td>
-                                            <td><span className="type-badge-mini" style={{ 
-                                                textTransform: 'capitalize',
-                                                background: m.categoria === 'fisico' ? '#ef4444' : 
-                                                            m.categoria === 'speciale' ? '#3b82f6' : 
-                                                            '#6b7280',
-                                                color: 'white',
-                                                border: 'none',
-                                                fontWeight: 'bold'
-                                            }}>{m.categoria}</span></td>
                                             <td>
                                                 <div
                                                     className={`pokedex-toggle ${m.disponibile ? 'active' : ''}`}
@@ -216,33 +328,19 @@ export default function MosseMaster() {
 
             {isEditing && editForm && (
                 <div className="modal-overlay">
-                    <div className="master-edit-modal npc-modal-premium animate-slide-up">
+                    <div className="master-edit-modal npc-modal-premium animate-slide-up" style={{ width: '800px' }}>
                         <div className="modal-header">
-                            <h3>{editForm.id ? 'Modifica Mossa' : 'Crea Nuova Mossa'}</h3>
+                            <h3>{editForm.id ? 'Aggiorna Mossa' : 'Nuova Mossa Campagna'}</h3>
                             <button className="modal-close" onClick={() => setIsEditing(false)}><X size={24} /></button>
                         </div>
 
                         <div className="modal-body-scroll">
                             <div className="edit-section">
-                                <h4 className="edit-section-title"><Info size={16} /> Dettagli Mossa</h4>
-                                <div className="edit-grid-2">
+                                <h4 className="edit-section-title"><Info size={16} /> Parametri Fondamentali</h4>
+                                <div className="edit-grid-3">
                                     <div className="input-field">
-                                        <label>Nome</label>
+                                        <label>Nome Mossa</label>
                                         <input type="text" value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} />
-                                    </div>
-                                    <div className="input-field">
-                                        <label>Livello Animazione (Power Level)</label>
-                                        <div className="level-selector-row">
-                                            {[1, 2, 3].map(l => (
-                                                <button 
-                                                    key={l}
-                                                    className={`level-btn ${editForm.livello === l ? 'active' : ''}`}
-                                                    onClick={() => setEditForm({ ...editForm, livello: l })}
-                                                >
-                                                    Lv {l}
-                                                </button>
-                                            ))}
-                                        </div>
                                     </div>
                                     <div className="input-field">
                                         <label>Tipo</label>
@@ -271,25 +369,84 @@ export default function MosseMaster() {
                                     </div>
                                     <div className="input-field">
                                         <label>Categoria</label>
-                                        <select value={editForm.categoria} onChange={(e) => setEditForm({ ...editForm, categoria: e.target.value })}>
+                                        <select 
+                                            value={editForm.categoria || editForm.tipologia || 'fisico'} 
+                                            onChange={(e) => setEditForm({ ...editForm, categoria: e.target.value, tipologia: e.target.value })}
+                                        >
                                             <option value="fisico">FISICO</option>
                                             <option value="speciale">SPECIALE</option>
+                                            <option value="status">STATUS</option>
                                         </select>
                                     </div>
-                                    <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                                        <label>Descrizione</label>
-                                        <textarea value={editForm.descrizione || ''} onChange={(e) => setEditForm({ ...editForm, descrizione: e.target.value })} />
+                                    <div className="input-field">
+                                        <label>Danni (es. 2d6, 40, ...)</label>
+                                        <input type="text" value={editForm.danni} onChange={(e) => setEditForm({ ...editForm, danni: e.target.value })} />
                                     </div>
-                                    <div className="checkbox-field">
-                                        <input
-                                            type="checkbox"
-                                            id="disponibile-check"
-                                            checked={editForm.disponibile}
-                                            onChange={(e) => setEditForm({ ...editForm, disponibile: e.target.checked })}
-                                        />
-                                        <label htmlFor="disponibile-check">Disponibile (Visibile al Master)</label>
+                                    <div className="input-field">
+                                        <label>Accuratezza</label>
+                                        <input type="text" value={editForm.accuratezza} onChange={(e) => setEditForm({ ...editForm, accuratezza: e.target.value })} />
+                                    </div>
+                                    <div className="input-field">
+                                        <label>Priorità (+1, -1, ecc.)</label>
+                                        <input type="number" value={editForm.priorita} onChange={(e) => setEditForm({ ...editForm, priorita: parseInt(e.target.value) })} />
+                                    </div>
+                                    <div className="input-field">
+                                        <label>PP Massimi</label>
+                                        <input type="number" value={editForm.pp_max} onChange={(e) => setEditForm({ ...editForm, pp_max: parseInt(e.target.value) })} />
+                                    </div>
+                                    <div className="input-field">
+                                        <label>Area / Bersagli</label>
+                                        <input type="text" placeholder="es. Singolo, Tutti, Area..." value={editForm.bersagli} onChange={(e) => setEditForm({ ...editForm, bersagli: e.target.value })} />
+                                    </div>
+                                    <div className="input-field" style={{ gridColumn: 'span 2' }}>
+                                        <label>Livello Animazione (Combat Arena)</label>
+                                        <div className="level-selector-row">
+                                            {[1, 2, 3].map(l => (
+                                                <button 
+                                                    key={l}
+                                                    className={`level-btn ${editForm.livello === l ? 'active' : ''}`}
+                                                    onClick={() => setEditForm({ ...editForm, livello: l })}
+                                                >
+                                                    Power Level {l}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className="edit-section" style={{ marginTop: '20px' }}>
+                                <h4 className="edit-section-title">Contenuti Narrativi</h4>
+                                <div className="edit-grid-2">
+                                    <div className="input-field">
+                                        <label>Effetto (Meccaniche)</label>
+                                        <textarea 
+                                            placeholder="Cosa succede quando colpisce? (es. Scotta il bersaglio)" 
+                                            style={{ height: '80px' }}
+                                            value={editForm.effetto || ''} 
+                                            onChange={(e) => setEditForm({ ...editForm, effetto: e.target.value })} 
+                                        />
+                                    </div>
+                                    <div className="input-field">
+                                        <label>Descrizione Flavored</label>
+                                        <textarea 
+                                            placeholder="Testo descrittivo per il giocatore..." 
+                                            style={{ height: '80px' }}
+                                            value={editForm.descrizione || ''} 
+                                            onChange={(e) => setEditForm({ ...editForm, descrizione: e.target.value })} 
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="checkbox-field" style={{ padding: '10px 0' }}>
+                                <input
+                                    type="checkbox"
+                                    id="disponibile-check"
+                                    checked={editForm.disponibile}
+                                    onChange={(e) => setEditForm({ ...editForm, disponibile: e.target.checked })}
+                                />
+                                <label htmlFor="disponibile-check" style={{ fontWeight: 600 }}>Rendi questa mossa disponibile all'assegnazione</label>
                             </div>
                         </div>
 
@@ -297,13 +454,8 @@ export default function MosseMaster() {
                             <button className="btn-cancel-flat" onClick={() => setIsEditing(false)}>Annulla</button>
                             <div className="btn-group-master">
                                 <button className="btn-save-hero" onClick={() => salvaMossa(false)} disabled={saving}>
-                                    {saving ? <Loader2 className="spin" /> : <Save size={18} />} {editForm.id ? 'Sovrascrivi' : 'Crea'}
+                                    {saving ? <Loader2 size={18} className="spin" /> : <Save size={18} />} {editForm.id ? 'Salva Cambiamenti' : 'Crea Mossa'}
                                 </button>
-                                {editForm.id && (
-                                    <button className="btn-save-hero accent" onClick={() => salvaMossa(true)} disabled={saving}>
-                                        <Plus size={18} /> Aggiungi come Nuovo
-                                    </button>
-                                )}
                             </div>
                         </div>
                     </div>
