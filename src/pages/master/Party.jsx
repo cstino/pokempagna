@@ -375,7 +375,7 @@ export default function Party() {
                 velocita: editingPkmn.velocita,
                 tipo1: editingPkmn.tipo1,
                 tipo2: editingPkmn.tipo2,
-                posizione_squadra: editingPkmn.posizione_squadra || 99
+                posizione_squadra: (editingPkmn.posizione_squadra !== undefined && editingPkmn.posizione_squadra !== null) ? editingPkmn.posizione_squadra : 99
             };
 
             if (editingPkmn.id) {
