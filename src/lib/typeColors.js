@@ -20,6 +20,8 @@ export const TYPE_COLORS = {
     dark: { color: '#374151', label: 'Buio', emoji: '🌑' },
     steel: { color: '#94A3B8', label: 'Acciaio', emoji: '⚙️' },
     fairy: { color: '#F472B6', label: 'Folletto', emoji: '🧚' },
+    sound: { color: '#00E5FF', label: 'Suono' },
+    unknown: { color: '#333333', label: 'Sconosciuto' },
 };
 
 export function getTypeColor(type) {

@@ -58,24 +58,27 @@
   --accent-glow: rgba(45, 45, 143, 0.4);
 
   /* Pokémon Type Colors */
-  --type-normal: #6B7280;
-  --type-fire: #EF4444;
-  --type-water: #3B82F6;
-  --type-electric: #F59E0B;
-  --type-grass: #10B981;
-  --type-ice: #06B6D4;
-  --type-fighting: #DC2626;
-  --type-poison: #8B5CF6;
-  --type-ground: #92400E;
-  --type-flying: #818CF8;
-  --type-psychic: #EC4899;
-  --type-bug: #84CC16;
-  --type-rock: #A16207;
-  --type-ghost: #7C3AED;
-  --type-dragon: #6366F1;
-  --type-dark: #374151;
-  --type-steel: #94A3B8;
-  --type-fairy: #F472B6;
+  /* Pokémon Type Colors */
+  --type-normal: #6B7280; --type-normale: #6B7280;
+  --type-fire: #EF4444;   --type-fuoco: #EF4444;
+  --type-water: #3B82F6;  --type-acqua: #3B82F6;
+  --type-electric: #F59E0B; --type-elettro: #F59E0B;
+  --type-grass: #10B981;   --type-erba: #10B981;
+  --type-ice: #06B6D4;     --type-ghiaccio: #06B6D4;
+  --type-fighting: #DC2626; --type-lotta: #DC2626;
+  --type-poison: #8B5CF6;   --type-veleno: #8B5CF6;
+  --type-ground: #92400E;   --type-terra: #92400E;
+  --type-flying: #818CF8;   --type-volante: #818CF8;
+  --type-psychic: #EC4899;  --type-psico: #EC4899;
+  --type-bug: #84CC16;      --type-coleottero: #84CC16;
+  --type-rock: #A16207;     --type-roccia: #A16207;
+  --type-ghost: #7C3AED;    --type-spettro: #7C3AED;
+  --type-dragon: #6366F1;   --type-drago: #6366F1;
+  --type-dark: #374151;     --type-buio: #374151;
+  --type-steel: #94A3B8;    --type-acciaio: #94A3B8;
+  --type-fairy: #F472B6;    --type-folletto: #F472B6;
+  --type-suono: #ff00d4;    --type-sound: #ff00d4;
+  --type-sconosciuto: #555;  --type-unknown: #555;
 
   /* HP Bar Colors */
   --hp-high: #10B981;

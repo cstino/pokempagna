@@ -1,116 +1,208 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Search, Plus, Edit2, Save, X, Loader2, Check, Info, Trash2, Heart, Shield, Zap, TrendingUp, Ruler, Weight } from 'lucide-react';
+import { Search, Plus, Edit2, Save, X, Loader2, Check, Info, Trash2, Heart, Shield, Zap, TrendingUp, Ruler, Weight, Upload } from 'lucide-react';
 import './Party.css'; // Reusing Party.css for consistent Master dashboard styling
 
 export default function PokemonMaster() {
-    const [pokemon, setPokemon] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState('campaign'); // 'campaign' o 'national'
+    const [pokemonNational, setPokemonNational] = useState([]);
+    const [pokemonCampaign, setPokemonCampaign] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState(null);
     const [saving, setSaving] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [uploading, setUploading] = useState(false);
 
-    // Globale / PokeAPI
-    const [activeTab, setActiveTab] = useState('local'); // 'local' | 'global'
-    const [fullGlobalList, setFullGlobalList] = useState([]);
-    const [filteredGlobalList, setFilteredGlobalList] = useState([]);
-    const [loadingGlobal, setLoadingGlobal] = useState(false);
+    const BUCKET_NAME = 'pokemon_immagini';
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            // 🛡️ Upload su Supabase Storage
+            const { error: uploadError } = await supabase.storage
+                .from(BUCKET_NAME)
+                .upload(filePath, file);
+
+            if (uploadError) {
+                if (uploadError.message.includes('bucket not found')) {
+                    throw new Error("Il bucket 'pokemon_immagini' non esiste su Supabase. Crealo nella sezione Storage.");
+                }
+                throw uploadError;
+            }
+
+            // Recupero URL pubblico
+            const { data: { publicUrl } } = supabase.storage
+                .from(BUCKET_NAME)
+                .getPublicUrl(filePath);
+
+            setEditForm(prev => ({ ...prev, immagine_url: publicUrl }));
+        } catch (err) {
+            console.error("Errore upload immagine:", err);
+            alert(err.message || "Errore durante il caricamento dell'immagine.");
+        } finally {
+            setUploading(false);
+        }
+    };
 
     useEffect(() => {
-        caricaPokemon();
+        caricaDati();
     }, []);
 
-    async function caricaPokemon() {
+    const translateType = (t) => {
+        if (!t || typeof t !== 'string') return '';
+        const cleanT = t.trim().toUpperCase();
+        if (cleanT === 'NESSUNO' || cleanT === 'NONE' || cleanT === '') return '';
+        
+        const types = {
+            'normal': 'Normale', 'fire': 'Fuoco', 'water': 'Acqua', 'grass': 'Erba',
+            'electric': 'Elettro', 'ice': 'Ghiaccio', 'fighting': 'Lotta', 'poison': 'Veleno',
+            'ground': 'Terra', 'flying': 'Volante', 'psychic': 'Psico', 'bug': 'Coleottero',
+            'rock': 'Roccia', 'ghost': 'Spettro', 'dragon': 'Drago', 'steel': 'Acciaio',
+            'fairy': 'Folletto', 'dark': 'Buio', 'suono': 'Suono', 'sconosciuto': 'Sconosciuto',
+            'normale': 'Normale', 'fuoco': 'Fuoco', 'acqua': 'Acqua', 'erba': 'Erba',
+            'elettro': 'Elettro', 'ghiaccio': 'Ghiaccio', 'lotta': 'Lotta', 'veleno': 'Veleno',
+            'terra': 'Terra', 'volante': 'Volante', 'psico': 'Psico', 'coleottero': 'Coleottero',
+            'roccia': 'Roccia', 'spettro': 'Spettro', 'drago': 'Drago', 'buio': 'Buio',
+            'acciaio': 'Acciaio', 'folletto': 'Folletto', 'sound': 'Suono', 'unknown': 'Sconosciuto'
+        };
+        const key = cleanT.toLowerCase();
+        return types[key] || cleanT.charAt(0) + cleanT.slice(1).toLowerCase();
+    };
+
+    async function caricaDati() {
         setLoading(true);
+        await Promise.all([caricaPokemonNational(), caricaPokemonCampaign()]);
+        setLoading(false);
+    }
+
+    async function caricaPokemonNational() {
         try {
             const { data, error } = await supabase
                 .from('pokemon')
                 .select('*')
                 .order('id', { ascending: true });
+            if (error) throw error;
+            setPokemonNational(data || []);
+        } catch (err) {
+            console.error("Errore caricamento national:", err);
+        }
+    }
 
-            if (error) {
-                console.error("Errore caricamento pokemon:", error);
-                setPokemon([]);
-            } else {
-                setPokemon(data || []);
+    async function caricaPokemonCampaign() {
+        try {
+            const { data, error } = await supabase
+                .from('pokemon_campagna')
+                .select('*')
+                .order('id', { ascending: true });
+            if (error) throw error;
+            setPokemonCampaign(data || []);
+        } catch (err) {
+            console.error("Errore caricamento campaign:", err);
+        }
+    }
+
+    async function salvaPokemon(asNew = false) {
+        setSaving(true);
+        try {
+            // 🛡️ Logica di calcolo ID ultra-sicura
+            let idToUse = editForm.id;
+            
+            // Se stiamo salvando come nuovo o se l'ID manca/non è valido
+            if (asNew || !idToUse || isNaN(Number(idToUse))) {
+                const { data: allPkmn, error: fetchError } = await supabase
+                    .from('pokemon_campagna')
+                    .select('id');
+                
+                if (fetchError) throw fetchError;
+
+                const ids = (allPkmn || []).map(p => Number(p.id));
+                let next = 1;
+                while (ids.includes(next)) {
+                    next++;
+                }
+                idToUse = next;
             }
+
+            const cleanId = Number(idToUse);
+
+            const payload = {
+                id: cleanId,
+                nome: String(editForm.nome || 'SCONOSCIUTO').toUpperCase().trim(),
+                tipo1: String(editForm.tipo1 || 'NORMALE').toUpperCase().trim(),
+                tipo2: editForm.tipo2 && editForm.tipo2.toUpperCase() !== 'NESSUNO' ? editForm.tipo2.toUpperCase().trim() : null,
+                hp_base: parseInt(editForm.hp_base) || 0,
+                atk_base: parseInt(editForm.atk_base) || 0,
+                def_base: parseInt(editForm.def_base) || 0,
+                spatk_base: parseInt(editForm.spatk_base) || 0,
+                spdef_base: parseInt(editForm.spdef_base) || 0,
+                speed_base: parseInt(editForm.speed_base) || 0,
+                immagine_url: editForm.immagine_url || null,
+                sprite_url: editForm.sprite_url || null,
+                descrizione: editForm.descrizione || '',
+                visibile_pokedex: Boolean(editForm.visibile_pokedex === false ? false : true)
+            };
+
+            // 🛡️ Upsert millimetrico: se l'ID esiste aggiorna, altrimenti inserisce
+            const { error: upsertError } = await supabase
+                .from('pokemon_campagna')
+                .upsert(payload, { onConflict: 'id' });
+                
+            if (upsertError) throw upsertError;
+            
+            setIsEditing(false);
+            caricaPokemonCampaign();
+            setActiveTab('campaign');
         } catch (err) {
-            console.error(err);
+            console.error("DEBUG - Errore salvataggio pokemon:", err);
+            alert("Benjamin segnala un errore: " + (err.message || "Controlla i campi inseriti."));
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
     }
 
-    async function caricaGlobalLibrary() {
-        if (fullGlobalList.length > 0) return;
-        setLoadingGlobal(true);
-        try {
-            const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1025');
-            const data = await res.json();
-            const list = data.results.map((p, idx) => ({
-                id: idx + 1,
-                name: p.name.toUpperCase(),
-                url: p.url
-            }));
-            setFullGlobalList(list);
-            setFilteredGlobalList(list);
-        } catch (err) {
-            console.error("Errore caricamento PokeAPI:", err);
-        } finally {
-            setLoadingGlobal(false);
-        }
+    async function importaInCampagna(p) {
+        // Mappatura inversa per il selettore (EN -> IT Upper)
+        const typeMap = {
+            'normal': 'NORMALE', 'fire': 'FUOCO', 'water': 'ACQUA', 'grass': 'ERBA',
+            'electric': 'ELETTRO', 'ice': 'GHIACCIO', 'fighting': 'LOTTA', 'poison': 'VELENO',
+            'ground': 'TERRA', 'flying': 'VOLANTE', 'psychic': 'PSICO', 'bug': 'COLEOTTERO',
+            'rock': 'ROCCIA', 'ghost': 'SPETTRO', 'dragon': 'DRAGO', 'steel': 'ACCIAIO',
+            'fairy': 'FOLLETTO', 'dark': 'BUIO', 'suono': 'SUONO', 'sconosciuto': 'SCONOSCIUTO'
+        };
+
+        setEditForm({
+            nome: p.nome.toUpperCase(),
+            tipo1: typeMap[p.tipo1.toLowerCase()] || 'NORMALE',
+            tipo2: p.tipo2 ? (typeMap[p.tipo2.toLowerCase()] || 'NESSUNO') : 'NESSUNO',
+            hp_base: p.hp_base,
+            atk_base: p.atk_base,
+            def_base: p.def_base,
+            spatk_base: p.spatk_base,
+            spdef_base: p.spdef_base,
+            speed_base: p.speed_base,
+            immagine_url: p.immagine_url,
+            sprite_url: p.sprite_url,
+            descrizione: p.descrizione,
+            visibile_pokedex: true
+        });
+        setIsEditing(true);
     }
-
-    useEffect(() => {
-        if (activeTab === 'global') {
-            caricaGlobalLibrary();
-        }
-    }, [activeTab]);
-
-    useEffect(() => {
-        if (activeTab === 'global') {
-            const filtered = fullGlobalList.filter(p =>
-                p.name.includes(searchTerm.toUpperCase()) ||
-                p.id.toString().includes(searchTerm)
-            );
-            setFilteredGlobalList(filtered);
-        }
-    }, [searchTerm, fullGlobalList]);
-
-    const importFromGlobal = async (p) => {
-        setLoadingGlobal(true);
-        try {
-            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${p.id}`);
-            const data = await res.json();
-
-            setEditForm({
-                nome: data.name.toUpperCase(),
-                tipo1: data.types[0]?.type.name.toUpperCase(),
-                tipo2: data.types[1]?.type.name.toUpperCase() || null,
-                hp_base: data.stats[0].base_stat,
-                atk_base: data.stats[1].base_stat,
-                def_base: data.stats[2].base_stat,
-                spatk_base: data.stats[3].base_stat,
-                spdef_base: data.stats[4].base_stat,
-                speed_base: data.stats[5].base_stat,
-                descrizione: '',
-                immagine_url: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${data.id}.png`,
-                sprite_url: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${data.id}.png`,
-                visibile_pokedex: true
-            });
-            setIsEditing(true);
-        } catch (err) {
-            console.error("Errore importazione:", err);
-            alert("Errore durante l'importazione dei dati.");
-        } finally {
-            setLoadingGlobal(false);
-        }
-    };
 
     const openEditModal = (p = null) => {
         if (p) {
-            setEditForm({ ...p });
+            setEditForm({ 
+                ...p, 
+                tipo1: p.tipo1.toUpperCase(), 
+                tipo2: p.tipo2 ? p.tipo2.toUpperCase() : null 
+            });
         } else {
             setEditForm({
                 nome: '',
@@ -131,43 +223,20 @@ export default function PokemonMaster() {
         setIsEditing(true);
     };
 
-    async function salvaPokemon(asNew = false) {
-        setSaving(true);
-        try {
-            const payload = { ...editForm };
-            if (asNew) delete payload.id;
-
-            let error;
-            if (editForm.id && !asNew) {
-                const { error: err } = await supabase
-                    .from('pokemon')
-                    .update(payload)
-                    .eq('id', editForm.id);
-                error = err;
-            } else {
-                const { error: err } = await supabase
-                    .from('pokemon')
-                    .insert([payload]);
-                error = err;
-            }
-
-            if (error) throw error;
-            setIsEditing(false);
-            caricaPokemon();
-        } catch (err) {
-            console.error("Errore salvataggio pokemon:", err);
-            alert("Errore nel salvataggio. Assicurati che la tabella 'pokemon' esista in Supabase.");
-        } finally {
-            setSaving(false);
-        }
-    }
 
     async function eliminaPokemon(id) {
-        if (!confirm("Sei sicuro di voler eliminare questo Pokemon?")) return;
+        if (!confirm("Sei sicuro di voler rimuovere questo Pokemon dalla Campagna?")) return;
         try {
-            const { error } = await supabase.from('pokemon').delete().eq('id', id);
+            const { error } = await supabase.from('pokemon_campagna').delete().eq('id', id);
             if (error) throw error;
-            caricaPokemon();
+            
+            // 🛡️ Se la tabella è vuota, resetta l'ID a 1
+            const { data: remains } = await supabase.from('pokemon_campagna').select('id').limit(1);
+            if (!remains || remains.length === 0) {
+                await supabase.rpc('reset_id_pokemon_campagna');
+            }
+            
+            caricaPokemonCampaign();
         } catch (err) {
             console.error(err);
         }
@@ -176,17 +245,19 @@ export default function PokemonMaster() {
     async function togglePokedex(p) {
         try {
             const { error } = await supabase
-                .from('pokemon')
+                .from('pokemon_campagna')
                 .update({ visibile_pokedex: !p.visibile_pokedex })
                 .eq('id', p.id);
             if (error) throw error;
-            setPokemon(prev => prev.map(item => item.id === p.id ? { ...item, visibile_pokedex: !item.visibile_pokedex } : item));
+            setPokemonCampaign(prev => prev.map(item => item.id === p.id ? { ...item, visibile_pokedex: !item.visibile_pokedex } : item));
         } catch (err) {
             console.error(err);
         }
     }
 
-    const filteredLocal = pokemon.filter(p =>
+    const currentList = activeTab === 'national' ? pokemonNational : pokemonCampaign;
+
+    const filteredLocal = currentList.filter(p =>
         p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.id && p.id.toString().includes(searchTerm))
     );
@@ -206,19 +277,18 @@ export default function PokemonMaster() {
                 </button>
             </div>
 
-            {/* TAB SELECTOR */}
-            <div className="master-tabs">
-                <button
-                    className={`master-tab ${activeTab === 'local' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('local')}
+            <div className="tab-control-master">
+                <button 
+                    className={`tab-btn ${activeTab === 'campaign' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('campaign')}
                 >
-                    <Heart size={18} /> La mia Campagna ({pokemon.length})
+                    <Check size={18} /> Libreria Campagna ({pokemonCampaign.length})
                 </button>
-                <button
-                    className={`master-tab ${activeTab === 'global' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('global')}
+                <button 
+                    className={`tab-btn ${activeTab === 'national' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('national')}
                 >
-                    <Search size={18} /> Libreria Globale (PokeAPI)
+                    <Info size={18} /> Pokédex Nazionale (1025)
                 </button>
             </div>
 
@@ -226,22 +296,21 @@ export default function PokemonMaster() {
                 <Search className="search-icon" size={20} />
                 <input
                     type="text"
-                    placeholder={activeTab === 'local' ? "Cerca nei tuoi Pokémon..." : "Cerca ID o Nome su PokeAPI..."}
+                    placeholder={`Cerca in ${activeTab === 'national' ? 'Pokédex Nazionale' : 'Libreria Campagna'}...`}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
 
-            {activeTab === 'local' ? (
-                loading ? (
-                    <div className="flex-center p-xl"><Loader2 className="spin" size={32} /></div>
-                ) : filteredLocal.length === 0 ? (
-                    <div className="empty-state-pokedex">
-                        <Info size={48} />
-                        <h3>Nessun Pokémon trovato</h3>
-                        <p>Aggiungi un nuovo Pokémon o cercane uno nella Libreria Globale.</p>
-                    </div>
-                ) : (
+            {loading ? (
+                <div className="flex-center p-xl"><Loader2 className="spin" size={32} /></div>
+            ) : filteredLocal.length === 0 ? (
+                <div className="empty-state-pokedex">
+                    <Info size={48} />
+                    <h3>{activeTab === 'national' ? 'Niente nel Pokédex' : 'Libreria della Campagna Vuota'}</h3>
+                    <p>{activeTab === 'national' ? 'Controlla il termine di ricerca.' : 'Inizia importando Pokémon dal Pokédex Nazionale o creane uno nuovo!'}</p>
+                </div>
+            ) : (
                     <div className="master-list-table-container">
                         <table className="master-list-table">
                             <thead>
@@ -251,7 +320,7 @@ export default function PokemonMaster() {
                                     <th>Nome</th>
                                     <th>Tipo</th>
                                     <th>Stats</th>
-                                    <th>Visibilità</th>
+                                    {activeTab === 'campaign' && <th>Visibilità</th>}
                                     <th>Azioni</th>
                                 </tr>
                             </thead>
@@ -265,27 +334,37 @@ export default function PokemonMaster() {
                                         <td style={{ fontWeight: 800 }}>{p.nome}</td>
                                         <td>
                                             <div className="pkmn-types-mini">
-                                                <span className="type-badge-mini" style={{ backgroundColor: `var(--type-${p.tipo1.toLowerCase()})` }}>{p.tipo1}</span>
-                                                {p.tipo2 && <span className="type-badge-mini" style={{ backgroundColor: `var(--type-${p.tipo2.toLowerCase()})` }}>{p.tipo2}</span>}
+                                                <span className="type-badge-mini" style={{ backgroundColor: `var(--type-${p.tipo1.toLowerCase()})` }}>{translateType(p.tipo1)}</span>
+                                                {p.tipo2 && <span className="type-badge-mini" style={{ backgroundColor: `var(--type-${p.tipo2.toLowerCase()})` }}>{translateType(p.tipo2)}</span>}
                                             </div>
                                         </td>
                                         <td>
                                             <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>
-                                                {p.hp_base}/{p.atk_base}/{p.def_base}/...
+                                                {p.hp_base}/{p.atk_base}/{p.def_base}
                                             </span>
                                         </td>
-                                        <td>
-                                            <div
-                                                className={`pokedex-toggle ${p.visibile_pokedex ? 'active' : ''}`}
-                                                onClick={() => togglePokedex(p)}
-                                            >
-                                                <div className="toggle-circle"></div>
-                                            </div>
-                                        </td>
+                                        {activeTab === 'campaign' && (
+                                            <td>
+                                                <div
+                                                    className={`pokedex-toggle ${p.visibile_pokedex ? 'active' : ''}`}
+                                                    onClick={() => togglePokedex(p)}
+                                                >
+                                                    <div className="toggle-circle"></div>
+                                                </div>
+                                            </td>
+                                        )}
                                         <td className="actions-cell-column">
                                             <div className="actions-cell">
-                                                <button className="btn-icon" onClick={() => openEditModal(p)}><Edit2 size={16} /></button>
-                                                <button className="btn-icon del" onClick={() => eliminaPokemon(p.id)}><Trash2 size={16} /></button>
+                                                {activeTab === 'national' ? (
+                                                    <button className="btn-icon accent" title="Importa in Campagna" onClick={() => importaInCampagna(p)}>
+                                                        <Plus size={16} />
+                                                    </button>
+                                                ) : (
+                                                    <>
+                                                        <button className="btn-icon" onClick={() => openEditModal(p)}><Edit2 size={16} /></button>
+                                                        <button className="btn-icon del" onClick={() => eliminaPokemon(p.id)}><Trash2 size={16} /></button>
+                                                    </>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -293,42 +372,7 @@ export default function PokemonMaster() {
                             </tbody>
                         </table>
                     </div>
-                )
-            ) : (
-                <div className="global-pokedex-grid animate-fade-in">
-                    {loadingGlobal ? (
-                        <div className="flex-center p-xl" style={{ gridColumn: '1 / -1' }}>
-                            <Loader2 className="spin" size={32} />
-                        </div>
-                    ) : filteredGlobalList.length === 0 ? (
-                        <div className="empty-state-pokedex" style={{ gridColumn: '1 / -1' }}>
-                            <Search size={48} />
-                            <h3>Nessun risultato</h3>
-                            <p>Prova a cercare un altro Pokémon o ID.</p>
-                        </div>
-                    ) : (
-                        filteredGlobalList.slice(0, 100).map(p => (
-                            <div key={p.id} className="global-pkmn-card">
-                                <span className="global-pkmn-id">#{p.id}</span>
-                                <img
-                                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`}
-                                    alt={p.name}
-                                    className="global-pkmn-img"
-                                />
-                                <div className="global-pkmn-info">
-                                    <strong>{p.name}</strong>
-                                    <button className="btn-import-mini" onClick={() => importFromGlobal(p)}>
-                                        <Plus size={14} /> Importa
-                                    </button>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                    {filteredGlobalList.length > 100 && !loadingGlobal && (
-                        <p className="limit-hint">Vengono mostrati solo i primi 100 risultati. Usa la ricerca per precisare.</p>
-                    )}
-                </div>
-            )}
+                )}
 
             {isEditing && editForm && (
                 <div className="modal-overlay">
@@ -367,6 +411,8 @@ export default function PokemonMaster() {
                                             <option value="BUIO">BUIO</option>
                                             <option value="ACCIAIO">ACCIAIO</option>
                                             <option value="FOLLETTO">FOLLETTO</option>
+                                            <option value="SUONO">SUONO</option>
+                                            <option value="SCONOSCIUTO">SCONOSCIUTO</option>
                                         </select>
                                     </div>
                                     <div className="input-field">
@@ -391,11 +437,40 @@ export default function PokemonMaster() {
                                             <option value="BUIO">BUIO</option>
                                             <option value="ACCIAIO">ACCIAIO</option>
                                             <option value="FOLLETTO">FOLLETTO</option>
+                                            <option value="SUONO">SUONO</option>
+                                            <option value="SCONOSCIUTO">SCONOSCIUTO</option>
                                         </select>
                                     </div>
                                     <div className="input-field" style={{ gridColumn: 'span 3' }}>
-                                        <label>Immagine URL (Vuoto per auto-generata da ID)</label>
-                                        <input type="text" value={editForm.immagine_url || ''} onChange={(e) => setEditForm({ ...editForm, immagine_url: e.target.value })} />
+                                        <label>Immagine Pokémon</label>
+                                        <div className="master-upload-container">
+                                            {editForm.immagine_url ? (
+                                                <div className="master-upload-preview-box">
+                                                    <img src={editForm.immagine_url} alt="Anteprima" className="master-upload-preview" />
+                                                    <button className="btn-remove-upload" onClick={() => setEditForm({ ...editForm, immagine_url: '' })}>
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <label className="master-upload-placeholder">
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        style={{ display: 'none' }}
+                                                        onChange={handleFileUpload}
+                                                        disabled={uploading}
+                                                    />
+                                                    {uploading ? (
+                                                        <Loader2 className="spin" size={24} />
+                                                    ) : (
+                                                        <>
+                                                            <Upload size={24} />
+                                                            <span>Seleziona Immagine dal Tuo PC</span>
+                                                        </>
+                                                    )}
+                                                </label>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="input-field" style={{ gridColumn: 'span 3' }}>
                                         <label>Descrizione Pokédex</label>
@@ -439,7 +514,7 @@ export default function PokemonMaster() {
                             <button className="btn-cancel-flat" onClick={() => setIsEditing(false)}>Annulla</button>
                             <div className="btn-group-master">
                                 <button className="btn-save-hero" onClick={() => salvaPokemon(false)} disabled={saving}>
-                                    {saving ? <Loader2 className="spin" /> : <Save size={18} />} {editForm.id ? 'Sovrascrivi' : 'Crea'}
+                                    {saving ? <Loader2 className="spin" /> : <Save size={18} />} {editForm.id ? 'Sovrascrivi' : 'Aggiungi alla Libreria Campagna'}
                                 </button>
                                 {editForm.id && (
                                     <button className="btn-save-hero accent" onClick={() => salvaPokemon(true)} disabled={saving}>
@@ -453,6 +528,34 @@ export default function PokemonMaster() {
             )}
 
             <style>{`
+                .search-bar-container {
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                    background: var(--bg-card);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 12px;
+                    padding: 0 15px;
+                    margin-bottom: 20px;
+                    transition: all 0.3s;
+                    gap: 24px;
+                }
+                .search-bar-container:focus-within {
+                    border-color: var(--accent-primary);
+                    box-shadow: 0 0 10px var(--accent-glow);
+                }
+                .search-bar-container input {
+                    background: transparent;
+                    border: none;
+                    color: var(--text-master) !important;
+                    padding: 12px 0 12px 25px;
+                    font-size: 1rem;
+                    width: 100%;
+                    outline: none;
+                }
+                .search-icon {
+                    color: var(--text-muted);
+                }
                 .master-list-table-container {
                     background: var(--bg-card);
                     border-radius: 12px;
@@ -557,98 +660,6 @@ export default function PokemonMaster() {
                 }
                 .btn-save-hero.accent {
                     background: #ff00d4;
-                }
-                .master-tabs {
-                    display: flex;
-                    gap: 10px;
-                    margin-bottom: 20px;
-                }
-                .master-tab {
-                    padding: 10px 20px;
-                    background: var(--bg-card);
-                    border: 1px solid var(--border-subtle);
-                    border-radius: 12px;
-                    color: var(--text-secondary);
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    font-weight: 600;
-                }
-                .master-tab.active {
-                    background: var(--bg-secondary);
-                    border-color: var(--accent-primary);
-                    color: var(--text-primary);
-                    box-shadow: 0 0 15px var(--accent-glow);
-                }
-                .global-pokedex-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-                    gap: 15px;
-                    margin-top: 20px;
-                }
-                .global-pkmn-card {
-                    background: var(--bg-card);
-                    border: 1px solid var(--border-subtle);
-                    border-radius: 16px;
-                    padding: 15px;
-                    text-align: center;
-                    position: relative;
-                    transition: all 0.2s;
-                }
-                .global-pkmn-card:hover {
-                    transform: translateY(-5px);
-                    border-color: var(--accent-primary);
-                }
-                .global-pkmn-id {
-                    position: absolute;
-                    top: 8px;
-                    right: 10px;
-                    font-size: 0.7rem;
-                    font-family: monospace;
-                    opacity: 0.5;
-                }
-                .global-pkmn-img {
-                    width: 70px;
-                    height: 70px;
-                    object-fit: contain;
-                    margin: 0 auto 10px;
-                }
-                .global-pkmn-info {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                }
-                .global-pkmn-info strong {
-                    font-size: 0.8rem;
-                    text-transform: uppercase;
-                }
-                .btn-import-mini {
-                    background: var(--accent-primary);
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    padding: 4px 8px;
-                    font-size: 0.75rem;
-                    font-weight: 700;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 4px;
-                    cursor: pointer;
-                }
-                .empty-state-pokedex {
-                    text-align: center;
-                    padding: 50px;
-                    color: var(--text-muted);
-                }
-                .limit-hint {
-                    grid-column: 1 / -1;
-                    text-align: center;
-                    font-size: 0.8rem;
-                    color: var(--text-muted);
-                    margin-top: 20px;
                 }
             `}</style>
         </div>

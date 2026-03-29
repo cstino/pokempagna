@@ -1957,13 +1957,26 @@
     gap: 12px;
 }
 
-.move-checkbox-card input {
-    width: 18px;
-    height: 18px;
-    accent-color: #a78bfa;
-    cursor: pointer;
-    margin-top: 2px;
+.custom-checkbox-master {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: white;
+    background: rgba(0, 0, 0, 0.1);
     flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.custom-checkbox-master.active {
+    background: #a78bfa;
+    border-color: #a78bfa;
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(167, 139, 250, 0.4);
 }
 
 .move-checkbox-card:hover {

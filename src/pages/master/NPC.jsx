@@ -983,18 +983,31 @@ export default function NPC() {
                                                     </select>
                                                 </div>
                                                 <div className="moves-selection-grid">
-                                                    {allAvailableMoves.filter(m => (m.nome.toLowerCase().includes(moveSearch.toLowerCase()) && (moveTypeFilter === 'all' || m.tipo === moveTypeFilter))).map(move => (
-                                                        <label key={move.id} className={`move-checkbox-card ${selectedPkmnMoveIds.includes(move.id) ? 'checked' : ''}`}>
-                                                            <input type="checkbox" checked={selectedPkmnMoveIds.includes(move.id)} onChange={(e) => toggleMoveAssignment(move.id, e.target.checked)} />
-                                                            <div className="move-check-content">
-                                                                <div className="move-check-header">
-                                                                    <span className="move-check-name">{move.nome}</span>
-                                                                    <span className="type-tag-move" style={{ borderLeftColor: `var(--type-${move.tipo.toLowerCase()})` }}>{translateType(move.tipo)}</span>
+                                                    {allAvailableMoves.filter(m => (m.nome.toLowerCase().includes(moveSearch.toLowerCase()) && (moveTypeFilter === 'all' || m.tipo === moveTypeFilter))).map(move => {
+                                                        const isChecked = selectedPkmnMoveIds.includes(move.id);
+                                                        return (
+                                                            <div 
+                                                                key={move.id} 
+                                                                className={`move-checkbox-card ${isChecked ? 'checked' : ''}`}
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    toggleMoveAssignment(move.id, !isChecked);
+                                                                }}
+                                                            >
+                                                                <div className={`custom-checkbox-master ${isChecked ? 'active' : ''}`}>
+                                                                    {isChecked && <Check size={12} />}
                                                                 </div>
-                                                                <div className="move-check-details"><span>POT {move.potenza || '-'}</span><span>PP {move.pp_max}</span></div>
+                                                                <div className="move-check-content">
+                                                                    <div className="move-check-header">
+                                                                        <span className="move-check-name">{move.nome}</span>
+                                                                        <span className="type-tag-move" style={{ borderLeftColor: `var(--type-${move.tipo.toLowerCase()})` }}>{translateType(move.tipo)}</span>
+                                                                    </div>
+                                                                    <div className="move-check-details"><span>POT {move.potenza || '-'}</span><span>PP {move.pp_max}</span></div>
+                                                                </div>
                                                             </div>
-                                                        </label>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                             <button className="btn-confirm-add" onClick={salvaPokeStats} disabled={saving} style={{ marginTop: '20px' }}>
