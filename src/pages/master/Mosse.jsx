@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Search, Plus, Edit2, Save, X, Loader2, Check, Info, Trash2, Zap } from 'lucide-react';
+import { getTypeColor } from '../../lib/typeColors';
 import './Party.css';
 
 export default function MosseMaster() {
@@ -165,8 +166,23 @@ export default function MosseMaster() {
                                         <tr key={m.id}>
                                             <td><strong>{m.nome}</strong></td>
                                             <td className="desc-cell"><em>{m.descrizione || 'Nessuna descrizione'}</em></td>
-                                            <td><span className="type-badge-mini" style={{ textTransform: 'uppercase' }}>{m.tipo}</span></td>
-                                            <td><span className="type-badge-mini" style={{ textTransform: 'capitalize' }}>{m.categoria}</span></td>
+                                            <td><span className="type-badge-mini" style={{ 
+                                                textTransform: 'uppercase',
+                                                background: getTypeColor(m.tipo),
+                                                color: 'white',
+                                                border: 'none',
+                                                fontWeight: 'bold',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                            }}>{m.tipo}</span></td>
+                                            <td><span className="type-badge-mini" style={{ 
+                                                textTransform: 'capitalize',
+                                                background: m.categoria === 'fisico' ? '#ef4444' : 
+                                                            m.categoria === 'speciale' ? '#3b82f6' : 
+                                                            '#6b7280',
+                                                color: 'white',
+                                                border: 'none',
+                                                fontWeight: 'bold'
+                                            }}>{m.categoria}</span></td>
                                             <td>
                                                 <div
                                                     className={`pokedex-toggle ${m.disponibile ? 'active' : ''}`}
@@ -297,12 +313,12 @@ export default function MosseMaster() {
                     color: var(--text-muted);
                 }
                 .type-badge-mini {
-                    font-size: 0.65rem;
-                    padding: 2px 8px;
-                    border-radius: 4px;
-                    background: var(--bg-secondary);
-                    color: var(--text-secondary);
-                    border: 1px solid var(--border-subtle);
+                    font-size: 0.75rem;
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    display: inline-block;
+                    min-width: 80px;
+                    text-align: center;
                 }
                 .actions-cell {
                     display: flex;
