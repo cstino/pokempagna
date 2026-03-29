@@ -394,48 +394,13 @@ export default function NPC() {
         } catch (err) { console.error("Errore recupero mosse assegnate:", err); }
     };
 
-    const toggleMoveAssignment = async (moveId, isChecked) => {
+    const toggleMoveAssignment = (moveId, isChecked) => {
         if (!editingPkmn) return;
 
-        // AGGIORNAMENTO OTTIMISTICO: cambiamo subito lo stato della UI
         if (isChecked) {
             setSelectedPkmnMoveIds(prev => [...prev, moveId]);
         } else {
             setSelectedPkmnMoveIds(prev => prev.filter(id => id !== moveId));
-        }
-
-        // Se è un nuovo Pokémon, abbiamo finito (salverà tutto salvaPokeStats)
-        if (!editingPkmn.id) return;
-
-        // Se il Pokémon esiste già, sincronizziamo col DB in background
-        try {
-            if (isChecked) {
-                const moveDetails = allAvailableMoves.find(m => m.id === moveId);
-                const { error } = await supabase.from('mosse_pokemon').insert({
-                    pokemon_giocatore_id: editingPkmn.id,
-                    mossa_id: moveId,
-                    pp_attuale: moveDetails?.pp_max || 20,
-                    attiva: true
-                });
-                if (error) {
-                    // Rollback in caso di errore
-                    setSelectedPkmnMoveIds(prev => prev.filter(id => id !== moveId));
-                    throw error;
-                }
-            } else {
-                const { error } = await supabase.from('mosse_pokemon')
-                    .delete()
-                    .eq('pokemon_giocatore_id', editingPkmn.id)
-                    .eq('mossa_id', moveId);
-                if (error) {
-                    // Rollback in caso di errore
-                    setSelectedPkmnMoveIds(prev => [...prev, moveId]);
-                    throw error;
-                }
-            }
-        } catch (err) {
-            console.error("Errore sincronizzazione mossa DB:", err);
-            // Non allertiamo l'utente per non interrompere il flusso, il log basterà per il debug
         }
     };
 
@@ -467,6 +432,25 @@ export default function NPC() {
                     .update(pkmnData)
                     .eq('id', editingPkmn.id);
                 if (error) throw error;
+
+                // AGGIORNAMENTO MOSSE PER POKEMON ESISTENTE
+                // 1. Eliminiamo le vecchie assegnazioni
+                await supabase.from('mosse_pokemon').delete().eq('pokemon_giocatore_id', editingPkmn.id);
+                
+                // 2. Inseriamo le nuove selezionate
+                if (selectedPkmnMoveIds.length > 0) {
+                    const movesToInsert = selectedPkmnMoveIds.map(moveId => {
+                        const mDetails = allAvailableMoves.find(m => m.id === moveId);
+                        return {
+                            pokemon_giocatore_id: editingPkmn.id,
+                            mossa_id: moveId,
+                            pp_attuale: mDetails?.pp_max || 20,
+                            attiva: true
+                        };
+                    });
+                    const { error: mError } = await supabase.from('mosse_pokemon').insert(movesToInsert);
+                    if (mError) throw mError;
+                }
             } else {
                 // INSERT (Nuovo Pokémon)
                 const { data: newPkmn, error } = await supabase
@@ -493,7 +477,7 @@ export default function NPC() {
                         .from('mosse_pokemon')
                         .insert(movesToInsert);
                     
-                    if (movesError) console.error("Errore salvataggio mosse iniziali:", movesError);
+                    if (movesError) throw movesError;
                 }
             }
 
