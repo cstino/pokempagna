@@ -395,6 +395,7 @@ export default function Party() {
                             pokemon_giocatore_id: editingPkmn.id,
                             mossa_id: moveId,
                             nome: mDetails?.nome || 'Mossa',
+                            tipo: mDetails?.tipo || 'normale',
                             pp_attuale: mDetails?.pp_max || 20,
                             attiva: true
                         };
@@ -420,6 +421,7 @@ export default function Party() {
                             pokemon_giocatore_id: newPkmn.id,
                             mossa_id: moveId,
                             nome: mDetails?.nome || 'Mossa',
+                            tipo: mDetails?.tipo || 'normale',
                             pp_attuale: mDetails?.pp_max || 20,
                             attiva: true
                         };
