@@ -444,6 +444,9 @@ export default function NPC() {
                         return {
                             pokemon_giocatore_id: editingPkmn.id,
                             mossa_id: moveId,
+                            nome: mDetails?.nome || 'Mossa',
+                            tipo: mDetails?.tipo,
+                            potenza: mDetails?.potenza,
                             pp_attuale: mDetails?.pp_max || 20,
                             attiva: true
                         };
@@ -468,6 +471,9 @@ export default function NPC() {
                         return {
                             pokemon_giocatore_id: newPkmn.id,
                             mossa_id: moveId,
+                            nome: mDetails?.nome || 'Mossa',
+                            tipo: mDetails?.tipo,
+                            potenza: mDetails?.potenza,
                             pp_attuale: mDetails?.pp_max || 20,
                             attiva: true
                         };
