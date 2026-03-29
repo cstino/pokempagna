@@ -1725,7 +1725,7 @@
     margin: 15px 0 10px 0 !important;
     filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15)) !important;
     object-fit: contain !important;
-    transform: translateY(8px);
+    transform: translateY(18px);
 }
 
 .master-card-premium .pkmn-card-details h3 {
