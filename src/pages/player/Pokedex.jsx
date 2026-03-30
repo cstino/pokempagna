@@ -20,7 +20,7 @@ export default function Pokedex() {
         try {
             // 1. Carica lista pokemon visibili
             const { data, error } = await supabase
-                .from('pokemon')
+                .from('pokemon_campagna')
                 .select('*')
                 .eq('visibile_pokedex', true)
                 .order('id', { ascending: true });

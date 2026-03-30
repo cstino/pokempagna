@@ -119,9 +119,11 @@
 
 .pkmn-card-details h3 {
     margin: 0;
-    font-size: 1.1rem;
-    font-weight: 800;
+    font-size: 1.3rem;
+    font-family: var(--font-display);
+    font-weight: 900;
     text-transform: uppercase;
+    letter-spacing: -0.02em;
     text-align: center !important;
     width: 100%;
 }
@@ -235,8 +237,10 @@
 .modal-pkmn-header h2 {
     font-size: 2.5rem;
     font-family: var(--font-display);
+    font-weight: 900;
     margin: 4px 0;
-    letter-spacing: -1px;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
 }
 
 .pkmn-types-modal {

@@ -4,9 +4,29 @@ import { supabase } from '../../lib/supabase';
 import { Star, Loader2, Trophy, Ruler, Weight, Shield, Zap, Heart, Info, ArrowRightLeft, XCircle, AlertCircle, Box, Plus, Check } from 'lucide-react';
 import gsap from 'gsap';
 import { Draggable } from 'gsap/Draggable';
+import { getTypeColor, getTypeLabel } from '../../lib/typeColors';
 import './Squadra.css';
 
 gsap.registerPlugin(Draggable);
+
+// Helper function for Type Icons
+const getTypeIconSrc = (typeStr) => {
+    if (!typeStr) return '';
+    const normalized = typeStr.toLowerCase();
+    let srcStr = `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${
+        normalized === 'fuoco' ? 'fire' : normalized === 'acqua' ? 'water' : normalized === 'erba' ? 'grass' :
+        normalized === 'elettro' ? 'electric' : normalized === 'ghiaccio' ? 'ice' : normalized === 'lotta' ? 'fighting' :
+        normalized === 'veleno' ? 'poison' : normalized === 'terra' ? 'ground' : normalized === 'volante' ? 'flying' :
+        normalized === 'psico' ? 'psychic' : normalized === 'coleottero' ? 'bug' : normalized === 'roccia' ? 'rock' :
+        normalized === 'spettro' ? 'ghost' : normalized === 'drago' ? 'dragon' : normalized === 'acciaio' ? 'steel' :
+        normalized === 'folletto' ? 'fairy' : normalized === 'buio' ? 'dark' : normalized === 'normale' ? 'normal' : normalized
+    }.svg`;
+    
+    if (normalized === 'suono' || normalized === 'sound') srcStr = 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg';
+    if (normalized === 'sconosciuto' || normalized === 'unknown') srcStr = 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg';
+    
+    return srcStr;
+};
 
 export default function Squadra() {
     const { profile } = useAuth();
@@ -46,9 +66,22 @@ export default function Squadra() {
                 .single();
 
             setSlots(giaterData?.slot_squadra || 3);
-            setPokemon(pkmnData || []);
+            
+            // pokemon_giocatore ha già nome, tipo1, tipo2 e pokemon_id (che è il National Dex ID)
+            // Non c'è alcun bisogno di incrociare con pokemon_campagna perché la dashboard Master 
+            // aggiunge i PKMN ai giocatori scaricandoli direttamente da PokeAPI!
+            const cleanData = (pkmnData || []).map(p => ({
+                ...p,
+                campagna_nome: p.soprannome || p.nome || 'Sconosciuto',
+                campagna_tipo1: p.tipo1,
+                campagna_tipo2: p.tipo2,
+                campagna_img: null // Userà il fallback classico PokeAPI in base a p.pokemon_id
+            }));
+            
+            setPokemon(cleanData);
         } catch (err) {
             console.error("Errore recupero squadra:", err);
+            setErrorMsg("Errore nel recupero della squadra.");
         } finally {
             setLoading(false);
         }
@@ -249,16 +282,46 @@ export default function Squadra() {
                         <div className="modal-pkmn-bg">
                             <button className="modal-close-btn" onClick={() => setSelectedPkmn(null)}>✕</button>
                             <img
-                                src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${selectedPkmn.pokemon_id}.png`}
+                                src={selectedPkmn.campagna_img || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${selectedPkmn.pokemon_id}.png`}
                                 alt={selectedPkmn.soprannome}
                                 className="modal-pkmn-img"
                             />
                         </div>
 
                         <div className="modal-pkmn-body">
-                            <div className="modal-pkmn-header">
-                                <h2>{selectedPkmn.soprannome || 'Senza Nome'}</h2>
-                                <p style={{ opacity: 0.5, textTransform: 'uppercase', fontSize: '0.8rem' }}>Lv. {selectedPkmn.livello}</p>
+                            <div className="modal-pkmn-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingBottom: '20px' }}>
+                                <h2 style={{ 
+                                    textAlign: 'left', 
+                                    margin: '0 0 12px 0', 
+                                    fontFamily: 'var(--font-display), sans-serif', 
+                                    fontWeight: 900, 
+                                    fontSize: '2.4rem',
+                                    letterSpacing: '-0.02em',
+                                    lineHeight: 1,
+                                    textTransform: 'uppercase'
+                                }}>
+                                    {selectedPkmn.soprannome || 'Senza Nome'}
+                                </h2>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                        <span style={{ opacity: 0.9, textTransform: 'uppercase', fontSize: '1rem', fontWeight: 900, color: '#fcd34d' }}>Lv.</span>
+                                        <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fcd34d', lineHeight: 1 }}>{selectedPkmn.livello}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        {selectedPkmn.campagna_tipo1 && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: getTypeColor(selectedPkmn.campagna_tipo1), padding: '6px 12px', borderRadius: '14px', fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', color: 'white', border: '1px solid rgba(255,255,255,0.4)', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+                                                <img src={getTypeIconSrc(selectedPkmn.campagna_tipo1)} alt={selectedPkmn.campagna_tipo1} style={{ width: '14px', height: '14px', filter: 'brightness(0) invert(1)', objectFit: 'contain' }} />
+                                                {getTypeLabel(selectedPkmn.campagna_tipo1)}
+                                            </div>
+                                        )}
+                                        {selectedPkmn.campagna_tipo2 && selectedPkmn.campagna_tipo2.toUpperCase() !== 'NESSUNO' && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: getTypeColor(selectedPkmn.campagna_tipo2), padding: '6px 12px', borderRadius: '14px', fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', color: 'white', border: '1px solid rgba(255,255,255,0.4)', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+                                                <img src={getTypeIconSrc(selectedPkmn.campagna_tipo2)} alt={selectedPkmn.campagna_tipo2} style={{ width: '14px', height: '14px', filter: 'brightness(0) invert(1)', objectFit: 'contain' }} />
+                                                {getTypeLabel(selectedPkmn.campagna_tipo2)}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="pkmn-actions-container">
@@ -439,14 +502,28 @@ function PkmnCard({ pkmn, isBench, onClick, getHPColor }) {
     }
 
     const hpPct = (pkmn.hp_attuale / pkmn.hp_max) * 100;
+    
+    // Funzione helper per le icone dei tipi (copiata da Party.jsx)
+    const renderTypeIcon = (typeStr, isMini = false) => {
+        if (!typeStr) return null;
+        return (
+            <div className={isMini ? "pkmn-type-circle-mini" : "pkmn-type-circle"} style={{ backgroundColor: getTypeColor(typeStr) }} title={getTypeLabel(typeStr)}>
+                <img src={getTypeIconSrc(typeStr)} alt={typeStr} className={isMini ? "type-icon-img-mini" : "type-icon-img"} />
+            </div>
+        );
+    };
+
     return (
         <div className={`pkmn-card-squadra ${isBench ? 'bench-card' : ''}`} onClick={onClick}>
-            <div className="pkmn-type-badge">{pkmn.tipo1 || '???'}</div>
+            <div className="pkmn-types-container-absolute">
+                {renderTypeIcon(pkmn.campagna_tipo1)}
+                {pkmn.campagna_tipo2 && pkmn.campagna_tipo2.toUpperCase() !== 'NESSUNO' && renderTypeIcon(pkmn.campagna_tipo2)}
+            </div>
             <div className="pkmn-lvl-badge">Lv.{pkmn.livello}</div>
             <div className="pkmn-image-container">
                 <img
                     className="pkmn-image"
-                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pkmn.pokemon_id}.png`}
+                    src={pkmn.campagna_img || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pkmn.pokemon_id}.png`}
                     alt={pkmn.soprannome}
                 />
             </div>

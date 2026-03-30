@@ -36,8 +36,8 @@ Ogni animazione elementale deve apparire come una sostanza liquida, gommosa e vi
 ## 🔄 Workflow per nuove mosse
 1. **Identificazione:** La mossa è Elementale (blob) o Fisica (sharp)?
 2. **Palette:** Scegliere 3 gradazioni di colore saturate.
-3. **Traiettoria:** Definire punto A (attaccante) e punto B (difensore).
-4. **Impact:** Aggiungere sempre un `createToonBurst` o uno `Slash` finale per feedback visivo.
+3. **Posizionamento:** Niente traiettorie A -> B. Illuminare l'attaccante (punto A) come feedback visivo, ed eseguire tutte le animazioni della mossa (elementali o fisiche) **direttamente sul bersaglio** (punto B).
+4. **Impact:** Aggiungere sempre un `createToonBurst` o uno `Slash` finale per feedback visivo sul bersaglio.
 
 ---
 // Questo file funge da "memoria visiva" per l'agente Antigravity durante lo sviluppo di Pokémpagna.

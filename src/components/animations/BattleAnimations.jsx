@@ -13,188 +13,164 @@ import './BattleAnimations.css';
 export default function BattleAnimations({ startPos, endPos = { x: 600, y: 300 }, trigger, type = 'fire_1' }) {
     const containerRef = useRef(null);
 
+    const typeColors = {
+        normale: ['#A8A77A', '#C6C6A7'],
+        fuoco: ['#EF4444', '#F97316', '#EAB308'],
+        acqua: ['#3B82F6', '#60A5FA', '#93C5FD'],
+        erba: ['#10B981', '#34D399', '#6EE7B7'],
+        elettro: ['#F59E0B', '#FCD34D'],
+        ghiaccio: ['#38BDF8', '#BAE6FD'],
+        lotta: ['#DC2626', '#F87171'], 
+        veleno: ['#9333EA', '#C084FC'],
+        terra: ['#D97706', '#FBBF24'],
+        volante: ['#8B5CF6', '#C4B5FD'],
+        psico: ['#EC4899', '#F9A8D4'],
+        coleottero: ['#84CC16', '#D9FA9D'],
+        roccia: ['#B45309', '#FCD34D'],
+        spettro: ['#6D28D9', '#C4B5FD'],
+        drago: ['#4C1D95', '#8B5CF6'],
+        buio: ['#1F2937', '#6B7280'],
+        acciaio: ['#64748B', '#CBD5E1'],
+        folletto: ['#DB2777', '#FBCFE8'],
+        suono: ['#0D9488', '#5EEAD4'],
+        sconosciuto: ['#475569', '#94A3B8']
+    };
+
+    const typeFamilies = {
+        normale: 'impact', lotta: 'impact', roccia: 'impact', terra: 'impact', suono: 'impact',
+        acqua: 'fluid', veleno: 'fluid', ghiaccio: 'fluid',
+        fuoco: 'ascendant', spettro: 'ascendant', psico: 'ascendant',
+        erba: 'nature', folletto: 'nature', coleottero: 'nature',
+        elettro: 'energy', volante: 'energy', acciaio: 'energy', drago: 'energy', sconosciuto: 'energy', buio: 'impact'
+    };
+
     useEffect(() => {
         if (trigger) {
             const [baseType, levelStr] = type.split('_');
             const level = parseInt(levelStr) || 1;
-
-            if (baseType === 'fire') launchFire(level);
-            if (baseType === 'water') launchWater(level);
-            if (baseType === 'grass') launchGrass(level);
-            if (baseType === 'physical') launchPhysical(level);
+            launchUnifiedBurst(baseType, level);
         }
     }, [trigger]);
 
-    // --- FUOCO (3 LIVELLI) ---
-    const launchFire = (level) => {
-        const container = containerRef.current;
-        const conf = {
-            1: { count: 15, size: [15, 30], radius: 30, duration: 0.6, burst: 1.5, colors: ['#ff4d00', '#ff9500'] },
-            2: { count: 35, size: [25, 55], radius: 60, duration: 0.9, burst: 3.0, colors: ['#ff4d00', '#ff9500', '#ffcc00'] },
-            3: { count: 80, size: [40, 90], radius: 120, duration: 1.4, burst: 5.5, colors: ['#ff4d00', '#ff9500', '#ffcc00', '#ffffff'] }
-        }[level] || { count: 15, size: [15, 30], radius: 30, duration: 0.6, burst: 1.5, colors: ['#ff4d00', '#ff9500'] };
-
-        for (let i = 0; i < conf.count; i++) {
-            const dot = document.createElement('div');
-            dot.className = 'fire-particle toon-blob';
-            container.appendChild(dot);
-            
-            const size = gsap.utils.random(conf.size[0], conf.size[1]);
-            gsap.set(dot, { 
-                x: endPos.x + gsap.utils.random(-15, 15), 
-                y: endPos.y + gsap.utils.random(-15, 15), 
-                width: size, height: size, 
-                background: gsap.utils.random(conf.colors),
-                opacity: 1, scale: 0 
-            });
-
-            const tl = gsap.timeline({ onComplete: () => dot.remove() });
-            tl.to(dot, { duration: 0.2, scale: 1, ease: "back.out(2)" })
-              .to(dot, { 
-                  duration: gsap.utils.random(conf.duration * 0.7, conf.duration), 
-                  x: endPos.x + gsap.utils.random(-conf.radius, conf.radius), 
-                  y: endPos.y + gsap.utils.random(-conf.radius, conf.radius), 
-                  ease: "power2.out",
-                  scale: 0.2,
-                  opacity: 0
-              }, "-=0.1");
-        }
-        setTimeout(() => { createToonBurst(endPos.x, endPos.y, '#ff9500', conf.burst); }, 200);
-    };
-
-    // --- ACQUA (3 LIVELLI) ---
-    const launchWater = (level) => {
-        const container = containerRef.current;
-        const conf = {
-            1: { count: 12, size: [15, 25], radius: 40, burst: 1.2 },
-            2: { count: 30, size: [25, 45], radius: 70, burst: 2.8 },
-            3: { count: 65, size: [40, 80], radius: 130, burst: 5.0 }
-        }[level] || { count: 12, size: [15, 25], radius: 40, burst: 1.2 };
-
-        for (let i = 0; i < conf.count; i++) {
-            const drop = document.createElement('div');
-            drop.className = 'water-particle toon-blob';
-            container.appendChild(drop);
-            const size = gsap.utils.random(conf.size[0], conf.size[1]);
-            
-            gsap.set(drop, {
-                x: endPos.x + gsap.utils.random(-10, 10),
-                y: endPos.y + gsap.utils.random(-10, 10),
-                width: size, height: size,
-                background: gsap.utils.random(['#3b82f6', '#60a5fa', '#93c5fd']),
-                opacity: 0.8, scale: 0
-            });
-
-            gsap.timeline({ onComplete: () => drop.remove() })
-                .to(drop, { duration: 0.15, scale: 1.2, ease: "expo.out" })
-                .to(drop, {
-                    duration: gsap.utils.random(0.4, 0.8),
-                    x: endPos.x + gsap.utils.random(-conf.radius, conf.radius),
-                    y: endPos.y + gsap.utils.random(-conf.radius, conf.radius),
-                    ease: "back.out(1)",
-                    scale: 0, opacity: 0
-                });
-        }
-        setTimeout(() => { createToonBurst(endPos.x, endPos.y, '#60a5fa', conf.burst); }, 100);
-    };
-
-    // --- ERBA (3 LIVELLI) ---
-    const launchGrass = (level) => {
-        const container = containerRef.current;
-        const conf = {
-            1: { count: 10, radius: 50, burst: 1.5 },
-            2: { count: 25, radius: 90, burst: 3.0 },
-            3: { count: 50, radius: 150, burst: 5.2 }
-        }[level];
-
-        for (let i = 0; i < conf.count; i++) {
-            const leaf = document.createElement('div');
-            leaf.className = 'leaf-particle';
-            container.appendChild(leaf);
-            
-            gsap.set(leaf, { 
-                x: endPos.x, y: endPos.y, 
-                scale: 0, 
-                rotate: gsap.utils.random(0, 360),
-                opacity: 1 
-            });
-
-            gsap.timeline({ onComplete: () => leaf.remove() })
-                .to(leaf, { duration: 0.2, scale: gsap.utils.random(1, 1.5), ease: "back.out" })
-                .to(leaf, { 
-                    duration: gsap.utils.random(0.6, 1.2), 
-                    x: endPos.x + gsap.utils.random(-conf.radius, conf.radius), 
-                    y: endPos.y + gsap.utils.random(-conf.radius, conf.radius), 
-                    rotate: "+=720",
-                    opacity: 0, scale: 0
-                });
-        }
+    const launchUnifiedBurst = (baseType, level) => {
+        const colors = typeColors[baseType] || typeColors.normal;
+        const family = typeFamilies[baseType] || 'impact';
         
-        if (level >= 2) {
+        // Regole richieste:
+        // L1: 3 cerchi piccoli esplosivi
+        // L2: 5 cerchi medi esplosivi
+        // L3: 5 cerchi grandi esplosivi + 1 esplosione finale gigante
+        const config = {
+            1: { count: 3, scale: 2.5, radius: 45, finalBurst: false },
+            2: { count: 5, scale: 4.0, radius: 75, finalBurst: false },
+            3: { count: 5, scale: 6.0, radius: 110, finalBurst: true, finalScale: 10.0 }
+        }[level] || { count: 3, scale: 2.5, radius: 45, finalBurst: false };
+
+        // Sequenza veloce dei cerchi esplosivi
+        const timeDelay = family === 'energy' ? 80 : family === 'fluid' ? 180 : 150;
+
+        for (let i = 0; i < config.count; i++) {
             setTimeout(() => {
-                const slash = document.createElement('div');
-                slash.className = 'toon-slash-effect';
-                container.appendChild(slash);
-                gsap.set(slash, { x: endPos.x, y: endPos.y, scaleX: 0, scaleY: 0.1, rotate: gsap.utils.random(0, 180) });
-                gsap.timeline({ onComplete: () => slash.remove() })
-                    .to(slash, { duration: 0.1, scaleX: level * 2, scaleY: 1.5, ease: "power4.out" })
-                    .to(slash, { duration: 0.2, opacity: 0, scaleY: 0, ease: "power4.in" });
-            }, 300);
+                const cx = endPos.x + gsap.utils.random(-config.radius, config.radius);
+                const cy = endPos.y + gsap.utils.random(-config.radius, config.radius);
+                const color = gsap.utils.random(colors);
+                createToonBurst(cx, cy, color, config.scale, family, false);
+            }, i * timeDelay);
         }
-    };
 
-    // --- FISICO (3 LIVELLI) ---
-    const launchPhysical = (level) => {
-        const container = containerRef.current;
-        const hitCount = level === 1 ? 1 : level === 2 ? 3 : 6;
-        
-        for(let h=0; h<hitCount; h++) {
+        // Esplosione finale per L3
+        if (config.finalBurst) {
             setTimeout(() => {
-                const impact = document.createElement('div');
-                impact.className = 'kick-impact-effect';
-                container.appendChild(impact);
-                
-                const offsetX = gsap.utils.random(-30, 30) * (level - 1);
-                const offsetY = gsap.utils.random(-30, 30) * (level - 1);
-
-                gsap.set(impact, { x: endPos.x + offsetX, y: endPos.y + offsetY, scale: 0, opacity: 1 });
-                gsap.to(impact, {
-                    duration: 0.2, scale: 1.5 + (level * 0.5), ease: "back.out(2)",
-                    onComplete: () => { gsap.to(impact, { duration: 0.1, opacity: 0, scale: impact.scale * 0.8, onComplete: () => impact.remove() }); }
-                });
-
-                // Linee di impatto
-                const lineCount = 4 + (level * 2);
-                for (let i = 0; i < lineCount; i++) {
-                    const line = document.createElement('div');
-                    line.className = 'kick-line';
-                    container.appendChild(line);
-                    const angle = (i / lineCount) * Math.PI * 2;
-                    gsap.set(line, { x: endPos.x + offsetX, y: endPos.y + offsetY, rotate: (i / lineCount) * 360, scaleX: 0 });
-                    gsap.to(line, { 
-                        duration: 0.3, 
-                        scaleX: 1 + (level * 0.3), 
-                        x: endPos.x + offsetX + Math.cos(angle) * (60 * level), 
-                        y: endPos.y + offsetY + Math.sin(angle) * (60 * level), 
-                        opacity: 0, ease: "power2.out", onComplete: () => line.remove() 
-                    });
-                }
-            }, h * (250 / level));
+                // Impatto core bianco circondato dal colore primario (L'esplosione finale è sempre di tipo impact massiccio)
+                createToonBurst(endPos.x, endPos.y, colors[0], config.finalScale, 'impact', true);
+                setTimeout(() => {
+                    createToonBurst(endPos.x, endPos.y, '#ffffff', config.finalScale * 0.7, 'impact', true);
+                }, 50);
+            }, (config.count * timeDelay) + 150);
         }
     };
 
     // --- UTILITIES ---
-    const createToonBurst = (x, y, color, finalScale) => {
+    const createToonBurst = (x, y, color, finalScale, family, isFinal) => {
         const container = containerRef.current;
         if (!container) return;
         const burst = document.createElement('div');
-        burst.className = 'toon-burst-effect';
+        
+        // Stili di base: centriamo perfettamente l'origine visiva e rendiamoli NITIDI
+        burst.style.position = 'absolute';
         burst.style.backgroundColor = color;
+        burst.style.zIndex = 10001;
+        burst.style.transform = 'translate(-50%, -50%)'; 
+        
+        if (isFinal) {
+            // L'esplosione magna (Livello 3 core) è sempre un cerchio solido incandescente
+            burst.style.width = '50px';
+            burst.style.height = '50px';
+            burst.style.borderRadius = '50%';
+            burst.style.boxShadow = `0 0 40px ${color}, 0 0 20px white`;
+            burst.style.zIndex = 10005;
+        } else {
+            // Personalizzazione drastica delle forme per renderle ultra-riconoscibili
+            if (family === 'nature') {
+                // FOGLIE / PETALI (clip path nitido)
+                burst.style.width = '24px';
+                burst.style.height = '35px';
+                burst.style.clipPath = 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
+                burst.style.border = '1px solid rgba(255,255,255,0.4)';
+            } else if (family === 'energy') {
+                // SCINTILLE PIATTE / SPIGOLOSE
+                burst.style.width = '15px';
+                burst.style.height = '15px';
+                burst.style.borderRadius = gsap.utils.random(0,1) > 0.5 ? '0px' : '4px';
+                burst.style.boxShadow = `0 0 15px ${color}`;
+            } else if (family === 'fluid') {
+                // LIQUIDO GOOEY (morbido e blurrato)
+                burst.style.width = '40px';
+                burst.style.height = '40px';
+                burst.style.borderRadius = '50%';
+                burst.style.filter = 'blur(4px)';
+                burst.style.opacity = '0.8';
+            } else if (family === 'ascendant') {
+                // FIAMME A GOCCIA
+                burst.style.width = '30px';
+                burst.style.height = '30px';
+                burst.style.borderRadius = '50% 0 50% 50%'; // forma della fiamma
+                burst.style.boxShadow = `0 0 15px ${color}`;
+            } else { 
+                // IMPACT (Cerchi perfetti con bordo duro, come bolle di forza o pugni)
+                burst.style.width = '40px';
+                burst.style.height = '40px';
+                burst.style.borderRadius = '50%';
+                burst.style.border = '3px solid rgba(255,255,255,0.8)';
+                burst.style.boxShadow = `0 0 20px ${color}`;
+            }
+        }
+        
         container.appendChild(burst);
-        gsap.set(burst, { x, y, scale: 0, opacity: 1 });
-        gsap.timeline({ onComplete: () => burst.remove() })
-            .to(burst, { duration: 0.15, scale: finalScale, ease: "expo.out" })
-            .to(burst, { duration: 0.2, scale: 0, opacity: 0, ease: "power2.in" });
+        const tl = gsap.timeline({ onComplete: () => burst.remove() });
+
+        if (isFinal || family === 'impact') {
+            gsap.set(burst, { x, y, scale: 0, opacity: 1 });
+            tl.to(burst, { duration: 0.15, scale: finalScale, ease: "expo.out" })
+              .to(burst, { duration: 0.3, scale: finalScale * 1.1, opacity: 0, ease: "power2.inOut" });
+        } else if (family === 'fluid') {
+            gsap.set(burst, { x, y, scale: 0, opacity: 1 });
+            tl.to(burst, { duration: 0.2, scale: finalScale, ease: "back.out(2)" })
+              .to(burst, { duration: 0.4, y: y + 50, scale: 0, opacity: 0, ease: "power1.in" });
+        } else if (family === 'ascendant') {
+            gsap.set(burst, { x, y: y + 30, scale: 0, opacity: 1, rotation: gsap.utils.random(-15, 15) });
+            tl.to(burst, { duration: 0.2, scale: finalScale, ease: "power2.out" })
+              .to(burst, { duration: 0.5, y: y - 80, x: x + gsap.utils.random(-30, 30), scale: 0, opacity: 0, ease: "sine.inOut" });
+        } else if (family === 'nature') {
+             gsap.set(burst, { x, y, scale: 0, opacity: 1, rotation: gsap.utils.random(0, 360) });
+             tl.to(burst, { duration: 0.2, scale: finalScale, ease: "back.out(1.5)" })
+               .to(burst, { duration: 0.6, rotation: "+=720", x: x + gsap.utils.random(-60, 60), y: y + gsap.utils.random(-60, 60), scale: 0, opacity: 0, ease: "power2.out" });
+        } else if (family === 'energy') {
+             gsap.set(burst, { x, y, scale: finalScale * 0.5, opacity: 0, rotation: gsap.utils.random(0, 90) }); 
+             tl.to(burst, { duration: 0.05, opacity: 1, x: x + gsap.utils.random(-40, 40), y: y + gsap.utils.random(-40, 40), scale: finalScale * 1.2, ease: "none" })
+               .to(burst, { duration: 0.05, x: x + gsap.utils.random(-40, 40), y: y + gsap.utils.random(-40, 40), ease: "none" })
+               .to(burst, { duration: 0.1, scale: 0, opacity: 0, ease: "power4.in" });
+        }
     };
 
     return (
@@ -202,8 +178,8 @@ export default function BattleAnimations({ startPos, endPos = { x: 600, y: 300 }
             <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style={{ display: 'none' }}>
                 <defs>
                     <filter id="toonFlame">
-                        <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
-                        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -11" result="toonFlame" />
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+                        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="toonFlame" />
                         <feBlend in="SourceGraphic" in2="toonFlame" />
                     </filter>
                 </defs>
