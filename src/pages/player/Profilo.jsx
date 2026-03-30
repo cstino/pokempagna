@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { User, Shield, Zap, TrendingUp, Medal, Camera, Loader2, Edit2, Check, Heart } from 'lucide-react';
+import { User, Shield, Zap, TrendingUp, Medal, Camera, Loader2, Edit2, Check, Heart, Leaf, Eye, BookOpen, MessageCircle, Swords } from 'lucide-react';
 import './Profilo.css';
 
 export default function Profilo() {
@@ -157,7 +157,7 @@ export default function Profilo() {
                 </div>
             </div>
 
-            {/* STATISTICHE FISICHE */}
+            {/* STATISTICHE ALLENATORE */}
             <div className="card stats-section">
                 <h3 className="section-title">Statistiche Base</h3>
                 <div className="stats-grid">
@@ -179,10 +179,10 @@ export default function Profilo() {
 
                     <div className="stat-box">
                         <div className="stat-icon-bg bg-red">
-                            <Zap size={20} color="#ef4444" />
+                            <Heart size={20} color="#ef4444" />
                         </div>
                         <div className="stat-data">
-                            <span className="stat-name">Forza</span>
+                            <span className="stat-name">Vigore</span>
                             <span className="stat-value">{profile.forza}</span>
                         </div>
                     </div>
@@ -193,6 +193,56 @@ export default function Profilo() {
                         <div className="stat-data">
                             <span className="stat-name">Destrezza</span>
                             <span className="stat-value">{profile.destrezza}</span>
+                        </div>
+                    </div>
+                    
+                    <div className="stat-box">
+                        <div className="stat-icon-bg" style={{ background: 'rgba(16, 185, 129, 0.15)' }}>
+                            <Leaf size={20} color="#10b981" />
+                        </div>
+                        <div className="stat-data">
+                            <span className="stat-name">Sopravvivenza</span>
+                            <span className="stat-value">{profile.altre_stats?.sopravvivenza || 0}</span>
+                        </div>
+                    </div>
+
+                    <div className="stat-box">
+                        <div className="stat-icon-bg" style={{ background: 'rgba(139, 92, 246, 0.15)' }}>
+                            <Eye size={20} color="#8b5cf6" />
+                        </div>
+                        <div className="stat-data">
+                            <span className="stat-name">Percezione</span>
+                            <span className="stat-value">{profile.altre_stats?.percezione || 0}</span>
+                        </div>
+                    </div>
+
+                    <div className="stat-box">
+                        <div className="stat-icon-bg" style={{ background: 'rgba(59, 130, 246, 0.15)' }}>
+                            <BookOpen size={20} color="#3b82f6" />
+                        </div>
+                        <div className="stat-data">
+                            <span className="stat-name">Intelligenza</span>
+                            <span className="stat-value">{profile.altre_stats?.intelligenza || 0}</span>
+                        </div>
+                    </div>
+
+                    <div className="stat-box">
+                        <div className="stat-icon-bg" style={{ background: 'rgba(244, 63, 94, 0.15)' }}>
+                            <MessageCircle size={20} color="#f43f5e" />
+                        </div>
+                        <div className="stat-data">
+                            <span className="stat-name">Eloquenza</span>
+                            <span className="stat-value">{profile.altre_stats?.eloquenza || 0}</span>
+                        </div>
+                    </div>
+
+                    <div className="stat-box">
+                        <div className="stat-icon-bg" style={{ background: 'rgba(252, 211, 77, 0.15)' }}>
+                            <Swords size={20} color="#fcd34d" />
+                        </div>
+                        <div className="stat-data">
+                            <span className="stat-name">Coraggio</span>
+                            <span className="stat-value">{profile.altre_stats?.coraggio || 0}</span>
                         </div>
                     </div>
                 </div>

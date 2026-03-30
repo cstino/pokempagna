@@ -91,6 +91,18 @@ export default function Pokedex() {
         return colors[t] || '#9ca3af';
     };
 
+    const renderTypeBadges = (stringTypes) => {
+        if (!stringTypes) return <span className="empty-val" style={{ opacity: 0.5 }}>Nessuna</span>;
+        return stringTypes.split(',').map(t => {
+            const typeStr = t.trim().toUpperCase();
+            return (
+                <span key={typeStr} className="type-badge" style={{ backgroundColor: getTypeColor(typeStr) }}>
+                    {typeStr}
+                </span>
+            );
+        });
+    };
+
     return (
         <div className="pokedex-page animate-fade-in">
             {/* INTESTAZIONE E RICERCA */}
@@ -190,7 +202,50 @@ export default function Pokedex() {
 
                             <p className="pkmn-flavor-text">{selectedPkmn.descrizione || 'Nessuna descrizione disponibile.'}</p>
 
+                            <div className="pkmn-info-row">
+                                <div className="info-box">
+                                    <label><Ruler size={12} /> Altezza</label>
+                                    <span>{selectedPkmn.altezza ? `${selectedPkmn.altezza}` : '?'}</span>
+                                </div>
+                                <div className="info-box">
+                                    <label><Weight size={12} /> Peso</label>
+                                    <span>{selectedPkmn.peso ? `${selectedPkmn.peso}` : '?'}</span>
+                                </div>
+                            </div>
+
                             <div className="stats-container">
+                                <h4 className="stats-title">Affinità Elementale</h4>
+                                <div className="elemental-affinities">
+                                    {selectedPkmn.debolezze_x4 && (
+                                        <div className="affinity-row">
+                                            <span className="affinity-label" style={{ color: '#ef4444' }}>Debolezza (x4)</span>
+                                            <div className="affinity-badges">{renderTypeBadges(selectedPkmn.debolezze_x4)}</div>
+                                        </div>
+                                    )}
+                                    <div className="affinity-row">
+                                        <span className="affinity-label" style={{ color: '#f87171' }}>Debolezza (x2)</span>
+                                        <div className="affinity-badges">{renderTypeBadges(selectedPkmn.debolezze)}</div>
+                                    </div>
+                                    <div className="affinity-row">
+                                        <span className="affinity-label" style={{ color: '#60a5fa' }}>Resistenza (x0.5)</span>
+                                        <div className="affinity-badges">{renderTypeBadges(selectedPkmn.resistenze)}</div>
+                                    </div>
+                                    {selectedPkmn.resistenze_x4 && (
+                                        <div className="affinity-row">
+                                            <span className="affinity-label" style={{ color: '#3b82f6' }}>Resistenza (x0.25)</span>
+                                            <div className="affinity-badges">{renderTypeBadges(selectedPkmn.resistenze_x4)}</div>
+                                        </div>
+                                    )}
+                                    {selectedPkmn.immunita && (
+                                        <div className="affinity-row">
+                                            <span className="affinity-label" style={{ color: '#10b981' }}>Immunità (x0)</span>
+                                            <div className="affinity-badges">{renderTypeBadges(selectedPkmn.immunita)}</div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="stats-container" style={{ marginTop: '20px' }}>
                                 <h4 className="stats-title">Statistiche Base</h4>
                                 {[
                                     { label: 'HP', val: selectedPkmn.hp_base },

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Users, User, Shield, Zap, Medal, Edit2, Loader2, X, Check, Save, Heart, TrendingUp, Plus, Minus, Package, Trash2, Search, Info, Layout } from 'lucide-react';
+import { Users, User, Shield, Zap, Medal, Edit2, Loader2, X, Check, Save, Heart, TrendingUp, Plus, Minus, Package, Trash2, Search, Info, Layout, Leaf, Eye, BookOpen, MessageCircle, Swords } from 'lucide-react';
 import { getTypeColor, getTypeLabel, getTypeEmoji } from '../../lib/typeColors';
 import './Party.css';
 
@@ -502,6 +502,16 @@ export default function Party() {
         }));
     };
 
+    const handleAltreStatsChange = (stat, value) => {
+        setEditForm(prev => ({
+            ...prev,
+            altre_stats: {
+                ...(prev.altre_stats || {}),
+                [stat]: parseInt(value) || 0
+            }
+        }));
+    };
+
     const saveChanges = async () => {
         setSaving(true);
         try {
@@ -513,9 +523,10 @@ export default function Party() {
                     hp_max: editForm.hp_max,
                     livello_allenatore: editForm.livello_allenatore,
                     punti_tlp: editForm.punti_tlp,
-                    forza: editForm.forza,
+                    forza: editForm.forza, // Vigore
                     destrezza: editForm.destrezza,
                     slot_squadra: editForm.slot_squadra,
+                    altre_stats: editForm.altre_stats || {},
                 })
                 .eq('id', editForm.id);
 
@@ -595,8 +606,8 @@ export default function Party() {
                                     </div>
 
                                     <div className="stats-mini-grid">
-                                        <div className="stat-mini-box">
-                                            <Zap size={14} color="#ef4444" />
+                                        <div className="stat-mini-box" title="Vigore">
+                                            <Heart size={14} color="#ef4444" />
                                             <span>{player.forza}</span>
                                         </div>
                                         <div className="stat-mini-box">
@@ -715,9 +726,9 @@ export default function Party() {
                                         <h4 className="edit-section-title"><Shield size={16} /> Statistiche Base</h4>
                                         <div className="edit-grid-2">
                                             <div className="input-field">
-                                                <label>Forza (ATK FISICO)</label>
+                                                <label>Vigore (HP/ATK FISICO)</label>
                                                 <div className="input-with-icon">
-                                                    <Zap size={14} color="#ef4444" />
+                                                    <Heart size={14} color="#ef4444" />
                                                     <input
                                                         type="number"
                                                         value={editForm.forza}
@@ -726,13 +737,68 @@ export default function Party() {
                                                 </div>
                                             </div>
                                             <div className="input-field">
-                                                <label>Destrezza (DEF FISICA)</label>
+                                                <label>Destrezza (DEF FISICA/VEL)</label>
                                                 <div className="input-with-icon">
                                                     <Shield size={14} color="#3b82f6" />
                                                     <input
                                                         type="number"
                                                         value={editForm.destrezza}
                                                         onChange={(e) => handleStatChange('destrezza', e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="input-field">
+                                                <label>Sopravvivenza (Natura)</label>
+                                                <div className="input-with-icon">
+                                                    <Leaf size={14} color="#10b981" />
+                                                    <input
+                                                        type="number"
+                                                        value={editForm.altre_stats?.sopravvivenza || 0}
+                                                        onChange={(e) => handleAltreStatsChange('sopravvivenza', e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="input-field">
+                                                <label>Percezione (Sensi)</label>
+                                                <div className="input-with-icon">
+                                                    <Eye size={14} color="#8b5cf6" />
+                                                    <input
+                                                        type="number"
+                                                        value={editForm.altre_stats?.percezione || 0}
+                                                        onChange={(e) => handleAltreStatsChange('percezione', e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="input-field">
+                                                <label>Intelligenza (Saggezza/Tecnica)</label>
+                                                <div className="input-with-icon">
+                                                    <BookOpen size={14} color="#3b82f6" />
+                                                    <input
+                                                        type="number"
+                                                        value={editForm.altre_stats?.intelligenza || 0}
+                                                        onChange={(e) => handleAltreStatsChange('intelligenza', e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="input-field">
+                                                <label>Eloquenza (Carisma/Sociale)</label>
+                                                <div className="input-with-icon">
+                                                    <MessageCircle size={14} color="#f43f5e" />
+                                                    <input
+                                                        type="number"
+                                                        value={editForm.altre_stats?.eloquenza || 0}
+                                                        onChange={(e) => handleAltreStatsChange('eloquenza', e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="input-field">
+                                                <label>Coraggio (Volontà)</label>
+                                                <div className="input-with-icon">
+                                                    <Swords size={14} color="#fcd34d" />
+                                                    <input
+                                                        type="number"
+                                                        value={editForm.altre_stats?.coraggio || 0}
+                                                        onChange={(e) => handleAltreStatsChange('coraggio', e.target.value)}
                                                     />
                                                 </div>
                                             </div>
