@@ -24,15 +24,15 @@ export function AuthProvider({ children }) {
                 if (!data) {
                     const { data: userData } = await supabase.auth.getUser();
 
-                    // Recupero il VERO nome inserito in fase di registrazione dai metadati (se esiste), non più split dell'email!
                     const userNome = userData?.user?.user_metadata?.nome || userData?.user?.email?.split('@')[0] || 'Allenatore';
+                    const userRuolo = userData?.user?.user_metadata?.ruolo || 'giocatore';
 
                     const { data: newProfile, error: insertError } = await supabase
                         .from('giocatori')
                         .insert({
                             id: userId,
                             nome: userNome,
-                            ruolo: 'giocatore',
+                            ruolo: userRuolo,
                             livello_allenatore: 1,
                             hp: 100,
                             hp_max: 100,
@@ -139,28 +139,27 @@ export function AuthProvider({ children }) {
             password,
             options: {
                 data: {
-                    nome: nome
+                    nome: nome,
+                    ruolo: ruolo
                 }
             }
         });
         if (error) throw error;
 
-        // Try to create profile immediately, but ignore errors if RLS or email confirm blocks it,
-        // since fetchProfile will auto-create it later anyway using maybeSingle.
-        if (data.user) {
-            await supabase.from('giocatori').insert({
-                id: data.user.id,
-                nome,
-                ruolo,
-                livello_allenatore: 1,
-                hp: 100,
-                hp_max: 100,
-                forza: 10,
-                destrezza: 10,
-                punti_tlp: 0,
-                medaglie: [],
-            });
+        // Se per qualche motivo Supabase registra l'utente ma non avvia la sessione, 
+        // ed essendo la conferma email disattivata, forziamo il login.
+        if (data.user && !data.session) {
+            try {
+                await supabase.auth.signInWithPassword({ email, password });
+            } catch (err) {
+                console.error("Auto-login post-registrazione fallito:", err);
+            }
         }
+
+        // NOTA: Non creiamo più il profilo qui (evita conflict di chiave primaria).
+        // onAuthStateChange vedrà l'utente loggato, chiamerà loadProfileData,
+        // la quale vedrà che non c'è il profilo e lo creerà in modo sicuro
+        // inserendo i metadata corretti (nome, ruolo) passati in fase di registrazione.
 
         return data;
     }
