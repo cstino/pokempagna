@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Book, Backpack, Star, Swords } from 'lucide-react';
+import { User, Book, Backpack, Star, Swords, Smartphone } from 'lucide-react';
 import './PlayerLayout.css';
 
 const NAV_ITEMS = [
@@ -16,6 +16,15 @@ export default function PlayerLayout() {
 
     return (
         <div className="player-layout">
+            <div className="portrait-lock-overlay">
+                <div className="phone-wrapper">
+                    <Smartphone className="rotate-icon" size={64} />
+                    <div className="rotate-arrow">↻</div>
+                </div>
+                <h2>Ruota il dispositivo</h2>
+                <p>L'Interfaccia Allenatore di Pokémpagna offre prestazioni e visibilità ottimali in <strong>modalità orizzontale</strong>.</p>
+            </div>
+
             <nav className="player-navbar">
                 <div className="player-navbar-inner">
                     {NAV_ITEMS.map((item) => (

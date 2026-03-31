@@ -4,6 +4,7 @@
     "description": "App per la gestione di campagne GDR a tema Pokémon",
     "start_url": "/",
     "display": "standalone",
+    "orientation": "landscape",
     "background_color": "#0a0a0f",
     "theme_color": "#0a0a0f",
     "icons": [

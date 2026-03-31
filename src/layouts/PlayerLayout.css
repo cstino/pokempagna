@@ -105,3 +105,95 @@
     font-size: 0.9rem;
     margin-top: var(--space-xs);
 }
+
+/* ============================================
+   Portrait Lock Overlay (Landscape Enforcer)
+   ============================================ */
+
+.portrait-lock-overlay {
+    display: none; /* Hidden by default (Landscape) */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 10, 15, 0.98);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    z-index: 999999;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-primary);
+}
+
+.phone-wrapper {
+    position: relative;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.portrait-lock-overlay .rotate-icon {
+    color: var(--accent-primary);
+    animation: rotatePhone 2.5s infinite ease-in-out;
+}
+
+.rotate-arrow {
+    position: absolute;
+    font-size: 2rem;
+    color: rgba(255,255,255,0.7);
+    right: -20px;
+    bottom: -15px;
+    animation: fadeArrow 2.5s infinite ease-in-out;
+}
+
+.portrait-lock-overlay h2 {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin-bottom: 15px;
+    background: linear-gradient(135deg, #fff, #a5b4fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.portrait-lock-overlay p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    max-width: 320px;
+    line-height: 1.6;
+}
+
+.portrait-lock-overlay p strong {
+    color: var(--accent-primary-light);
+}
+
+@keyframes rotatePhone {
+    0% { transform: rotate(0deg); }
+    15% { transform: rotate(0deg); }
+    50% { transform: rotate(-90deg); }
+    85% { transform: rotate(-90deg); }
+    100% { transform: rotate(0deg); }
+}
+
+@keyframes fadeArrow {
+    0%, 15% { opacity: 0; transform: translateY(-10px); }
+    30%, 70% { opacity: 1; transform: translateY(0); }
+    85%, 100% { opacity: 0; transform: translateY(10px); }
+}
+
+/* Mostra il lock solo se lo schermo è in Portrait e su dispositivi stretti (Mobile/Tablet verticali) */
+@media screen and (orientation: portrait) and (max-width: 1024px) {
+    .portrait-lock-overlay {
+        display: flex;
+    }
+    
+    /* Disattiva lo scrolling dietro l'overlay */
+    body {
+        overflow: hidden;
+    }
+}
