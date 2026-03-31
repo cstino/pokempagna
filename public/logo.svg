@@ -1,15 +1,15 @@
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
     <defs>
         <linearGradient id="pokeball-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#EF4444" />
-            <stop offset="100%" stopColor="#DC2626" />
+            <stop offset="0%" stop-color="#EF4444" />
+            <stop offset="100%" stop-color="#DC2626" />
         </linearGradient>
     </defs>
-    <circle cx="50" cy="50" r="48" fill="none" stroke="#333" strokeWidth="3" />
+    <circle cx="50" cy="50" r="48" fill="none" stroke="#333" stroke-width="3" />
     <path d="M 2 50 A 48 48 0 0 1 98 50" fill="url(#pokeball-grad)" />
     <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#f5f5f5" />
-    <line x1="2" y1="50" x2="98" y2="50" stroke="#333" strokeWidth="3" />
-    <circle cx="50" cy="50" r="14" fill="#f5f5f5" stroke="#333" strokeWidth="3" />
+    <line x1="2" y1="50" x2="98" y2="50" stroke="#333" stroke-width="3" />
+    <circle cx="50" cy="50" r="14" fill="#f5f5f5" stroke="#333" stroke-width="3" />
     <circle cx="50" cy="50" r="8" fill="#333" />
     <circle cx="50" cy="50" r="5" fill="#666">
         <animate attributeName="fill" values="#666;#818CF8;#666" dur="3s" repeatCount="indefinite" />

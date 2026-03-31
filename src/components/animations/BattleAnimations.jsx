@@ -56,15 +56,11 @@ export default function BattleAnimations({ startPos, endPos = { x: 600, y: 300 }
         const colors = typeColors[baseType] || typeColors.normal;
         const family = typeFamilies[baseType] || 'impact';
         
-        // Regole richieste:
-        // L1: 3 cerchi piccoli esplosivi
-        // L2: 5 cerchi medi esplosivi
-        // L3: 5 cerchi grandi esplosivi + 1 esplosione finale gigante
         const config = {
-            1: { count: 3, scale: 2.5, radius: 45, finalBurst: false },
-            2: { count: 5, scale: 4.0, radius: 75, finalBurst: false },
-            3: { count: 5, scale: 6.0, radius: 110, finalBurst: true, finalScale: 10.0 }
-        }[level] || { count: 3, scale: 2.5, radius: 45, finalBurst: false };
+            1: { count: 3, scale: 2.5, radius: 45, finalBurst: true, finalScale: 5.0, duration: 0.15 },
+            2: { count: 5, scale: 4.0, radius: 75, finalBurst: true, finalScale: 7.5, duration: 0.2 },
+            3: { count: 5, scale: 6.0, radius: 110, finalBurst: true, finalScale: 11.5, duration: 0.5 }
+        }[level] || { count: 3, scale: 2.5, radius: 45, finalBurst: true, finalScale: 5.0, duration: 0.15 };
 
         // Sequenza veloce dei cerchi esplosivi
         const timeDelay = family === 'energy' ? 80 : family === 'fluid' ? 180 : 150;
@@ -78,20 +74,25 @@ export default function BattleAnimations({ startPos, endPos = { x: 600, y: 300 }
             }, i * timeDelay);
         }
 
-        // Esplosione finale per L3
+        // Esplosione finale
         if (config.finalBurst) {
             setTimeout(() => {
-                // Impatto core bianco circondato dal colore primario (L'esplosione finale è sempre di tipo impact massiccio)
-                createToonBurst(endPos.x, endPos.y, colors[0], config.finalScale, 'impact', true);
+                // Screen shake per L3
+                if (level === 3 && containerRef.current) {
+                    gsap.to(containerRef.current, { duration: 0.4, x: "+=10", y: "+=10", repeat: 5, yoyo: true, ease: "rough" });
+                    gsap.to(containerRef.current, { delay: 0.4, x: 0, y: 0, duration: 0.1 });
+                }
+
+                createToonBurst(endPos.x, endPos.y, colors[0], config.finalScale, 'impact', true, config.duration);
                 setTimeout(() => {
-                    createToonBurst(endPos.x, endPos.y, '#ffffff', config.finalScale * 0.7, 'impact', true);
+                    createToonBurst(endPos.x, endPos.y, '#ffffff', config.finalScale * 0.7, 'impact', true, config.duration);
                 }, 50);
             }, (config.count * timeDelay) + 150);
         }
     };
 
     // --- UTILITIES ---
-    const createToonBurst = (x, y, color, finalScale, family, isFinal) => {
+    const createToonBurst = (x, y, color, finalScale, family, isFinal, duration = 0.15) => {
         const container = containerRef.current;
         if (!container) return;
         const burst = document.createElement('div');
@@ -112,7 +113,7 @@ export default function BattleAnimations({ startPos, endPos = { x: 600, y: 300 }
         } else {
             // Personalizzazione drastica delle forme per renderle ultra-riconoscibili
             if (family === 'nature') {
-                // FOGLIE / PETALI (clip path nitido)
+                // FOGLIE / PETALI
                 burst.style.width = '24px';
                 burst.style.height = '35px';
                 burst.style.clipPath = 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
@@ -134,10 +135,10 @@ export default function BattleAnimations({ startPos, endPos = { x: 600, y: 300 }
                 // FIAMME A GOCCIA
                 burst.style.width = '30px';
                 burst.style.height = '30px';
-                burst.style.borderRadius = '50% 0 50% 50%'; // forma della fiamma
+                burst.style.borderRadius = '50% 0 50% 50%';
                 burst.style.boxShadow = `0 0 15px ${color}`;
             } else { 
-                // IMPACT (Cerchi perfetti con bordo duro, come bolle di forza o pugni)
+                // IMPACT (Cerchi perfetti con bordo duro)
                 burst.style.width = '40px';
                 burst.style.height = '40px';
                 burst.style.borderRadius = '50%';
@@ -151,8 +152,8 @@ export default function BattleAnimations({ startPos, endPos = { x: 600, y: 300 }
 
         if (isFinal || family === 'impact') {
             gsap.set(burst, { x, y, scale: 0, opacity: 1 });
-            tl.to(burst, { duration: 0.15, scale: finalScale, ease: "expo.out" })
-              .to(burst, { duration: 0.3, scale: finalScale * 1.1, opacity: 0, ease: "power2.inOut" });
+            tl.to(burst, { duration: duration, scale: finalScale, ease: "expo.out" })
+              .to(burst, { duration: duration * 1.5, scale: finalScale * 1.1, opacity: 0, ease: "power2.inOut" });
         } else if (family === 'fluid') {
             gsap.set(burst, { x, y, scale: 0, opacity: 1 });
             tl.to(burst, { duration: 0.2, scale: finalScale, ease: "back.out(2)" })

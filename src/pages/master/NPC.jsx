@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Users, User, Shield, Zap, Medal, Edit2, Loader2, X, Check, Save, Heart, TrendingUp, Plus, Minus, Package, Trash2, Search, Info, Layout, Camera, Upload, Leaf, Eye, BookOpen, MessageCircle, Swords } from 'lucide-react';
-import { getTypeColor, getTypeLabel, getTypeEmoji } from '../../lib/typeColors';
+import { getTypeColor, getTypeLabel, getTypeEmoji, getTypeIcon } from '../../lib/typeColors';
 import './Party.css';
 
 export default function NPC() {
@@ -351,9 +352,16 @@ export default function NPC() {
     }, [searchQuery, sortOrder, fullPokeList]);
 
     const selectFromLibrary = async (p) => {
+        // Estrai National ID dallo sprite_url (es. .../pokemon/9.png -> 9)
+        const nationalIdFromUrl = p.sprite_url ? p.sprite_url.split('/').pop().split('.')[0] : p.id;
+        
+        // Costruiamo URL ufficiale se possibile
+        const officialArt = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nationalIdFromUrl}.png`;
+
         setSearchResult({
             ...p,
-            immagine_url: p.sprite_url,
+            pokemon_id: nationalIdFromUrl,
+            immagine_url: officialArt, // Usa arte ufficiale
             hp_base: p.hp_base,
             atk_base: p.atk_base,
             def_base: p.def_base,
@@ -630,7 +638,7 @@ export default function NPC() {
             )}
 
             {/* MODAL DI MODIFICA MASTER */}
-            {isEditing && editForm && (
+            {isEditing && editForm && createPortal(
                 <div className="modal-overlay" onClick={() => setIsEditing(false)}>
                     <div className="modal-content master-edit-modal npc-modal-premium" onClick={e => e.stopPropagation()}>
                         <input 
@@ -660,16 +668,21 @@ export default function NPC() {
                                         <Camera size={14} />
                                     </div>
                                 </div>
-                                <div className="modal-header-info-master">
-                                    <span className="modal-subtitle-npc">CONFIGURAZIONE NPC</span>
-                                    <div className="npc-name-edit-wrapper">
+                                <div className="modal-header-info">
+                                    <h2>Modifica NPC</h2>
+                                    <p>{editForm.nome}</p>
+                                </div>
+                                <div className="modal-header-info-master" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+                                    <div className="npc-name-edit-wrapper" style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '20px' }}>
+                                        <label style={{ fontSize: '0.65rem', fontWeight: 900, color: '#818cf8', display: 'block', marginBottom: '4px' }}>NOME RAPIDO</label>
                                         <input 
                                             className="edit-npc-name-input-hero" 
                                             value={editForm.nome} 
                                             onChange={e => setEditForm({...editForm, nome: e.target.value})}
-                                            placeholder="Inserisci nome NPC..."
+                                            placeholder="Nome NPC..."
                                             spellCheck="false"
                                             onClick={(e) => e.stopPropagation()}
+                                            style={{ fontSize: '1rem', height: 'auto', width: '200px' }}
                                         />
                                     </div>
                                 </div>
@@ -710,6 +723,7 @@ export default function NPC() {
                                                 <label>HP Attuali</label>
                                                 <input
                                                     type="number"
+                                                    onWheel={(e) => e.currentTarget.blur()}
                                                     value={editForm.hp}
                                                     onChange={(e) => setEditForm({...editForm, hp: parseInt(e.target.value) || 0})}
                                                 />
@@ -744,6 +758,7 @@ export default function NPC() {
                                                     <Layout size={14} color="#fcd34d" />
                                                     <input
                                                         type="number"
+                                                        onWheel={(e) => e.currentTarget.blur()}
                                                         value={editForm.slot_squadra || 6}
                                                         onChange={(e) => setEditForm({...editForm, slot_squadra: parseInt(e.target.value) || 0})}
                                                     />
@@ -791,6 +806,7 @@ export default function NPC() {
                                                     <Heart size={14} color="#ef4444" />
                                                     <input
                                                         type="number"
+                                                        onWheel={(e) => e.currentTarget.blur()}
                                                         value={editForm.forza}
                                                         onChange={(e) => setEditForm({...editForm, forza: parseInt(e.target.value) || 0})}
                                                     />
@@ -802,6 +818,7 @@ export default function NPC() {
                                                     <Shield size={14} color="#3b82f6" />
                                                     <input
                                                         type="number"
+                                                        onWheel={(e) => e.currentTarget.blur()}
                                                         value={editForm.destrezza}
                                                         onChange={(e) => setEditForm({...editForm, destrezza: parseInt(e.target.value) || 0})}
                                                     />
@@ -813,6 +830,7 @@ export default function NPC() {
                                                     <Leaf size={14} color="#10b981" />
                                                     <input
                                                         type="number"
+                                                        onWheel={(e) => e.currentTarget.blur()}
                                                         value={editForm.altre_stats?.sopravvivenza || 0}
                                                         onChange={(e) => handleAltreStatsChange('sopravvivenza', e.target.value)}
                                                     />
@@ -824,6 +842,7 @@ export default function NPC() {
                                                     <Eye size={14} color="#8b5cf6" />
                                                     <input
                                                         type="number"
+                                                        onWheel={(e) => e.currentTarget.blur()}
                                                         value={editForm.altre_stats?.percezione || 0}
                                                         onChange={(e) => handleAltreStatsChange('percezione', e.target.value)}
                                                     />
@@ -835,6 +854,7 @@ export default function NPC() {
                                                     <BookOpen size={14} color="#3b82f6" />
                                                     <input
                                                         type="number"
+                                                        onWheel={(e) => e.currentTarget.blur()}
                                                         value={editForm.altre_stats?.intelligenza || 0}
                                                         onChange={(e) => handleAltreStatsChange('intelligenza', e.target.value)}
                                                     />
@@ -846,6 +866,7 @@ export default function NPC() {
                                                     <MessageCircle size={14} color="#f43f5e" />
                                                     <input
                                                         type="number"
+                                                        onWheel={(e) => e.currentTarget.blur()}
                                                         value={editForm.altre_stats?.eloquenza || 0}
                                                         onChange={(e) => handleAltreStatsChange('eloquenza', e.target.value)}
                                                     />
@@ -857,6 +878,7 @@ export default function NPC() {
                                                     <Swords size={14} color="#fcd34d" />
                                                     <input
                                                         type="number"
+                                                        onWheel={(e) => e.currentTarget.blur()}
                                                         value={editForm.altre_stats?.coraggio || 0}
                                                         onChange={(e) => handleAltreStatsChange('coraggio', e.target.value)}
                                                     />
@@ -999,26 +1021,35 @@ export default function NPC() {
                                                         <label>Soprannome</label>
                                                         <input
                                                             type="text"
-                                                            value={editingPkmn.soprannome || ''}
+                                                            value={(editingPkmn.soprannome || editingPkmn.nome) || ''}
                                                             onChange={(e) => handlePokeStatChange('soprannome', e.target.value)}
+                                                            placeholder="Indica il soprannome..."
                                                         />
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div className="edit-grid-3">
-                                                <div className="input-field"><label>Livello</label><input type="number" value={editingPkmn.livello} onChange={(e) => handlePokeStatChange('livello', e.target.value)} /></div>
-                                                <div className="input-field"><label>HP Attuali</label><input type="number" value={editingPkmn.hp_attuale} onChange={(e) => handlePokeStatChange('hp_attuale', e.target.value)} /></div>
-                                                <div className="input-field"><label>HP Max</label><input type="number" value={editingPkmn.hp_max} onChange={(e) => handlePokeStatChange('hp_max', e.target.value)} /></div>
-                                                <div className="input-field"><label>Attacco</label><input type="number" value={editingPkmn.attacco} onChange={(e) => handlePokeStatChange('attacco', e.target.value)} /></div>
-                                                <div className="input-field"><label>Difesa</label><input type="number" value={editingPkmn.difesa} onChange={(e) => handlePokeStatChange('difesa', e.target.value)} /></div>
-                                                <div className="input-field"><label>Velocità</label><input type="number" value={editingPkmn.velocita} onChange={(e) => handlePokeStatChange('velocita', e.target.value)} /></div>
-                                                <div className="input-field"><label>Att. Spec.</label><input type="number" value={editingPkmn.attacco_speciale} onChange={(e) => handlePokeStatChange('attacco_speciale', e.target.value)} /></div>
-                                                <div className="input-field"><label>Dif. Spec.</label><input type="number" value={editingPkmn.difesa_speciale} onChange={(e) => handlePokeStatChange('difesa_speciale', e.target.value)} /></div>
-                                            </div>
+                                            <div className="pkmn-moves-master-section" style={{ marginTop: '20px' }}>
+                                                <h4 className="edit-section-title"><Zap size={16} /> Statistiche di Combattimento</h4>
+                                                
+                                                <div className="stats-thematic-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', marginBottom: '20px' }}>
+                                                    <div className="input-field"><label>Livello</label><input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.livello} onChange={(e) => handlePokeStatChange('livello', e.target.value)} /></div>
+                                                    <div className="input-field"><label>HP Attuali</label><input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.hp_attuale} onChange={(e) => handlePokeStatChange('hp_attuale', e.target.value)} /></div>
+                                                    <div className="input-field"><label>HP Max</label><input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.hp_max} onChange={(e) => handlePokeStatChange('hp_max', e.target.value)} /></div>
+                                                </div>
 
-                                            <div className="pkmn-moves-master-section">
-                                                <h4 className="edit-section-title"><Zap size={16} /> Mosse Conosciute</h4>
+                                                <div className="stats-thematic-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '15px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '20px' }}>
+                                                    <div className="input-field"><label>ATTACCO</label><input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.attacco} onChange={(e) => handlePokeStatChange('attacco', e.target.value)} /></div>
+                                                    <div className="input-field"><label>DIFESA</label><input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.difesa} onChange={(e) => handlePokeStatChange('difesa', e.target.value)} /></div>
+                                                    <div className="input-field"><label>VELOCITÀ</label><input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.velocita} onChange={(e) => handlePokeStatChange('velocita', e.target.value)} /></div>
+                                                </div>
+
+                                                <div className="stats-thematic-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px' }}>
+                                                    <div className="input-field"><label>ATT. SPECIALE</label><input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.attacco_speciale} onChange={(e) => handlePokeStatChange('attacco_speciale', e.target.value)} /></div>
+                                                    <div className="input-field"><label>DIF. SPECIALE</label><input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.difesa_speciale} onChange={(e) => handlePokeStatChange('difesa_speciale', e.target.value)} /></div>
+                                                </div>
+
+                                                <h4 className="edit-section-title" style={{ marginTop: '30px' }}><Zap size={16} /> Mosse Conosciute</h4>
                                                 <div className="move-filters-row">
                                                     <div className="search-input-wrapper"><Search size={14} /><input type="text" placeholder="Cerca..." value={moveSearch} onChange={(e) => setMoveSearch(e.target.value)} /></div>
                                                     <select className="filter-select-master" value={moveTypeFilter} onChange={(e) => setMoveTypeFilter(e.target.value)}>
@@ -1074,18 +1105,22 @@ export default function NPC() {
                                             </div>
                                             <div className="library-layout-master">
                                                 <div className="pokemon-library-scroll">
-                                                    {searching && fullPokeList.length === 0 ? <Loader2 className="spin" /> : filteredPokeList.map(p => (
-                                                        <div key={p.id} className={`library-item-pkmn ${searchResult?.id === p.id ? 'selected' : ''}`} onClick={() => selectFromLibrary(p)}>
-                                                            <img 
-                                                                src={p.immagine_url?.includes('sprites/pokemon/') && !p.immagine_url.includes('other/official-artwork') 
-                                                                    ? p.immagine_url.replace('sprites/pokemon/', 'sprites/pokemon/other/official-artwork/') 
-                                                                    : p.immagine_url} 
-                                                                alt={p.nome} 
-                                                                onError={(e) => { e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'; e.target.style.opacity = '0.3'; }}
-                                                            />
-                                                            <span>{p.nome.toUpperCase()}</span>
-                                                        </div>
-                                                    ))}
+                                                    {searching && fullPokeList.length === 0 ? <Loader2 className="spin" /> : filteredPokeList.map(p => {
+                                                        const nationalId = p.sprite_url ? p.sprite_url.split('/').pop().split('.')[0] : p.id;
+                                                        const highResThumb = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nationalId}.png`;
+
+                                                        return (
+                                                            <div key={p.id} className={`library-item-pkmn ${searchResult?.id === p.id ? 'selected' : ''}`} onClick={() => selectFromLibrary(p)}>
+                                                                <img 
+                                                                    src={highResThumb} 
+                                                                    alt={p.nome} 
+                                                                    onError={(e) => { e.target.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${nationalId}.png`; }}
+                                                                    style={{ objectFit: 'contain' }}
+                                                                />
+                                                                <span>{p.nome.toUpperCase()}</span>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                                 <div className="library-selection-detail">
                                                     {searchResult ? (
@@ -1133,8 +1168,8 @@ export default function NPC() {
                                                                 return (
                                                                     <div key={poke.id} className="pkmn-card-squadra master-card-premium clickable" onClick={() => startEditingPkmn(poke)}>
                                                                         <div className="pkmn-types-wrapper">
-                                                                            <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(t1En) }} title={getTypeLabel(t1En)}><img src={t1En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t1En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t1En}.svg`} alt={t1En} className="type-icon-img" /></div>
-                                                                            {poke.tipo2 && <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(t2En) }} title={getTypeLabel(t2En)}><img src={t2En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t2En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t2En}.svg`} alt={t2En} className="type-icon-img" /></div>}
+                                                                            <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(t1En) }} title={getTypeLabel(t1En)}><img src={getTypeIcon(t1En)} alt={t1En} className="type-icon-img" /></div>
+                                                                            {poke.tipo2 && <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(t2En) }} title={getTypeLabel(t2En)}><img src={getTypeIcon(t2En)} alt={t2En} className="type-icon-img" /></div>}
                                                                         </div>
                                                                         <div className="pkmn-lvl-badge">Lv.{poke.livello}</div>
                                                                         <img className="pkmn-image" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`} alt={poke.soprannome} />
@@ -1160,8 +1195,8 @@ export default function NPC() {
                                                                 return (
                                                                     <div key={poke.id} className="pkmn-card-squadra compact-box-card-v3 clickable" onClick={() => startEditingPkmn(poke)}>
                                                                         <div className="pkmn-types-wrapper-mini">
-                                                                            <div className="pkmn-type-circle-mini" style={{ backgroundColor: getTypeColor(t1En) }} title={getTypeLabel(t1En)}><img src={t1En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t1En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t1En}.svg`} alt={t1En} className="type-icon-img-mini" /></div>
-                                                                            {poke.tipo2 && <div className="pkmn-type-circle-mini" style={{ backgroundColor: getTypeColor(t2En) }} title={getTypeLabel(t2En)}><img src={t2En === 'sound' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : t2En === 'unknown' ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${t2En}.svg`} alt={t2En} className="type-icon-img-mini" /></div>}
+                                                                            <div className="pkmn-type-circle-mini" style={{ backgroundColor: getTypeColor(t1En) }} title={getTypeLabel(t1En)}><img src={getTypeIcon(t1En)} alt={t1En} className="type-icon-img-mini" /></div>
+                                                                            {poke.tipo2 && <div className="pkmn-type-circle-mini" style={{ backgroundColor: getTypeColor(t2En) }} title={getTypeLabel(t2En)}><img src={getTypeIcon(t2En)} alt={t2En} className="type-icon-img-mini" /></div>}
                                                                         </div>
                                                                         <div className="pkmn-lvl-badge" style={{ fontSize: '0.6rem' }}>Lv.{poke.livello}</div>
                                                                         <img 
@@ -1195,11 +1230,12 @@ export default function NPC() {
                             </div>
                         )}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* MODAL DI CONFERMA GRAFICO */}
-            {confirmModal && (
+            {confirmModal && createPortal(
                 <div className="modal-overlay confirm-layout" onClick={() => setConfirmModal(null)}>
                     <div className="modal-content confirm-modal animate-float" onClick={e => e.stopPropagation()}>
                         <div className={`confirm-icon-bg ${confirmModal.type}`}>
@@ -1214,7 +1250,8 @@ export default function NPC() {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

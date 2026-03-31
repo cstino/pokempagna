@@ -56,6 +56,27 @@ export function getTypeEmoji(type) {
     return TYPE_COLORS[type?.toLowerCase()]?.emoji || '⚪';
 }
 
+export function getTypeIcon(type) {
+    const normalized = type?.toLowerCase();
+    if (!normalized) return '';
+
+    // Custom types with reliable UNPKG links
+    if (normalized === 'suono') return 'https://unpkg.com/lucide-static@0.294.0/icons/music.svg';
+    if (normalized === 'sconosciuto' || normalized === 'unknown') return 'https://unpkg.com/lucide-static@0.294.0/icons/help-circle.svg';
+
+    // Standard types from the pokemon-type-svg-icons repo
+    const map = {
+        fuoco: 'fire', acqua: 'water', erba: 'grass',
+        elettro: 'electric', ghiaccio: 'ice', lotta: 'fighting', veleno: 'poison',
+        terra: 'ground', volante: 'flying', psico: 'psychic', coleottero: 'bug',
+        roccia: 'rock', spettro: 'ghost', drago: 'dragon', acciaio: 'steel',
+        folletto: 'fairy', buio: 'dark', normale: 'normal'
+    };
+
+    const remoteName = map[normalized] || normalized;
+    return `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${remoteName}.svg`;
+}
+
 // Get HP bar color based on percentage
 export function getHpColor(current, max) {
     const pct = (current / max) * 100;

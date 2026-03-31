@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Users, User, Shield, Zap, Medal, Edit2, Loader2, X, Check, Save, Heart, TrendingUp, Plus, Minus, Package, Trash2, Search, Info, Layout, Leaf, Eye, BookOpen, MessageCircle, Swords } from 'lucide-react';
-import { getTypeColor, getTypeLabel, getTypeEmoji } from '../../lib/typeColors';
+import { getTypeColor, getTypeLabel, getTypeEmoji, getTypeIcon } from '../../lib/typeColors';
 import './Party.css';
 
 export default function Party() {
@@ -627,7 +628,7 @@ export default function Party() {
             )}
 
             {/* MODAL DI MODIFICA MASTER */}
-            {isEditing && editForm && (
+            {isEditing && editForm && createPortal(
                 <div className="modal-overlay" onClick={() => setIsEditing(false)}>
                     <div className="modal-content master-edit-modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
@@ -680,6 +681,7 @@ export default function Party() {
                                                 <label>HP Attuali</label>
                                                 <input
                                                     type="number"
+                                                    onWheel={(e) => e.currentTarget.blur()}
                                                     value={editForm.hp}
                                                     onChange={(e) => handleStatChange('hp', e.target.value)}
                                                 />
@@ -714,6 +716,7 @@ export default function Party() {
                                                     <Layout size={14} color="#fcd34d" />
                                                     <input
                                                         type="number"
+                                                        onWheel={(e) => e.currentTarget.blur()}
                                                         value={editForm.slot_squadra !== undefined && editForm.slot_squadra !== null ? editForm.slot_squadra : 3}
                                                         onChange={(e) => handleStatChange('slot_squadra', e.target.value)}
                                                     />
@@ -970,19 +973,19 @@ export default function Party() {
                                         <div className="stats-thematic-row vitalita-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '15px', borderRadius: '16px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)', marginBottom: '15px' }}>
                                             <div className="input-field">
                                                 <label style={{ color: '#10b981' }}>HP Attuali</label>
-                                                <input type="number" value={editingPkmn.hp_attuale} onChange={(e) => handlePokeStatChange('hp_attuale', e.target.value)} />
+                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.hp_attuale} onChange={(e) => handlePokeStatChange('hp_attuale', e.target.value)} />
                                             </div>
                                             <div className="input-field">
                                                 <label style={{ color: '#10b981' }}>HP Max</label>
-                                                <input type="number" value={editingPkmn.hp_max} onChange={(e) => handlePokeStatChange('hp_max', e.target.value)} />
+                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.hp_max} onChange={(e) => handlePokeStatChange('hp_max', e.target.value)} />
                                             </div>
                                             <div className="input-field">
                                                 <label style={{ color: '#10b981', opacity: 0.7 }}>Vel. Base</label>
-                                                <input type="number" value={editingPkmn.velocita} onChange={(e) => handlePokeStatChange('velocita', e.target.value)} />
+                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.velocita} onChange={(e) => handlePokeStatChange('velocita', e.target.value)} />
                                             </div>
                                             <div className="input-field">
                                                 <label style={{ color: '#fbbf24', fontWeight: 'bold' }}>Vel. Attuale</label>
-                                                <input type="number" value={editingPkmn.velocita_attuale || editingPkmn.velocita} onChange={(e) => handlePokeStatChange('velocita_attuale', e.target.value)} />
+                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.velocita_attuale || editingPkmn.velocita} onChange={(e) => handlePokeStatChange('velocita_attuale', e.target.value)} />
                                             </div>
                                         </div>
 
@@ -990,19 +993,19 @@ export default function Party() {
                                         <div className="stats-thematic-row attacco-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '15px', borderRadius: '16px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', marginBottom: '15px' }}>
                                             <div className="input-field">
                                                 <label style={{ color: '#ef4444', opacity: 0.7 }}>Atk Base</label>
-                                                <input type="number" value={editingPkmn.attacco} onChange={(e) => handlePokeStatChange('attacco', e.target.value)} />
+                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.attacco} onChange={(e) => handlePokeStatChange('attacco', e.target.value)} />
                                             </div>
                                             <div className="input-field">
                                                 <label style={{ color: '#fbbf24', fontWeight: 'bold' }}>Atk Attuale</label>
-                                                <input type="number" value={editingPkmn.attacco_attuale || editingPkmn.attacco} onChange={(e) => handlePokeStatChange('attacco_attuale', e.target.value)} />
+                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.attacco_attuale || editingPkmn.attacco} onChange={(e) => handlePokeStatChange('attacco_attuale', e.target.value)} />
                                             </div>
                                             <div className="input-field">
                                                 <label style={{ color: '#ef4444', opacity: 0.7 }}>S.Atk Base</label>
-                                                <input type="number" value={editingPkmn.attacco_speciale} onChange={(e) => handlePokeStatChange('attacco_speciale', e.target.value)} />
+                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.attacco_speciale} onChange={(e) => handlePokeStatChange('attacco_speciale', e.target.value)} />
                                             </div>
                                             <div className="input-field">
                                                 <label style={{ color: '#fbbf24', fontWeight: 'bold' }}>S.Atk Attuale</label>
-                                                <input type="number" value={editingPkmn.attacco_speciale_attuale || editingPkmn.attacco_speciale} onChange={(e) => handlePokeStatChange('attacco_speciale_attuale', e.target.value)} />
+                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.attacco_speciale_attuale || editingPkmn.attacco_speciale} onChange={(e) => handlePokeStatChange('attacco_speciale_attuale', e.target.value)} />
                                             </div>
                                         </div>
 
@@ -1010,19 +1013,19 @@ export default function Party() {
                                         <div className="stats-thematic-row difesa-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '15px', borderRadius: '16px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
                                             <div className="input-field">
                                                 <label style={{ color: '#3b82f6', opacity: 0.7 }}>Def Base</label>
-                                                <input type="number" value={editingPkmn.difesa} onChange={(e) => handlePokeStatChange('difesa', e.target.value)} />
+                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.difesa} onChange={(e) => handlePokeStatChange('difesa', e.target.value)} />
                                             </div>
                                             <div className="input-field">
                                                 <label style={{ color: '#fbbf24', fontWeight: 'bold' }}>Def Attuale</label>
-                                                <input type="number" value={editingPkmn.difesa_attuale || editingPkmn.difesa} onChange={(e) => handlePokeStatChange('difesa_attuale', e.target.value)} />
+                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.difesa_attuale || editingPkmn.difesa} onChange={(e) => handlePokeStatChange('difesa_attuale', e.target.value)} />
                                             </div>
                                             <div className="input-field">
                                                 <label style={{ color: '#3b82f6', opacity: 0.7 }}>S.Def Base</label>
-                                                <input type="number" value={editingPkmn.difesa_speciale} onChange={(e) => handlePokeStatChange('difesa_speciale', e.target.value)} />
+                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.difesa_speciale} onChange={(e) => handlePokeStatChange('difesa_speciale', e.target.value)} />
                                             </div>
                                             <div className="input-field">
                                                 <label style={{ color: '#fbbf24', fontWeight: 'bold' }}>S.Def Attuale</label>
-                                                <input type="number" value={editingPkmn.difesa_speciale_attuale || editingPkmn.difesa_speciale} onChange={(e) => handlePokeStatChange('difesa_speciale_attuale', e.target.value)} />
+                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.difesa_speciale_attuale || editingPkmn.difesa_speciale} onChange={(e) => handlePokeStatChange('difesa_speciale_attuale', e.target.value)} />
                                             </div>
                                         </div>
                                     </div>
@@ -1046,6 +1049,7 @@ export default function Party() {
                                                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                                             <input 
                                                                 type="number" 
+                                                                onWheel={(e) => e.currentTarget.blur()}
                                                                 value={editingPkmn.danni_totali || 0} 
                                                                 onChange={(e) => handlePokeStatChange('danni_totali', e.target.value)} 
                                                                 style={{ borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', color: '#fbbf24' }}
@@ -1174,22 +1178,26 @@ export default function Party() {
                                                     {searching && fullPokeList.length === 0 ? (
                                                         <div className="flex-center p-xl"><Loader2 className="spin" /></div>
                                                     ) : (
-                                                        filteredPokeList.map(p => (
-                                                            <div
-                                                                key={p.id}
-                                                                className={`library-item-pkmn ${searchResult?.id === p.id ? 'selected' : ''}`}
-                                                                onClick={() => selectFromLibrary(p)}
-                                                            >
-                                                                <img
-                                                                    src={p.immagine_url?.includes('sprites/pokemon/') && !p.immagine_url.includes('other/official-artwork') 
-                                                                        ? p.immagine_url.replace('sprites/pokemon/', 'sprites/pokemon/other/official-artwork/') 
-                                                                        : p.immagine_url}
-                                                                    alt={p.nome}
-                                                                    onError={(e) => { e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'; e.target.style.opacity = '0.3'; }}
-                                                                />
-                                                                <span>{p.nome.toUpperCase()}</span>
-                                                            </div>
-                                                        ))
+                                                        filteredPokeList.map(p => {
+                                                            const nationalId = p.immagine_url?.split('/').pop().split('.')[0] || p.id;
+                                                            const highResThumb = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nationalId}.png`;
+                                                            
+                                                            return (
+                                                                <div
+                                                                    key={p.id}
+                                                                    className={`library-item-pkmn ${searchResult?.id === p.id ? 'selected' : ''}`}
+                                                                    onClick={() => selectFromLibrary(p)}
+                                                                >
+                                                                    <img 
+                                                                        src={highResThumb} 
+                                                                        alt={p.nome} 
+                                                                        onError={(e) => { e.target.src = p.immagine_url || p.sprite_url; }}
+                                                                        style={{ objectFit: 'contain' }}
+                                                                    />
+                                                                    <span>{p.nome.toUpperCase()}</span>
+                                                                </div>
+                                                            );
+                                                        })
                                                     )}
                                                 </div>
 
@@ -1278,11 +1286,11 @@ export default function Party() {
                                                                         <div key={poke.id} className="pkmn-card-squadra master-card-premium clickable" onClick={() => startEditingPkmn(poke)}>
                                                                             <div className="pkmn-types-wrapper">
                                                                                 <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(poke.tipo1) }} title={getTypeLabel(poke.tipo1)}>
-                                                                                    <img src={(poke.tipo1?.toLowerCase() === 'sound' || poke.tipo1?.toLowerCase() === 'suono') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : (poke.tipo1?.toLowerCase() === 'unknown' || poke.tipo1?.toLowerCase() === 'sconosciuto') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${(poke.tipo1?.toLowerCase() === 'fuoco' ? 'fire' : poke.tipo1?.toLowerCase() === 'acqua' ? 'water' : poke.tipo1?.toLowerCase() === 'erba' ? 'grass' : poke.tipo1?.toLowerCase() === 'elettro' ? 'electric' : poke.tipo1?.toLowerCase() === 'ghiaccio' ? 'ice' : poke.tipo1?.toLowerCase() === 'lotta' ? 'fighting' : poke.tipo1?.toLowerCase() === 'veleno' ? 'poison' : poke.tipo1?.toLowerCase() === 'terra' ? 'ground' : poke.tipo1?.toLowerCase() === 'volante' ? 'flying' : poke.tipo1?.toLowerCase() === 'psico' ? 'psychic' : poke.tipo1?.toLowerCase() === 'coleottero' ? 'bug' : poke.tipo1?.toLowerCase() === 'roccia' ? 'rock' : poke.tipo1?.toLowerCase() === 'spettro' ? 'ghost' : poke.tipo1?.toLowerCase() === 'drago' ? 'dragon' : poke.tipo1?.toLowerCase() === 'acciaio' ? 'steel' : poke.tipo1?.toLowerCase() === 'folletto' ? 'fairy' : poke.tipo1?.toLowerCase() === 'buio' ? 'dark' : poke.tipo1?.toLowerCase() === 'normale' ? 'normal' : poke.tipo1?.toLowerCase())}.svg`} alt={poke.tipo1} className="type-icon-img" />
+                                                                                    <img src={getTypeIcon(poke.tipo1)} alt={poke.tipo1} className="type-icon-img" />
                                                                                 </div>
                                                                                 {poke.tipo2 && (
                                                                                     <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(poke.tipo2) }} title={getTypeLabel(poke.tipo2)}>
-                                                                                        <img src={(poke.tipo2?.toLowerCase() === 'sound' || poke.tipo2?.toLowerCase() === 'suono') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : (poke.tipo2?.toLowerCase() === 'unknown' || poke.tipo2?.toLowerCase() === 'sconosciuto') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${(poke.tipo2?.toLowerCase() === 'fuoco' ? 'fire' : poke.tipo2?.toLowerCase() === 'acqua' ? 'water' : poke.tipo2?.toLowerCase() === 'erba' ? 'grass' : poke.tipo2?.toLowerCase() === 'elettro' ? 'electric' : poke.tipo2?.toLowerCase() === 'ghiaccio' ? 'ice' : poke.tipo2?.toLowerCase() === 'lotta' ? 'fighting' : poke.tipo2?.toLowerCase() === 'veleno' ? 'poison' : poke.tipo2?.toLowerCase() === 'terra' ? 'ground' : poke.tipo2?.toLowerCase() === 'volante' ? 'flying' : poke.tipo2?.toLowerCase() === 'psico' ? 'psychic' : poke.tipo2?.toLowerCase() === 'coleottero' ? 'bug' : poke.tipo2?.toLowerCase() === 'roccia' ? 'rock' : poke.tipo2?.toLowerCase() === 'spettro' ? 'ghost' : poke.tipo2?.toLowerCase() === 'drago' ? 'dragon' : poke.tipo2?.toLowerCase() === 'acciaio' ? 'steel' : poke.tipo2?.toLowerCase() === 'folletto' ? 'fairy' : poke.tipo2?.toLowerCase() === 'buio' ? 'dark' : poke.tipo2?.toLowerCase() === 'normale' ? 'normal' : poke.tipo2?.toLowerCase())}.svg`} alt={poke.tipo2} className="type-icon-img" />
+                                                                                        <img src={getTypeIcon(poke.tipo2)} alt={poke.tipo2} className="type-icon-img" />
                                                                                     </div>
                                                                                 )}
                                                                             </div>
@@ -1331,11 +1339,11 @@ export default function Party() {
                                                                         <div key={poke.id} className="pkmn-card-squadra compact-box-card-v3 clickable" onClick={() => startEditingPkmn(poke)}>
                                                                             <div className="pkmn-types-wrapper-mini">
                                                                                 <div className="pkmn-type-circle-mini" style={{ backgroundColor: getTypeColor(poke.tipo1) }} title={getTypeLabel(poke.tipo1)}>
-                                                                                    <img src={(poke.tipo1?.toLowerCase() === 'sound' || poke.tipo1?.toLowerCase() === 'suono') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : (poke.tipo1?.toLowerCase() === 'unknown' || poke.tipo1?.toLowerCase() === 'sconosciuto') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${(poke.tipo1?.toLowerCase() === 'fuoco' ? 'fire' : poke.tipo1?.toLowerCase() === 'acqua' ? 'water' : poke.tipo1?.toLowerCase() === 'erba' ? 'grass' : poke.tipo1?.toLowerCase() === 'elettro' ? 'electric' : poke.tipo1?.toLowerCase() === 'ghiaccio' ? 'ice' : poke.tipo1?.toLowerCase() === 'lotta' ? 'fighting' : poke.tipo1?.toLowerCase() === 'veleno' ? 'poison' : poke.tipo1?.toLowerCase() === 'terra' ? 'ground' : poke.tipo1?.toLowerCase() === 'volante' ? 'flying' : poke.tipo1?.toLowerCase() === 'psico' ? 'psychic' : poke.tipo1?.toLowerCase() === 'coleottero' ? 'bug' : poke.tipo1?.toLowerCase() === 'roccia' ? 'rock' : poke.tipo1?.toLowerCase() === 'spettro' ? 'ghost' : poke.tipo1?.toLowerCase() === 'drago' ? 'dragon' : poke.tipo1?.toLowerCase() === 'acciaio' ? 'steel' : poke.tipo1?.toLowerCase() === 'folletto' ? 'fairy' : poke.tipo1?.toLowerCase() === 'buio' ? 'dark' : poke.tipo1?.toLowerCase() === 'normale' ? 'normal' : poke.tipo1?.toLowerCase())}.svg`} alt={poke.tipo1} className="type-icon-img-mini" />
+                                                                                    <img src={getTypeIcon(poke.tipo1)} alt={poke.tipo1} className="type-icon-img-mini" />
                                                                                 </div>
                                                                                 {poke.tipo2 && (
                                                                                     <div className="pkmn-type-circle-mini" style={{ backgroundColor: getTypeColor(poke.tipo2) }} title={getTypeLabel(poke.tipo2)}>
-                                                                                        <img src={(poke.tipo2?.toLowerCase() === 'sound' || poke.tipo2?.toLowerCase() === 'suono') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg' : (poke.tipo2?.toLowerCase() === 'unknown' || poke.tipo2?.toLowerCase() === 'sconosciuto') ? 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg' : `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${(poke.tipo2?.toLowerCase() === 'fuoco' ? 'fire' : poke.tipo2?.toLowerCase() === 'acqua' ? 'water' : poke.tipo2?.toLowerCase() === 'erba' ? 'grass' : poke.tipo2?.toLowerCase() === 'elettro' ? 'electric' : poke.tipo2?.toLowerCase() === 'ghiaccio' ? 'ice' : poke.tipo2?.toLowerCase() === 'lotta' ? 'fighting' : poke.tipo2?.toLowerCase() === 'veleno' ? 'poison' : poke.tipo2?.toLowerCase() === 'terra' ? 'ground' : poke.tipo2?.toLowerCase() === 'volante' ? 'flying' : poke.tipo2?.toLowerCase() === 'psico' ? 'psychic' : poke.tipo2?.toLowerCase() === 'coleottero' ? 'bug' : poke.tipo2?.toLowerCase() === 'roccia' ? 'rock' : poke.tipo2?.toLowerCase() === 'spettro' ? 'ghost' : poke.tipo2?.toLowerCase() === 'drago' ? 'dragon' : poke.tipo2?.toLowerCase() === 'acciaio' ? 'steel' : poke.tipo2?.toLowerCase() === 'folletto' ? 'fairy' : poke.tipo2?.toLowerCase() === 'buio' ? 'dark' : poke.tipo2?.toLowerCase() === 'normale' ? 'normal' : poke.tipo2?.toLowerCase())}.svg`} alt={poke.tipo2} className="type-icon-img-mini" />
+                                                                                        <img src={getTypeIcon(poke.tipo2)} alt={poke.tipo2} className="type-icon-img-mini" />
                                                                                     </div>
                                                                                 )}
                                                                             </div>
@@ -1402,11 +1410,12 @@ export default function Party() {
                             </div>
                         )}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* MODAL DI CONFERMA GRAFICO */}
-            {confirmModal && (
+            {confirmModal && createPortal(
                 <div className="modal-overlay confirm-layout" onClick={() => setConfirmModal(null)}>
                     <div className="modal-content confirm-modal animate-float" onClick={e => e.stopPropagation()}>
                         <div className={`confirm-icon-bg ${confirmModal.type}`}>
@@ -1421,7 +1430,8 @@ export default function Party() {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

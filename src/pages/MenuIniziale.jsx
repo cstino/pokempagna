@@ -319,6 +319,7 @@ export default function MenuIniziale() {
                                     key={camp.id}
                                     className="campaign-card"
                                     onClick={() => selezionaCampagna(camp.id, isMasterInThis ? 'master' : 'giocatore')}
+                                    style={camp.immagine_url ? { backgroundImage: `linear-gradient(180deg, rgba(30, 41, 59, 0) 0%, rgba(15, 23, 42, 0.9) 100%), url(${camp.immagine_url})` } : {}}
                                 >
                                     <div className={`card-badge ${badgeColor}`}>{badgeText}</div>
                                     <div className="card-info">

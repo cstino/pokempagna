@@ -1,32 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Star, Loader2, Trophy, Ruler, Weight, Shield, Zap, Heart, Info, ArrowRightLeft, XCircle, AlertCircle, Box, Plus, Check } from 'lucide-react';
+import { Star, Loader2, Trophy, Ruler, Weight, Shield, Zap, Heart, Info, ArrowRightLeft, XCircle, AlertCircle, Box, Plus, Check, Package } from 'lucide-react';
 import gsap from 'gsap';
 import { Draggable } from 'gsap/Draggable';
-import { getTypeColor, getTypeLabel } from '../../lib/typeColors';
+import { getTypeColor, getTypeLabel, getTypeIcon } from '../../lib/typeColors';
 import './Squadra.css';
 
 gsap.registerPlugin(Draggable);
 
-// Helper function for Type Icons
-const getTypeIconSrc = (typeStr) => {
-    if (!typeStr) return '';
-    const normalized = typeStr.toLowerCase();
-    let srcStr = `https://raw.githubusercontent.com/duiker101/pokemon-type-svg-icons/master/icons/${
-        normalized === 'fuoco' ? 'fire' : normalized === 'acqua' ? 'water' : normalized === 'erba' ? 'grass' :
-        normalized === 'elettro' ? 'electric' : normalized === 'ghiaccio' ? 'ice' : normalized === 'lotta' ? 'fighting' :
-        normalized === 'veleno' ? 'poison' : normalized === 'terra' ? 'ground' : normalized === 'volante' ? 'flying' :
-        normalized === 'psico' ? 'psychic' : normalized === 'coleottero' ? 'bug' : normalized === 'roccia' ? 'rock' :
-        normalized === 'spettro' ? 'ghost' : normalized === 'drago' ? 'dragon' : normalized === 'acciaio' ? 'steel' :
-        normalized === 'folletto' ? 'fairy' : normalized === 'buio' ? 'dark' : normalized === 'normale' ? 'normal' : normalized
-    }.svg`;
-    
-    if (normalized === 'suono' || normalized === 'sound') srcStr = 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/music.svg';
-    if (normalized === 'sconosciuto' || normalized === 'unknown') srcStr = 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/help-circle.svg';
-    
-    return srcStr;
-};
 
 export default function Squadra() {
     const { profile } = useAuth();
@@ -310,13 +292,13 @@ export default function Squadra() {
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         {selectedPkmn.campagna_tipo1 && (
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: getTypeColor(selectedPkmn.campagna_tipo1), padding: '6px 12px', borderRadius: '14px', fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', color: 'white', border: '1px solid rgba(255,255,255,0.4)', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-                                                <img src={getTypeIconSrc(selectedPkmn.campagna_tipo1)} alt={selectedPkmn.campagna_tipo1} style={{ width: '14px', height: '14px', filter: 'brightness(0) invert(1)', objectFit: 'contain' }} />
+                                                <img src={getTypeIcon(selectedPkmn.campagna_tipo1)} alt={selectedPkmn.campagna_tipo1} style={{ width: '14px', height: '14px', filter: 'brightness(0) invert(1)', objectFit: 'contain' }} />
                                                 {getTypeLabel(selectedPkmn.campagna_tipo1)}
                                             </div>
                                         )}
                                         {selectedPkmn.campagna_tipo2 && selectedPkmn.campagna_tipo2.toUpperCase() !== 'NESSUNO' && (
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: getTypeColor(selectedPkmn.campagna_tipo2), padding: '6px 12px', borderRadius: '14px', fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', color: 'white', border: '1px solid rgba(255,255,255,0.4)', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-                                                <img src={getTypeIconSrc(selectedPkmn.campagna_tipo2)} alt={selectedPkmn.campagna_tipo2} style={{ width: '14px', height: '14px', filter: 'brightness(0) invert(1)', objectFit: 'contain' }} />
+                                                <img src={getTypeIcon(selectedPkmn.campagna_tipo2)} alt={selectedPkmn.campagna_tipo2} style={{ width: '14px', height: '14px', filter: 'brightness(0) invert(1)', objectFit: 'contain' }} />
                                                 {getTypeLabel(selectedPkmn.campagna_tipo2)}
                                             </div>
                                         )}
@@ -367,6 +349,20 @@ export default function Squadra() {
                                     </div>
                                 </div>
                             )}
+
+                            {/* STRUMENTO E STATO */}
+                            <div className="extra-info-container">
+                                <div className="info-box">
+                                    <span className="info-label"><Package size={14} /> Strumento</span>
+                                    <span className="info-value">{selectedPkmn.strumento_tenuto || 'Nessuno'}</span>
+                                </div>
+                                <div className="info-box">
+                                    <span className="info-label"><Zap size={14} /> Stato</span>
+                                    <span className={`info-value status-badge ${selectedPkmn.condizione_stato ? selectedPkmn.condizione_stato?.toLowerCase() : 'none'}`}>
+                                        {selectedPkmn.condizione_stato ? selectedPkmn.condizione_stato.toUpperCase() : 'NORMALE'}
+                                    </span>
+                                </div>
+                            </div>
 
                             {/* STATISTICHE (Stile Pokedex - 2 Colonne) */}
                             <div className="stats-container-modal">
@@ -508,7 +504,7 @@ function PkmnCard({ pkmn, isBench, onClick, getHPColor }) {
         if (!typeStr) return null;
         return (
             <div className={isMini ? "pkmn-type-circle-mini" : "pkmn-type-circle"} style={{ backgroundColor: getTypeColor(typeStr) }} title={getTypeLabel(typeStr)}>
-                <img src={getTypeIconSrc(typeStr)} alt={typeStr} className={isMini ? "type-icon-img-mini" : "type-icon-img"} />
+                <img src={getTypeIcon(typeStr)} alt={typeStr} className={isMini ? "type-icon-img-mini" : "type-icon-img"} />
             </div>
         );
     };

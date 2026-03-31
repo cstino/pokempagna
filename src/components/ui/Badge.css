@@ -1,0 +1,98 @@
+.badge-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.badge-container.md { --badge-size: 80px; }
+.badge-container.sm { --badge-size: 50px; }
+.badge-container.lg { --badge-size: 110px; }
+
+.badge-hexagon {
+    width: var(--badge-size);
+    height: var(--badge-size);
+    clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+    background: linear-gradient(145deg, #d4af37, #f9d976, #b8860b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 3px; /* Border thickness */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.badge-container.earned:hover {
+    transform: scale(1.15) rotate(5deg);
+    filter: brightness(1.2);
+}
+
+.badge-container.locked {
+    filter: grayscale(1) opacity(0.4);
+}
+
+.badge-inner {
+    width: 100%;
+    height: 100%;
+    clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.badge-icon {
+    width: 50%;
+    height: 50%;
+    z-index: 2;
+    transition: transform 0.3s ease;
+}
+
+.badge-shine {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.4) 50%, transparent 55%);
+    transform: rotate(30deg);
+    transition: transform 0.5s ease;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.earned .badge-shine {
+    animation: badge-shine-anim 3s infinite;
+}
+
+@keyframes badge-shine-anim {
+    0% { transform: translateX(-100%) rotate(30deg); }
+    30% { transform: translateX(100%) rotate(30deg); }
+    100% { transform: translateX(100%) rotate(30deg); }
+}
+
+.badge-label {
+    font-size: 0.75rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+}
+
+.earned .badge-label {
+    color: var(--text-primary);
+    opacity: 1;
+}
+
+/* Glassmorphism for locked badges */
+.locked .badge-hexagon {
+    background: rgba(255,255,255,0.1);
+    box-shadow: none;
+}
+.locked .badge-inner {
+    background: rgba(0,0,0,0.3) !important;
+}

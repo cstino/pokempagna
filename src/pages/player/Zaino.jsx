@@ -18,6 +18,13 @@ export default function Zaino() {
 
     // Stati Modale Conferma Uso
     const [confirmAction, setConfirmAction] = useState(null); // { item, onConfirm }
+    const [successAction, setSuccessAction] = useState(null); // { title, message }
+    
+    // Stati Selezione Pokémon
+    const [userPkmn, setUserPkmn] = useState([]);
+    const [showPkmnSelector, setShowPkmnSelector] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [applyingEffect, setApplyingEffect] = useState(false);
 
     const filters = ['Tutti', 'Cura', 'Strumento', 'Battle', 'Altro'];
 
@@ -41,6 +48,7 @@ export default function Zaino() {
             if (error) throw error;
             setItems(data || []);
 
+            // Pokémon caricati on-demand ora, rimosso da qui per evitare ridondanza e bug di timing
             const { data: oggData } = await supabase.from('oggetti').select('*').order('nome');
             setAllOggetti(oggData || []);
         } catch (err) {
@@ -77,24 +85,99 @@ export default function Zaino() {
         }
     };
 
-    const handleUseItem = (item) => {
+    const handleUseItem = async (item) => {
+        // Se l'oggetto ha un effetto definibile, carichiamo i pokemon e mostriamo il selettore
+        if (item.oggetto.effetto_js) {
+            setLoading(true);
+            try {
+                const { data: pkmnData, error: pkmnError } = await supabase
+                    .from('pokemon_giocatore')
+                    .select('*')
+                    .eq('giocatore_id', profile.id)
+                    .order('posizione_squadra', { ascending: true, nullsFirst: false });
+
+                if (pkmnError) throw pkmnError;
+                
+                console.log(`Caricati ${pkmnData?.length || 0} Pokémon per l'utente ${profile.id}`);
+                setUserPkmn(pkmnData || []);
+                setSelectedItem(item);
+                setShowPkmnSelector(true);
+            } catch (err) {
+                console.error("Errore recupero Pokémon per uso oggetto:", err);
+                alert("Impossibile caricare i tuoi Pokémon. Riprova tra poco.");
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
         setConfirmAction({
             item,
             onConfirm: async () => {
                 try {
-                    if (item.quantita > 1) {
-                        await supabase.from('zaino_giocatore')
-                            .update({ quantita: item.quantita - 1, ultimo_aggiornamento: new Date() })
-                            .eq('giocatore_id', profile.id).eq('oggetto_id', item.oggetto.id);
-                    } else {
-                        await supabase.from('zaino_giocatore')
-                            .delete().eq('giocatore_id', profile.id).eq('oggetto_id', item.oggetto.id);
-                    }
-                    await fetchItems();
+                    await consumeItem(item);
                     setConfirmAction(null);
                 } catch (err) { console.error(err); }
             }
         });
+    };
+
+    const consumeItem = async (item) => {
+        if (item.quantita > 1) {
+            await supabase.from('zaino_giocatore')
+                .update({ quantita: item.quantita - 1, ultimo_aggiornamento: new Date() })
+                .eq('giocatore_id', profile.id).eq('oggetto_id', item.oggetto.id);
+        } else {
+            await supabase.from('zaino_giocatore')
+                .delete().eq('giocatore_id', profile.id).eq('oggetto_id', item.oggetto.id);
+        }
+        await fetchItems();
+    };
+
+    const applyItemEffect = async (pkmn) => {
+        if (!selectedItem || applyingEffect) return;
+        
+        setApplyingEffect(true);
+        try {
+            const effect = JSON.parse(selectedItem.oggetto.effetto_js);
+            let updates = {};
+
+            // Logica CURA HP
+            if (effect.heal) {
+                const newHp = Math.min(pkmn.hp_attuale + effect.heal, pkmn.hp_max);
+                updates.hp_attuale = newHp;
+            }
+
+            // Logica STATUS CLEAR
+            if (effect.status_clear) {
+                updates.condizione_stato = null;
+            }
+
+            // Applica aggiornamento Pokémon
+            if (Object.keys(updates).length > 0) {
+                const { error: pkmnError } = await supabase
+                    .from('pokemon_giocatore')
+                    .update(updates)
+                    .eq('id', pkmn.id);
+                
+                if (pkmnError) throw pkmnError;
+            }
+
+            // Consuma oggetto
+            await consumeItem(selectedItem);
+            
+            setShowPkmnSelector(false);
+            setSelectedItem(null);
+            setSuccessAction({
+                title: "Oggetto Utilizzato!",
+                message: `L'effetto di ${selectedItem.oggetto.nome} è stato applicato con successo a ${pkmn.nome}.`
+            });
+        } catch (err) {
+            console.error("Errore applicazione effetto:", err);
+            alert("Errore durante l'uso dell'oggetto.");
+        } finally {
+            setApplyingEffect(false);
+        }
     };
 
     const updateCart = (id, delta) => {
@@ -165,13 +248,13 @@ export default function Zaino() {
                 {filteredItems.length > 0 ? (
                     filteredItems.map((item, idx) => (
                         <div key={idx} className="item-card">
+                            <span className="item-qty-badge">x{item.quantita}</span>
                             <div className="item-icon-container">
                                 {item.oggetto.immagine_url ? (
                                     <img src={item.oggetto.immagine_url} alt={item.oggetto.nome} />
                                 ) : (
                                     <Package size={30} color="rgba(255,255,255,0.2)" />
                                 )}
-                                <span className="item-qty-badge">x{item.quantita}</span>
                             </div>
                             <div className="item-info">
                                 <h4>{item.oggetto.nome}</h4>
@@ -229,10 +312,10 @@ export default function Zaino() {
                 </div>
             )}
 
-            {/* MODALE CONFERMA USO PERSONALIZZATO */}
+            {/* MODALE CONFERMA USO PERSONALIZZATO (OGGETTI SENZA SELETTORE) */}
             {confirmAction && (
-                <div className="zaino-modal-overlay confirmation">
-                    <div className="zaino-modal confirm-small">
+                <div className="zaino-modal-overlay confirmation" onClick={() => setConfirmAction(null)}>
+                    <div className="zaino-modal confirm-small" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-body center">
                             <div className="confirm-icon-circle">
                                 <HelpCircle size={32} color="#fcd34d" />
@@ -242,6 +325,94 @@ export default function Zaino() {
                             <div className="confirm-actions">
                                 <button className="btn-cancel" onClick={() => setConfirmAction(null)}>Annulla</button>
                                 <button className="btn-confirm-use" onClick={confirmAction.onConfirm}>Si, usa</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODALE SELEZIONE POKÉMON (PER USO OGGETTO CURATIVO) */}
+            {showPkmnSelector && (
+                <div className="zaino-modal-overlay" onClick={() => setShowPkmnSelector(false)}>
+                    <div className="zaino-modal pkmn-selector-modal animate-slide-up" onClick={(e) => e.stopPropagation()}>
+                        <div className="zaino-modal-header">
+                            <div>
+                                <h3>Su chi vuoi usare {selectedItem?.oggetto.nome}?</h3>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Seleziona un Pokémon dalla tua squadra o dal box</p>
+                            </div>
+                            <button className="btn-close-modal" onClick={() => { setShowPkmnSelector(false); setSelectedItem(null); }}>
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className="modal-body pkmn-selector-body">
+                            <div className="pkmn-selector-grid">
+                                {userPkmn.length > 0 ? (
+                                    userPkmn.map(pkmn => {
+                                        const isFullHp = pkmn.hp_attuale >= pkmn.hp_max;
+                                        const effect = JSON.parse(selectedItem?.oggetto.effetto_js || '{}');
+                                        const canHeal = effect.heal && !isFullHp;
+                                        const canClearStatus = effect.status_clear && pkmn.condizione_stato;
+                                        const isSelectable = canHeal || canClearStatus || (!effect.heal && !effect.status_clear);
+
+                                        return (
+                                            <div 
+                                                key={pkmn.id} 
+                                                className={`pkmn-selector-card ${!isSelectable ? 'disabled' : ''} ${pkmn.posizione_squadra !== null ? 'is-active' : ''}`}
+                                                onClick={() => isSelectable && applyItemEffect(pkmn)}
+                                            >
+                                                <div className="pkmn-sel-img">
+                                                    <img 
+                                                        src={pkmn.immagine_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pkmn.pokedex_id || pkmn.pokemon_id}.png`} 
+                                                        alt={pkmn.nome} 
+                                                        onError={(e) => e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'}
+                                                    />
+                                                </div>
+                                                <div className="pkmn-sel-info">
+                                                    <div className="pkmn-sel-name-row">
+                                                        <strong>{pkmn.nome}</strong>
+                                                        {pkmn.posizione_squadra !== null && <span className="active-badge-mini">Squadra</span>}
+                                                    </div>
+                                                    <div className="pkmn-sel-hp-bar-container">
+                                                        <div className="pkmn-sel-hp-text">{pkmn.hp_attuale} / {pkmn.hp_max} HP</div>
+                                                        <div className="pkmn-sel-hp-bar">
+                                                            <div 
+                                                                className="pkmn-sel-hp-fill" 
+                                                                style={{ 
+                                                                    width: `${(pkmn.hp_attuale / pkmn.hp_max) * 100}%`,
+                                                                    backgroundColor: (pkmn.hp_attuale / pkmn.hp_max) < 0.2 ? '#ef4444' : (pkmn.hp_attuale / pkmn.hp_max) < 0.5 ? '#f59e0b' : '#10b981'
+                                                                }} 
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    {pkmn.condizione_stato && <div className="pkmn-sel-status">{pkmn.condizione_stato.toUpperCase()}</div>}
+                                                </div>
+                                                {applyingEffect && selectedItem && <div className="applying-overlay"><Loader2 className="spin" /></div>}
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="no-pkmn-msg" style={{ textAlign: 'center', padding: '40px 20px', opacity: 0.5 }}>
+                                        <p>Non hai Pokémon a cui applicare questo oggetto.</p>
+                                        <small>(Verifica di aver già catturato dei Pokémon)</small>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* MODALE SUCCESSO */}
+            {successAction && (
+                <div className="zaino-modal-overlay confirmation" onClick={() => setSuccessAction(null)}>
+                    <div className="zaino-modal confirm-small animate-bounce-in" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-body center">
+                            <div className="success-icon-circle">
+                                <Check size={32} color="#10b981" />
+                            </div>
+                            <h3>{successAction.title}</h3>
+                            <p>{successAction.message}</p>
+                            <div className="confirm-actions">
+                                <button className="btn-confirm-success" onClick={() => setSuccessAction(null)}>Fantastico!</button>
                             </div>
                         </div>
                     </div>

@@ -212,3 +212,8 @@
         margin-left: 64px;
     }
 }
+
+/* Modal Overlay fix for Sidebar */
+.modal-overlay {
+    z-index: 2000 !important;
+}

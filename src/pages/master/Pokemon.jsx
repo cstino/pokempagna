@@ -643,23 +643,23 @@ export default function PokemonMaster() {
                                 <div className="edit-grid-3">
                                     <div className="input-field">
                                         <label>HP</label>
-                                        <input type="number" value={editForm.hp_base} onChange={(e) => setEditForm({ ...editForm, hp_base: parseInt(e.target.value) })} />
+                                        <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editForm.hp_base} onChange={(e) => setEditForm({ ...editForm, hp_base: parseInt(e.target.value) })} />
                                     </div>
                                     <div className="input-field">
                                         <label>Attacco</label>
-                                        <input type="number" value={editForm.atk_base} onChange={(e) => setEditForm({ ...editForm, atk_base: parseInt(e.target.value) })} />
+                                        <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editForm.atk_base} onChange={(e) => setEditForm({ ...editForm, atk_base: parseInt(e.target.value) })} />
                                     </div>
                                     <div className="input-field">
                                         <label>Difesa</label>
-                                        <input type="number" value={editForm.def_base} onChange={(e) => setEditForm({ ...editForm, def_base: parseInt(e.target.value) })} />
+                                        <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editForm.def_base} onChange={(e) => setEditForm({ ...editForm, def_base: parseInt(e.target.value) })} />
                                     </div>
                                     <div className="input-field">
                                         <label>Attacco Sp.</label>
-                                        <input type="number" value={editForm.spatk_base} onChange={(e) => setEditForm({ ...editForm, spatk_base: parseInt(e.target.value) })} />
+                                        <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editForm.spatk_base} onChange={(e) => setEditForm({ ...editForm, spatk_base: parseInt(e.target.value) })} />
                                     </div>
                                     <div className="input-field">
                                         <label>Difesa Sp.</label>
-                                        <input type="number" value={editForm.spdef_base} onChange={(e) => setEditForm({ ...editForm, spdef_base: parseInt(e.target.value) })} />
+                                        <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editForm.spdef_base} onChange={(e) => setEditForm({ ...editForm, spdef_base: parseInt(e.target.value) })} />
                                     </div>
                                 </div>
                             </div>

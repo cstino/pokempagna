@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Map, Users, Swords, LogOut, LayoutDashboard, Copy, Sun, Moon, User as UserIcon, Heart, Package, Zap, Play } from 'lucide-react';
+import { Map, Users, Swords, LogOut, LayoutDashboard, Copy, Sun, Moon, User as UserIcon, Heart, Package, Zap, Play, Medal } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import PokeballLogo from '../components/PokeballLogo';
@@ -15,6 +15,7 @@ const NAV_ITEMS = [
     { path: '/master/pokemon', icon: <Heart size={22} />, label: 'Pokémon' },
     { path: '/master/oggetti', icon: <Package size={22} />, label: 'Oggetti' },
     { path: '/master/mosse', icon: <Zap size={22} />, label: 'Mosse' },
+    { path: '/master/medaglie', icon: <Medal size={22} />, label: 'Medaglie' },
     { path: '/master/battaglia', icon: <Swords size={22} />, label: 'Battaglia' },
     { path: '/master/test-anim', icon: <Play size={22} />, label: 'Test Animazioni' },
 ];

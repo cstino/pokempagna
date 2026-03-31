@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { User, Shield, Zap, TrendingUp, Medal, Camera, Loader2, Edit2, Check, Heart, Leaf, Eye, BookOpen, MessageCircle, Swords } from 'lucide-react';
+import Badge from '../../components/ui/Badge';
 import './Profilo.css';
 
 export default function Profilo() {
@@ -248,31 +249,41 @@ export default function Profilo() {
                 </div>
             </div>
 
-            {/* LA TECA MEDAGLIE */}
+            {/* LA TECA MEDAGLIE (2.0 - Anime Upgrade) */}
             <div className="card medals-section">
-                <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Medal size={20} color="#f59e0b" />
-                    Teca Medaglie
-                </h3>
-                {profile.medaglie && profile.medaglie.length > 0 ? (
-                    <div className="medals-grid">
-                        {profile.medaglie.map((medaglia, idx) => (
-                            <div key={idx} className="medal-slot earned">
-                                <img src={medaglia.immagine_url || '/pokeball-icon.svg'} alt={medaglia.nome} />
-                                <span>{medaglia.nome}</span>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="empty-medals">
-                        <div className="medal-placeholder">
-                            <div className="medal-slot shadow"></div>
-                            <div className="medal-slot shadow"></div>
-                            <div className="medal-slot shadow"></div>
+                <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                        <Medal size={20} color="#f59e0b" />
+                        Teca Medaglie della Lega
+                    </h3>
+                    <div className="league-progress">
+                        <span className="progress-text">Progresso: <strong>{profile.medaglie?.length || 0} / 20</strong></span>
+                        <div className="progress-mini-bar">
+                            <div className="progress-mini-fill" style={{ width: `${((profile.medaglie?.length || 0) / 20) * 100}%` }} />
                         </div>
-                        <p>Nessuna medaglia conquistata</p>
-                        <span>Sconfiggi un capopalestra per ottenere la tua prima medaglia!</span>
                     </div>
+                </div>
+
+                <div className="medals-grid-20">
+                    {[
+                        'normale', 'fuoco', 'acqua', 'erba', 'elettro', 
+                        'ghiaccio', 'lotta', 'veleno', 'terra', 'volante', 
+                        'psico', 'coleottero', 'roccia', 'spettro', 'drago', 
+                        'buio', 'acciaio', 'folletto', 'suono', 'sconosciuto'
+                    ].map(type => (
+                        <Badge 
+                            key={type} 
+                            type={type} 
+                            isEarned={profile.medaglie?.includes(type)} 
+                            size="md" 
+                        />
+                    ))}
+                </div>
+
+                {(profile.medaglie?.length || 0) < 20 && (
+                    <p className="medals-hint">
+                        Sconfiggi i Capipalestra per collezionare tutte le medaglie e qualificarti al Gran Torneo della Lega Pokémon!
+                    </p>
                 )}
             </div>
 

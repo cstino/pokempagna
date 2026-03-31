@@ -293,56 +293,68 @@
     color: var(--text-primary);
 }
 
-/* -- Medals Section -- */
-.medals-grid {
-    display: flex;
-    padding: var(--space-sm) 0;
-    gap: var(--space-md);
-    overflow-x: auto;
+/* -- Medals Section (2.0 - Anime Upgrade) -- */
+.medals-section {
+    padding: var(--space-lg);
 }
 
-.medal-slot {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.3);
-    border: 2px dashed rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    flex-shrink: 0;
+.medals-grid-20 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 20px;
+    padding: 10px 0;
+    justify-items: center;
 }
 
-.medal-slot.earned {
-    border: 2px solid #f59e0b;
-    background: radial-gradient(circle, rgba(245, 158, 11, 0.2) 0%, rgba(0, 0, 0, 0.3) 100%);
-    box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
-}
-
-.empty-medals {
+.league-progress {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: var(--space-lg) 0;
-    color: var(--text-muted);
+    align-items: flex-end;
+    gap: 6px;
+    min-width: 150px;
 }
 
-.empty-medals p {
-    font-weight: 600;
+.progress-text {
+    font-size: 0.8rem;
     color: var(--text-secondary);
-    margin: 12px 0 4px;
+    font-weight: 700;
 }
 
-.empty-medals span {
+.progress-mini-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.progress-mini-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #d4af37, #f9d976);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+    transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.medals-hint {
+    margin-top: 25px;
     font-size: 0.85rem;
-    max-width: 250px;
+    color: var(--text-muted);
+    text-align: center;
+    font-style: italic;
+    opacity: 0.7;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    padding-top: 15px;
+    line-height: 1.5;
 }
 
-.medal-placeholder {
-    display: flex;
-    gap: 8px;
-    margin-bottom: var(--space-sm);
+/* Responsive fixes */
+@media (max-width: 600px) {
+    .medals-grid-20 {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+    }
+    .league-progress {
+        display: none; 
+    }
 }
