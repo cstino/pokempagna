@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Users, User, Shield, Zap, Medal, Edit2, Loader2, X, Check, Save, Heart, TrendingUp, Plus, Minus, Package, Trash2, Search, Info, Layout, Leaf, Eye, BookOpen, MessageCircle, Swords } from 'lucide-react';
 import { getTypeColor, getTypeLabel, getTypeEmoji, getTypeIcon } from '../../lib/typeColors';
+import { calculatePokemonStats } from '../../lib/pokemonLogic';
 import './Party.css';
 
 export default function Party() {
@@ -132,7 +133,7 @@ export default function Party() {
 
             if (iErr) throw iErr;
 
-            // Carica Pokémon
+            // Carica Pokémon (semplice, evitiamo join problematiche)
             const { data: pokes, error: pErr } = await supabase
                 .from('pokemon_giocatore')
                 .select('*')
@@ -314,25 +315,108 @@ export default function Party() {
         setSelectedPkmnMoveIds([]); // Reset mosse per il nuovo Pokémon
     };
 
+    /**
+     * Ricalcola le statistiche di un Pokémon in base alla formula Ufficiale Compress (Approach A).
+     * @param {Object} pkmn - Lo stato attuale del Pokémon
+     * @param {string} changedStat - Il nome del campo che è appena cambiato (opzionale)
+     * @param {any} newValue - Il nuovo valore del campo (opzionale)
+     * @returns {Object} Un nuovo oggetto con le statistiche ricalcolate
+     */
+    const getRecalculatedPkmn = (pkmn, changedStat, newValue) => {
+        const base = pkmn.specie || {
+            hp_base: pkmn.hp_base || 50,
+            atk_base: pkmn.atk_base || 50,
+            def_base: pkmn.def_base || 50,
+            spatk_base: pkmn.spatk_base || 50,
+            spdef_base: pkmn.spdef_base || 50,
+            speed_base: pkmn.speed_base || 50
+        };
+
+        const getVal = (f, def) => (changedStat === f ? (parseInt(newValue) || 0) : (pkmn[f] || def));
+
+        const evs = {
+            hp: getVal('ev_hp', 0),
+            attacco: getVal('ev_attacco', 0),
+            difesa: getVal('ev_difesa', 0),
+            attacco_speciale: getVal('ev_attacco_speciale', 0),
+            difesa_speciale: getVal('ev_difesa_speciale', 0),
+            velocita: getVal('ev_velocita', 0)
+        };
+
+        const ivs = {
+            hp: getVal('iv_hp', 15),
+            attacco: getVal('iv_attacco', 15),
+            difesa: getVal('iv_difesa', 15),
+            attacco_speciale: getVal('iv_attacco_speciale', 15),
+            difesa_speciale: getVal('iv_difesa_speciale', 15),
+            velocita: getVal('iv_velocita', 15)
+        };
+
+        const level = getVal('livello', 5);
+        const stats = calculatePokemonStats(base, level, evs, ivs);
+
+        const result = { ...pkmn, ...stats };
+        if (changedStat) result[changedStat] = changedStat === 'soprannome' || changedStat === 'note' || changedStat === 'strumento_tenuto' ? newValue : (parseInt(newValue) || 0);
+
+        // Allineamento automatico dei valori "attuali" (correnti) ai nuovi massimali ricalcolati
+        result.hp_attuale = stats.hp_max;
+        result.attacco_attuale = stats.attacco;
+        result.difesa_attuale = stats.difesa;
+        result.attacco_speciale_attuale = stats.attacco_speciale;
+        result.difesa_speciale_attuale = stats.difesa_speciale;
+        result.velocita_attuale = stats.velocita;
+
+        return result;
+    };
+
     const handlePokeStatChange = (stat, value) => {
-        setEditingPkmn(prev => ({
-            ...prev,
-            [stat]: stat === 'soprannome' ? value : (parseInt(value) || 0)
-        }));
+        setEditingPkmn(prev => {
+            // Se cambiano fattori strutturali, ricalcoliamo tutto
+            if (['livello', 'ev_hp', 'ev_attacco', 'ev_difesa', 'ev_attacco_speciale', 'ev_difesa_speciale', 'ev_velocita', 'iv_hp', 'iv_attacco', 'iv_difesa', 'iv_attacco_speciale', 'iv_difesa_speciale', 'iv_velocita'].includes(stat)) {
+                return getRecalculatedPkmn(prev, stat, value);
+            }
+            // Altrimenti update semplice
+            return {
+                ...prev,
+                [stat]: stat === 'soprannome' || stat === 'note' || stat === 'strumento_tenuto' ? value : (parseInt(value) || 0)
+            };
+        });
+    };
+
+    const handleUseVitamin = (stat, amount = 4) => {
+        const evField = `ev_${stat}`;
+        const currentEv = editingPkmn[evField] || 0;
+        handlePokeStatChange(evField, currentEv + amount);
     };
 
     // Al click su "Modifica" Pokémon (nella lista della squadra/box)
     const startEditingPkmn = async (pkmn) => {
         setEditingPkmn(pkmn);
-        // Carica le mosse assegnate a questo specifico pokemon_giocatore_id
+        // Carica le mosse assegnate e i dati della specie per ricalcolo stat
         try {
-            const { data, error } = await supabase
+            // 1. Fetch mosse
+            const { data: mData, error: mErr } = await supabase
                 .from('mosse_pokemon')
                 .select('mossa_id')
                 .eq('pokemon_giocatore_id', pkmn.id);
-            if (error) throw error;
-            setSelectedPkmnMoveIds(data.map(m => m.mossa_id));
-        } catch (err) { console.error("Errore recupero mosse assegnate:", err); }
+            if (mErr) throw mErr;
+            setSelectedPkmnMoveIds(mData.map(m => m.mossa_id));
+
+            // 2. Fetch specie (per Approach A: ricalcolo basato su base_stats)
+            const { data: sData, error: sErr } = await supabase
+                .from('pokemon_campagna')
+                .select('*')
+                .eq('id', pkmn.pokemon_id)
+                .single();
+            
+            if (!sErr && sData) {
+                setEditingPkmn(prev => {
+                    const pkmnWithSpecie = { ...prev, specie: sData };
+                    // Ricalcoliamo subito le statistiche Approach A basate sui dati reali della specie
+                    return getRecalculatedPkmn(pkmnWithSpecie);
+                });
+            }
+        } catch (err) { console.error("Errore recupero dettagli pkmn:", err); }
     };
 
     const toggleMoveAssignment = (moveId, isChecked) => {
@@ -372,7 +456,20 @@ export default function Party() {
                 danni_totali: parseInt(editingPkmn.danni_totali) || 0,
                 tipo1: editingPkmn.tipo1,
                 tipo2: editingPkmn.tipo2,
-                posizione_squadra: (editingPkmn.posizione_squadra !== undefined && editingPkmn.posizione_squadra !== null) ? editingPkmn.posizione_squadra : 99
+                posizione_squadra: (editingPkmn.posizione_squadra !== undefined && editingPkmn.posizione_squadra !== null) ? editingPkmn.posizione_squadra : 99,
+                // Nuovi campi EV/IV
+                ev_hp: editingPkmn.ev_hp || 0,
+                ev_attacco: editingPkmn.ev_attacco || 0,
+                ev_difesa: editingPkmn.ev_difesa || 0,
+                ev_attacco_speciale: editingPkmn.ev_attacco_speciale || 0,
+                ev_difesa_speciale: editingPkmn.ev_difesa_speciale || 0,
+                ev_velocita: editingPkmn.ev_velocita || 0,
+                iv_hp: editingPkmn.iv_hp || 15,
+                iv_attacco: editingPkmn.iv_attacco || 15,
+                iv_difesa: editingPkmn.iv_difesa || 15,
+                iv_attacco_speciale: editingPkmn.iv_attacco_speciale || 15,
+                iv_difesa_speciale: editingPkmn.iv_difesa_speciale || 15,
+                iv_velocita: editingPkmn.iv_velocita || 15
             };
 
             if (editingPkmn.id) {
@@ -958,13 +1055,97 @@ export default function Party() {
                                                 onChange={(e) => handlePokeStatChange('soprannome', e.target.value)} 
                                             />
                                         </div>
-                                        <div className="input-field" style={{ width: '80px' }}>
-                                            <label>Lv.</label>
-                                            <input 
-                                                type="number" 
-                                                value={editingPkmn.livello} 
-                                                onChange={(e) => handlePokeStatChange('livello', e.target.value)} 
-                                            />
+                                        <div className="input-field" style={{ width: '120px' }}>
+                                            <label>Lv. (1-20)</label>
+                                            <div style={{ display: 'flex', gap: '5px' }}>
+                                                <input 
+                                                    type="number" 
+                                                    min="1"
+                                                    max="20"
+                                                    value={editingPkmn.livello} 
+                                                    onChange={(e) => handlePokeStatChange('livello', e.target.value)} 
+                                                />
+                                                <button 
+                                                    className="btn-lvl-up" 
+                                                    title="Level Up!"
+                                                    onClick={() => handlePokeStatChange('livello', Math.min(20, (editingPkmn.livello || 1) + 1))}
+                                                >
+                                                    <TrendingUp size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* SEZIONE VITAMINE / ALLENAMENTO */}
+                                    <div className="vitamins-section" style={{ marginBottom: '25px', padding: '15px', borderRadius: '16px', background: 'rgba(251, 191, 36, 0.05)', border: '1px solid rgba(251, 191, 36, 0.1)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                            <h4 className="edit-section-title" style={{ color: '#fbbf24', margin: 0 }}><Package size={16} /> Allenamento e Vitamine</h4>
+                                            <button 
+                                                className="btn-action-pkmn to-bench" 
+                                                style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+                                                onClick={() => {
+                                                    ['hp', 'attacco', 'difesa', 'attacco_speciale', 'difesa_speciale', 'velocita'].forEach(s => {
+                                                        handlePokeStatChange(`ev_${s}`, 0);
+                                                    });
+                                                }}
+                                            >
+                                                Reset EV
+                                            </button>
+                                        </div>
+                                        <div className="vitamins-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
+                                            {[
+                                                { id: 'hp', label: 'HP', title: 'PS-Su (+4 HP EV)' },
+                                                { id: 'attacco', label: 'ATK', title: 'Proteina (+4 ATK EV)' },
+                                                { id: 'difesa', label: 'DEF', title: 'Ferro (+4 DEF EV)' },
+                                                { id: 'attacco_speciale', label: 'SATK', title: 'Calcio (+4 SP.ATK EV)' },
+                                                { id: 'difesa_speciale', label: 'SDEF', title: 'Zinco (+4 SP.DEF EV)' },
+                                                { id: 'velocita', label: 'SPD', title: 'Carburante (+4 VEL EV)' }
+                                            ].map(v => (
+                                                <div key={v.id} style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                                                    <button className="vitamin-btn" onClick={() => handleUseVitamin(v.id)} title={v.title} style={{ width: '100%' }}>{v.label}</button>
+                                                    <input 
+                                                        type="number" 
+                                                        min="0"
+                                                        max="252"
+                                                        value={editingPkmn[`ev_${v.id}`] || 0}
+                                                        onChange={(e) => handlePokeStatChange(`ev_${v.id}`, e.target.value)}
+                                                        style={{ width: '45px', fontSize: '0.75rem', textAlign: 'center', padding: '2px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: '4px', color: '#fbbf24' }}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="iv-section" style={{ marginBottom: '25px', padding: '15px', borderRadius: '16px', background: 'rgba(96, 165, 250, 0.05)', border: '1px solid rgba(96, 165, 250, 0.1)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                            <h4 className="edit-section-title" style={{ color: '#60a5fa', margin: 0 }}><Zap size={16} /> Individual Values (DNA 0-31)</h4>
+                                            <button 
+                                                className="btn-action-pkmn to-squad" 
+                                                style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+                                                onClick={() => {
+                                                    ['hp', 'attacco', 'difesa', 'attacco_speciale', 'difesa_speciale', 'velocita'].forEach(s => {
+                                                        const randomIv = Math.floor(Math.random() * 32);
+                                                        handlePokeStatChange(`iv_${s}`, randomIv);
+                                                    });
+                                                }}
+                                            >
+                                                🎲 Genera Casuali
+                                            </button>
+                                        </div>
+                                        <div className="iv-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
+                                            {['hp', 'attacco', 'difesa', 'attacco_speciale', 'difesa_speciale', 'velocita'].map(s => (
+                                                <div key={s} style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                                                    <span style={{ fontSize: '0.6rem', color: '#60a5fa', fontWeight: 'bold' }}>{s.substring(0,3).toUpperCase()}</span>
+                                                    <input 
+                                                        type="number" 
+                                                        min="0"
+                                                        max="31"
+                                                        value={editingPkmn[`iv_${s}`] !== undefined ? editingPkmn[`iv_${s}`] : 15}
+                                                        onChange={(e) => handlePokeStatChange(`iv_${s}`, e.target.value)}
+                                                        style={{ width: '45px', fontSize: '0.75rem', textAlign: 'center', padding: '2px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: '4px', color: '#60a5fa' }}
+                                                    />
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
 
@@ -1244,7 +1425,16 @@ export default function Party() {
                                                                                 velocita: searchResult.speed_base,
                                                                                 tipo1: searchResult.tipo1.toLowerCase(),
                                                                                 tipo2: searchResult.tipo2 ? searchResult.tipo2.toLowerCase() : null,
-                                                                                posizione_squadra: 99
+                                                                                posizione_squadra: 99,
+                                                                                specie: searchResult,
+                                                                                // IV casuali di default per i nuovi pokemon (DNA unico)
+                                                                                iv_hp: Math.floor(Math.random() * 32),
+                                                                                iv_attacco: Math.floor(Math.random() * 32),
+                                                                                iv_difesa: Math.floor(Math.random() * 32),
+                                                                                iv_attacco_speciale: Math.floor(Math.random() * 32),
+                                                                                iv_difesa_speciale: Math.floor(Math.random() * 32),
+                                                                                iv_velocita: Math.floor(Math.random() * 32),
+                                                                                ev_hp: 0, ev_attacco: 0, ev_difesa: 0, ev_attacco_speciale: 0, ev_difesa_speciale: 0, ev_velocita: 0
                                                                             });
                                                                             setSearchResult(null);
                                                                             setSearchQuery('');
