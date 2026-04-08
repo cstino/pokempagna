@@ -12,6 +12,7 @@ export default function PokemonMaster() {
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState(null);
+    const [editSource, setEditSource] = useState(null); // 'national' o 'campaign'
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [tipiDisponibili, setTipiDisponibili] = useState([]);
@@ -104,23 +105,31 @@ export default function PokemonMaster() {
     async function salvaPokemon(asNew = false) {
         setSaving(true);
         try {
-            // 🛡️ Logica di calcolo ID ultra-sicura
+            // Decidiamo la tabella di destinazione
+            // Se editSource è 'national' AND non stiamo salvando come nuovo => aggiorna Pokédex Nazionale (tabella pokemon)
+            // Altrimenti => aggiorna/inserisce in pokemon_campagna
+            const isNationalUpdate = editSource === 'national' && !asNew;
+            const targetTable = isNationalUpdate ? 'pokemon' : 'pokemon_campagna';
+
+            // 🛡️ Logica di calcolo ID ultra-sicura (solo per pokemon_campagna)
             let idToUse = editForm.id;
             
-            // Se stiamo salvando come nuovo o se l'ID manca/non è valido
-            if (asNew || !idToUse || isNaN(Number(idToUse))) {
-                const { data: allPkmn, error: fetchError } = await supabase
-                    .from('pokemon_campagna')
-                    .select('id');
-                
-                if (fetchError) throw fetchError;
+            if (targetTable === 'pokemon_campagna') {
+                // Se stiamo salvando come nuovo o se l'ID manca/non è valido
+                if (asNew || !idToUse || isNaN(Number(idToUse))) {
+                    const { data: allPkmn, error: fetchError } = await supabase
+                        .from('pokemon_campagna')
+                        .select('id');
+                    
+                    if (fetchError) throw fetchError;
 
-                const ids = (allPkmn || []).map(p => Number(p.id));
-                let next = 1;
-                while (ids.includes(next)) {
-                    next++;
+                    const ids = (allPkmn || []).map(p => Number(p.id));
+                    let next = 1;
+                    while (ids.includes(next)) {
+                        next++;
+                    }
+                    idToUse = next;
                 }
-                idToUse = next;
             }
 
             const cleanId = Number(idToUse);
@@ -151,14 +160,18 @@ export default function PokemonMaster() {
 
             // 🛡️ Upsert millimetrico: se l'ID esiste aggiorna, altrimenti inserisce
             const { error: upsertError } = await supabase
-                .from('pokemon_campagna')
+                .from(targetTable)
                 .upsert(payload, { onConflict: 'id' });
                 
             if (upsertError) throw upsertError;
             
             setIsEditing(false);
-            caricaPokemonCampaign();
-            setActiveTab('campaign');
+            if (targetTable === 'pokemon') {
+                caricaPokemonNational();
+            } else {
+                caricaPokemonCampaign();
+                setActiveTab('campaign');
+            }
         } catch (err) {
             console.error("DEBUG - Errore salvataggio pokemon:", err);
             alert("Benjamin segnala un errore: " + (err.message || "Controlla i campi inseriti."));
@@ -231,14 +244,18 @@ export default function PokemonMaster() {
 
     const isTipoAttivo = (category, typeNameIt) => {
         const currentVal = editForm[category] || '';
+        if (!currentVal.trim()) return false;
         return currentVal.split(',')
+            .map(t => t.trim())
+            .filter(Boolean)
             .some(t => {
-                const label = getTypeLabel(t.trim());
-                return (label || t.trim()).toUpperCase() === typeNameIt.toUpperCase();
+                const label = getTypeLabel(t);
+                return (label || t).toUpperCase() === typeNameIt.toUpperCase();
             });
     };
 
-    const openEditModal = (p = null) => {
+    const openEditModal = (p = null, source = 'campaign') => {
+        setEditSource(source);
         if (p) {
             setEditForm({ 
                 ...p, 
@@ -410,10 +427,15 @@ export default function PokemonMaster() {
                                         )}
                                         <td className="actions-cell-column">
                                             <div className="actions-cell">
-                                                {activeTab === 'national' ? (
-                                                    <button className="btn-icon accent" title="Importa in Campagna" onClick={() => importaInCampagna(p)}>
-                                                        <Plus size={16} />
-                                                    </button>
+                                                 {activeTab === 'national' ? (
+                                                    <>
+                                                        <button className="btn-icon accent" title="Importa in Campagna" onClick={() => importaInCampagna(p)}>
+                                                            <Plus size={16} />
+                                                        </button>
+                                                        <button className="btn-icon" title="Modifica Base" onClick={() => openEditModal(p, 'national')}>
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                    </>
                                                 ) : (
                                                     <>
                                                         <button className="btn-icon" onClick={() => openEditModal(p)}><Edit2 size={16} /></button>
@@ -716,11 +738,13 @@ export default function PokemonMaster() {
                             <button className="btn-cancel-flat" onClick={() => setIsEditing(false)}>Annulla</button>
                             <div className="btn-group-master">
                                 <button className="btn-save-hero" onClick={() => salvaPokemon(false)} disabled={saving}>
-                                    {saving ? <Loader2 className="spin" /> : <Save size={18} />} {editForm.id ? 'Sovrascrivi' : 'Aggiungi alla Libreria Campagna'}
+                                    {saving ? <Loader2 className="spin" /> : <Save size={18} />} 
+                                    {editSource === 'national' ? 'Sovrascrivi Pokédex' : (editForm.id ? 'Sovrascrivi' : 'Aggiungi alla Libreria')}
                                 </button>
-                                {editForm.id && (
+                                {(editForm.id || editSource === 'national') && (
                                     <button className="btn-save-hero accent" onClick={() => salvaPokemon(true)} disabled={saving}>
-                                        <Plus size={18} /> Aggiungi come Nuovo
+                                        {editSource === 'national' ? <Plus size={18} /> : <Plus size={18} />}
+                                        {editSource === 'national' ? 'Aggiungi alla Campagna' : 'Aggiungi come Nuovo'}
                                     </button>
                                 )}
                             </div>

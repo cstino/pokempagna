@@ -49,7 +49,8 @@ export function getTypeColor(type) {
 }
 
 export function getTypeLabel(type) {
-    return TYPE_COLORS[type?.toLowerCase()]?.label || 'Normale';
+    if (!type) return '';
+    return TYPE_COLORS[type.toLowerCase()]?.label || type;
 }
 
 export function getTypeEmoji(type) {

@@ -196,38 +196,65 @@ export default function Party() {
             message: "L'oggetto verrà rimosso permanentemente dallo zaino dell'allenatore.",
             type: 'error',
             onConfirm: async () => {
+                const previousZaino = [...zaino];
+                // Optimistic UI
+                setZaino(prev => prev.filter(item => item.oggetto.id !== oggId));
+                setConfirmModal(null);
+
                 try {
                     const { error } = await supabase
                         .from('zaino_giocatore')
                         .delete()
                         .eq('giocatore_id', playerId)
                         .eq('oggetto_id', oggId);
+                    
                     if (error) throw error;
+                    // Consolida il dato dal server
                     caricaDatiExtra(playerId);
-                    setConfirmModal(null);
-                } catch (err) { console.error(err); }
+                } catch (err) { 
+                    console.error(err);
+                    setZaino(previousZaino); // Rollback
+                    alert("Errore durante la rimozione dell'oggetto. Operazione annullata.");
+                }
             }
         });
     };
 
     const sottraiUno = async (item, playerId) => {
+        const previousZaino = [...zaino];
+        // Optimistic UI
+        setZaino(prev => prev.map(i => 
+            i.oggetto.id === item.oggetto.id 
+                ? { ...i, quantita: Math.max(0, i.quantita - 1) } 
+                : i
+        ).filter(i => i.quantita > 0));
+
         try {
             if (item.quantita > 1) {
-                await supabase.from('zaino_giocatore')
+                const { error } = await supabase.from('zaino_giocatore')
                     .update({ quantita: item.quantita - 1 })
                     .eq('giocatore_id', playerId)
                     .eq('oggetto_id', item.oggetto.id);
+                if (error) throw error;
             } else {
-                await supabase.from('zaino_giocatore')
+                const { error } = await supabase.from('zaino_giocatore')
                     .delete()
                     .eq('giocatore_id', playerId)
                     .eq('oggetto_id', item.oggetto.id);
+                if (error) throw error;
             }
             caricaDatiExtra(playerId);
-        } catch (err) { console.error(err); }
+        } catch (err) { 
+            console.error(err);
+            setZaino(previousZaino); // Rollback
+        }
     };
 
     const spostaPokemon = async (pkmnId, nuovaPosizione) => {
+        const previousPokemon = [...playerPokemon];
+        // Optimistic UI
+        setPlayerPokemon(prev => prev.map(p => p.id === pkmnId ? { ...p, posizione_squadra: nuovaPosizione } : p));
+
         try {
             const { error } = await supabase
                 .from('pokemon_giocatore')
@@ -238,6 +265,8 @@ export default function Party() {
             caricaDatiExtra(editForm.id);
         } catch (err) {
             console.error("Errore spostamento pokemon:", err);
+            setPlayerPokemon(previousPokemon); // Rollback
+            alert("Errore durante lo spostamento del Pokémon.");
         }
     };
 
@@ -247,6 +276,11 @@ export default function Party() {
             message: "Questa azione è irreversibile. Il Pokémon lascerà la squadra per sempre.",
             type: 'error',
             onConfirm: async () => {
+                const previousPokemon = [...playerPokemon];
+                // Optimistic UI
+                setPlayerPokemon(prev => prev.filter(p => p.id !== pkmnId));
+                setConfirmModal(null);
+
                 try {
                     const { error } = await supabase
                         .from('pokemon_giocatore')
@@ -254,8 +288,11 @@ export default function Party() {
                         .eq('id', pkmnId);
                     if (error) throw error;
                     caricaDatiExtra(playerId);
-                    setConfirmModal(null);
-                } catch (err) { console.error(err); }
+                } catch (err) { 
+                    console.error(err);
+                    setPlayerPokemon(previousPokemon); // Rollback
+                    alert("Errore durante la rimozione del Pokémon.");
+                }
             }
         });
     };
