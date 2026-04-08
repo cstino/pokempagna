@@ -43,6 +43,7 @@ export default function Party() {
     const [selectedPkmnMoveIds, setSelectedPkmnMoveIds] = useState([]); // Array di ID mosse assegnate
     const [moveSearch, setMoveSearch] = useState('');
     const [moveTypeFilter, setMoveTypeFilter] = useState('all');
+    const [showEvoSearch, setShowEvoSearch] = useState(false);
 
     // Stato per la conferma personalizzata
     const [confirmModal, setConfirmModal] = useState(null); // { title, message, onConfirm, type }
@@ -352,79 +353,130 @@ export default function Party() {
         setSelectedPkmnMoveIds([]); // Reset mosse per il nuovo Pokémon
     };
 
-    /**
-     * Ricalcola le statistiche di un Pokémon in base alla formula Ufficiale Compress (Approach A).
-     * @param {Object} pkmn - Lo stato attuale del Pokémon
-     * @param {string} changedStat - Il nome del campo che è appena cambiato (opzionale)
-     * @param {any} newValue - Il nuovo valore del campo (opzionale)
-     * @returns {Object} Un nuovo oggetto con le statistiche ricalcolate
-     */
-    const getRecalculatedPkmn = (pkmn, changedStat, newValue) => {
-        const base = pkmn.specie || {
-            hp_base: pkmn.hp_base || 50,
-            atk_base: pkmn.atk_base || 50,
-            def_base: pkmn.def_base || 50,
-            spatk_base: pkmn.spatk_base || 50,
-            spdef_base: pkmn.spdef_base || 50,
-            speed_base: pkmn.speed_base || 50
-        };
+    const handleEvolve = (selectedSpecie) => {
+        setEditingPkmn(prev => {
+            const oldLevel = prev.livello || 1;
+            
+            // 1. Cerchiamo la specie attuale per ricalcolare la teoria "vecchia"
+            // Lookup robusto: prova ID libreria, poi ID nazione, poi fallback
+            const currentLibrarySpecie = fullPokeList.find(s => s.id === prev.pokemon_id) || 
+                                       fullPokeList.find(s => s.pokemon_id === prev.pokemon_id) || 
+                                       {
+                                         hp_base: 50, atk_base: 50, def_base: 50, 
+                                         spatk_base: 50, spdef_base: 50, speed_base: 50 
+                                       };
+            const oldTheoretical = calculatePokemonStats(currentLibrarySpecie, oldLevel);
+            
+            // 2. Prepariamo la NUOVA teoria (Source of Truth)
+            const newBase = selectedSpecie; // Da pokemon_campagna
+            const newTheoretical = calculatePokemonStats(newBase, oldLevel);
+            
+            // 3. Calcoliamo i BONUS ESPLICITI (se mancano, li deduciamo ora per migrare i dati)
+            // Se prev.hp_max è nullo (caso NaN precedente), usiamo la vecchia teoria come ancora
+            const bonuses = {
+                hp: prev.bonus_hp ?? ((prev.hp_max || oldTheoretical.hp_max) - oldTheoretical.hp_max),
+                atk: prev.bonus_attacco ?? ((prev.attacco || oldTheoretical.attacco) - oldTheoretical.attacco),
+                def: prev.bonus_difesa ?? ((prev.difesa || oldTheoretical.difesa) - oldTheoretical.difesa),
+                spatk: prev.bonus_attacco_speciale ?? ((prev.attacco_speciale || oldTheoretical.attacco_speciale) - oldTheoretical.attacco_speciale),
+                spdef: prev.bonus_difesa_speciale ?? ((prev.difesa_speciale || oldTheoretical.difesa_speciale) - oldTheoretical.difesa_speciale),
+                speed: prev.bonus_velocita ?? ((prev.velocita || oldTheoretical.velocita) - oldTheoretical.velocita)
+            };
 
-        const getVal = (f, def) => (changedStat === f ? (parseInt(newValue) || 0) : (pkmn[f] || def));
+            const evolvedStats = {
+                hp_max: newTheoretical.hp_max + bonuses.hp,
+                attacco: newTheoretical.attacco + bonuses.atk,
+                difesa: newTheoretical.difesa + bonuses.def,
+                attacco_speciale: newTheoretical.attacco_speciale + bonuses.spatk,
+                difesa_speciale: newTheoretical.difesa_speciale + bonuses.spdef,
+                velocita: newTheoretical.velocita + bonuses.speed,
+                hp_attuale: newTheoretical.hp_max + bonuses.hp,
+                attacco_attuale: newTheoretical.attacco + bonuses.atk,
+                difesa_attuale: newTheoretical.difesa + bonuses.def,
+                attacco_speciale_attuale: newTheoretical.attacco_speciale + bonuses.spatk,
+                difesa_speciale_attuale: newTheoretical.difesa_speciale + bonuses.spdef,
+                velocita_attuale: newTheoretical.velocita + bonuses.speed,
+                // Salviamo i bonus nel nuovo stato
+                bonus_hp: bonuses.hp,
+                bonus_attacco: bonuses.atk,
+                bonus_difesa: bonuses.def,
+                bonus_attacco_speciale: bonuses.spatk,
+                bonus_difesa_speciale: bonuses.spdef,
+                bonus_velocita: bonuses.speed
+            };
 
-        const evs = {
-            hp: getVal('ev_hp', 0),
-            attacco: getVal('ev_attacco', 0),
-            difesa: getVal('ev_difesa', 0),
-            attacco_speciale: getVal('ev_attacco_speciale', 0),
-            difesa_speciale: getVal('ev_difesa_speciale', 0),
-            velocita: getVal('ev_velocita', 0)
-        };
-
-        const ivs = {
-            hp: getVal('iv_hp', 15),
-            attacco: getVal('iv_attacco', 15),
-            difesa: getVal('iv_difesa', 15),
-            attacco_speciale: getVal('iv_attacco_speciale', 15),
-            difesa_speciale: getVal('iv_difesa_speciale', 15),
-            velocita: getVal('iv_velocita', 15)
-        };
-
-        const level = getVal('livello', 5);
-        const stats = calculatePokemonStats(base, level, evs, ivs);
-
-        const result = { ...pkmn, ...stats };
-        if (changedStat) result[changedStat] = changedStat === 'soprannome' || changedStat === 'note' || changedStat === 'strumento_tenuto' ? newValue : (parseInt(newValue) || 0);
-
-        // Allineamento automatico dei valori "attuali" (correnti) ai nuovi massimali ricalcolati
-        result.hp_attuale = stats.hp_max;
-        result.attacco_attuale = stats.attacco;
-        result.difesa_attuale = stats.difesa;
-        result.attacco_speciale_attuale = stats.attacco_speciale;
-        result.difesa_speciale_attuale = stats.difesa_speciale;
-        result.velocita_attuale = stats.velocita;
-
-        return result;
+            return {
+                ...prev,
+                ...evolvedStats,
+                pokemon_id: selectedSpecie.id,
+                nome: selectedSpecie.nome.toUpperCase(),
+                tipo1: selectedSpecie.tipo1.toUpperCase(),
+                tipo2: selectedSpecie.tipo2 ? selectedSpecie.tipo2.toUpperCase() : null,
+                specie: selectedSpecie
+            };
+        });
+        setShowEvoSearch(false);
     };
 
     const handlePokeStatChange = (stat, value) => {
         setEditingPkmn(prev => {
-            // Se cambiano fattori strutturali, ricalcoliamo tutto
-            if (['livello', 'ev_hp', 'ev_attacco', 'ev_difesa', 'ev_attacco_speciale', 'ev_difesa_speciale', 'ev_velocita', 'iv_hp', 'iv_attacco', 'iv_difesa', 'iv_attacco_speciale', 'iv_difesa_speciale', 'iv_velocita'].includes(stat)) {
-                return getRecalculatedPkmn(prev, stat, value);
+            const newValue = stat === 'soprannome' || stat === 'note' || stat === 'strumento_tenuto' ? value : (parseInt(value) || 0);
+            const newState = { ...prev, [stat]: newValue };
+
+            // 💡 LOGICA DEI BONUS ESPLICITI
+            // Lookup robusto: prova ID libreria, poi ID nazione, poi fallback sicuro (50) per evitare NaN
+            const librarySpecies = fullPokeList.find(s => s.id === prev.pokemon_id) || 
+                                 fullPokeList.find(s => s.pokemon_id === prev.pokemon_id) || 
+                                 { 
+                                   hp_base: 50, atk_base: 50, def_base: 50, 
+                                   spatk_base: 50, spdef_base: 50, speed_base: 50 
+                                 };
+            const theory = calculatePokemonStats(librarySpecies, prev.livello || 1);
+
+            if (stat === 'livello') {
+                // Ricalcoliamo la teoria al NUOVO livello
+                const newTheory = calculatePokemonStats(librarySpecies, newValue);
+                
+                // Applichiamo i bonus esistenti (o calcolati se assenti)
+                const bonusHp = prev.bonus_hp ?? (prev.hp_max - theory.hp_max);
+                const bonusAtk = prev.bonus_attacco ?? (prev.attacco - theory.attacco);
+                const bonusDef = prev.bonus_difesa ?? (prev.difesa - theory.difesa);
+                const bonusSpatk = prev.bonus_attacco_speciale ?? (prev.attacco_speciale - theory.attacco_speciale);
+                const bonusSpdef = prev.bonus_difesa_speciale ?? (prev.difesa_speciale - theory.difesa_speciale);
+                const bonusSpeed = prev.bonus_velocita ?? (prev.velocita - theory.velocita);
+
+                newState.hp_max = newTheory.hp_max + bonusHp;
+                newState.attacco = newTheory.attacco + bonusAtk;
+                newState.difesa = newTheory.difesa + bonusDef;
+                newState.attacco_speciale = newTheory.attacco_speciale + bonusSpatk;
+                newState.difesa_speciale = newTheory.difesa_speciale + bonusSpdef;
+                newState.velocita = newTheory.velocita + bonusSpeed;
+                
+                // Migriamo anche i bonus espliciti nello stato per sicurezza
+                newState.bonus_hp = bonusHp;
+                newState.bonus_attacco = bonusAtk;
+                newState.bonus_difesa = bonusDef;
+                newState.bonus_attacco_speciale = bonusSpatk;
+                newState.bonus_difesa_speciale = bonusSpdef;
+                newState.bonus_velocita = bonusSpeed;
+
+                newState.hp_attuale = newState.hp_max;
+            } else if (['hp_max', 'attacco', 'difesa', 'attacco_speciale', 'difesa_speciale', 'velocita'].includes(stat)) {
+                // Se modifichiamo una stat principale, aggiorniamo il BONUS relativo
+                const mapping = {
+                    hp_max: 'bonus_hp',
+                    attacco: 'bonus_attacco',
+                    difesa: 'bonus_difesa',
+                    attacco_speciale: 'bonus_attacco_speciale',
+                    difesa_speciale: 'bonus_difesa_speciale',
+                    velocita: 'bonus_velocita'
+                };
+                newState[mapping[stat]] = newValue - theory[stat];
             }
-            // Altrimenti update semplice
-            return {
-                ...prev,
-                [stat]: stat === 'soprannome' || stat === 'note' || stat === 'strumento_tenuto' ? value : (parseInt(value) || 0)
-            };
+
+            return newState;
         });
     };
 
-    const handleUseVitamin = (stat, amount = 4) => {
-        const evField = `ev_${stat}`;
-        const currentEv = editingPkmn[evField] || 0;
-        handlePokeStatChange(evField, currentEv + amount);
-    };
 
     // Al click su "Modifica" Pokémon (nella lista della squadra/box)
     const startEditingPkmn = async (pkmn) => {
@@ -447,11 +499,7 @@ export default function Party() {
                 .single();
             
             if (!sErr && sData) {
-                setEditingPkmn(prev => {
-                    const pkmnWithSpecie = { ...prev, specie: sData };
-                    // Ricalcoliamo subito le statistiche Approach A basate sui dati reali della specie
-                    return getRecalculatedPkmn(pkmnWithSpecie);
-                });
+                setEditingPkmn(prev => ({ ...prev, specie: sData }));
             }
         } catch (err) { console.error("Errore recupero dettagli pkmn:", err); }
     };
@@ -474,7 +522,7 @@ export default function Party() {
                 giocatore_id: editForm.id,
                 pokemon_id: editingPkmn.pokemon_id,
                 nome: editingPkmn.name?.toUpperCase() || editingPkmn.nome?.toUpperCase(),
-                soprannome: editingPkmn.soprannome || editingPkmn.name?.toUpperCase() || editingPkmn.nome?.toUpperCase(),
+                soprannome: editingPkmn.soprannome || '',
                 livello: editingPkmn.livello,
                 hp_attuale: editingPkmn.hp_attuale,
                 hp_max: editingPkmn.hp_max,
@@ -490,23 +538,16 @@ export default function Party() {
                 velocita_attuale: editingPkmn.velocita_attuale || editingPkmn.velocita,
                 strumento_tenuto: editingPkmn.strumento_tenuto || '',
                 note: editingPkmn.note || '',
-                danni_totali: parseInt(editingPkmn.danni_totali) || 0,
                 tipo1: editingPkmn.tipo1,
                 tipo2: editingPkmn.tipo2,
-                posizione_squadra: (editingPkmn.posizione_squadra !== undefined && editingPkmn.posizione_squadra !== null) ? editingPkmn.posizione_squadra : 99,
-                // Nuovi campi EV/IV
-                ev_hp: editingPkmn.ev_hp || 0,
-                ev_attacco: editingPkmn.ev_attacco || 0,
-                ev_difesa: editingPkmn.ev_difesa || 0,
-                ev_attacco_speciale: editingPkmn.ev_attacco_speciale || 0,
-                ev_difesa_speciale: editingPkmn.ev_difesa_speciale || 0,
-                ev_velocita: editingPkmn.ev_velocita || 0,
-                iv_hp: editingPkmn.iv_hp || 15,
-                iv_attacco: editingPkmn.iv_attacco || 15,
-                iv_difesa: editingPkmn.iv_difesa || 15,
-                iv_attacco_speciale: editingPkmn.iv_attacco_speciale || 15,
-                iv_difesa_speciale: editingPkmn.iv_difesa_speciale || 15,
-                iv_velocita: editingPkmn.iv_velocita || 15
+                // BONUS MASTER ESPLICITI
+                bonus_hp: editingPkmn.bonus_hp || 0,
+                bonus_attacco: editingPkmn.bonus_attacco || 0,
+                bonus_difesa: editingPkmn.bonus_difesa || 0,
+                bonus_attacco_speciale: editingPkmn.bonus_attacco_speciale || 0,
+                bonus_difesa_speciale: editingPkmn.bonus_difesa_speciale || 0,
+                bonus_velocita: editingPkmn.bonus_velocita || 0,
+                posizione_squadra: (editingPkmn.posizione_squadra !== undefined && editingPkmn.posizione_squadra !== null) ? editingPkmn.posizione_squadra : 99
             };
 
             if (editingPkmn.id) {
@@ -1063,128 +1104,170 @@ export default function Party() {
                                     
                                     {editingPkmn ? (
                                         <div className="pokemon-edit-form animate-slide-up">
-                                            <div className="pkmn-edit-header">
-                                                    <img
-                                                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${editingPkmn.pokemon_id}.png`}
-                                                        alt={editingPkmn.soprannome || editingPkmn.nome}
-                                                        onError={(e) => { e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'; }}
-                                                    />
-                                                <div className="pkmn-edit-identity">
-                                                    <span className="species-name-label">RAZZA: {(editingPkmn.nome || 'Sconosciuta').toUpperCase()}</span>
-                                                    <div className="input-field-soprannome">
-                                                        <label>Soprannome</label>
-                                                        <input
-                                                    type="text"
-                                                    placeholder="Metti un soprannome..."
-                                                    value={editingPkmn.soprannome || ''}
-                                                    onChange={(e) => handlePokeStatChange('soprannome', e.target.value)}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
+                                            {/* HEADER: FOTO E NOME + EVOLUZIONE */}
+                                            <div className="pkmn-edit-header" style={{ display: 'flex', gap: '20px', alignItems: 'center', justifyContent: 'space-between', marginBottom: '30px', width: '100%' }}>
+                                                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                                                    <div style={{ position: 'relative' }}>
+                                                        <img 
+                                                            className="pkmn-image-large" 
+                                                            src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${editingPkmn.pokemon_id}.png`} 
+                                                            alt={editingPkmn.nome} 
+                                                            style={{ width: '120px', height: '120px', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))' }}
+                                                        />
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        {showEvoSearch ? (
+                                                            <div className="evo-search-box" style={{ background: 'rgba(139, 92, 246, 0.1)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(139, 92, 246, 0.3)', width: '300px' }}>
+                                                                <label style={{ fontSize: '0.7rem', color: '#a78bfa', fontWeight: 'bold' }}>CERCA EVOLUZIONE / CAMBIA SPECIE</label>
+                                                                <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+                                                                    <input 
+                                                                        type="text" 
+                                                                        placeholder="Es: Wartortle..."
+                                                                        value={searchQuery}
+                                                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                                                        style={{ 
+                                                                            flex: 1, 
+                                                                            height: '35px', 
+                                                                            fontSize: '0.9rem',
+                                                                            padding: '0 10px',
+                                                                            background: 'rgba(0,0,0,0.3)',
+                                                                            border: '1px solid rgba(139, 92, 246, 0.3)',
+                                                                            borderRadius: '6px',
+                                                                            color: 'white'
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                                <div className="evo-results" style={{ marginTop: '10px', maxHeight: '150px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                                                    {searchQuery.trim().length > 0 ? (
+                                                                        filteredPokeList.length > 0 ? (
+                                                                            filteredPokeList.slice(0, 10).map(p => (
+                                                                                <div 
+                                                                                    key={p.id} 
+                                                                                    className="evo-res-item clickable"
+                                                                                    onClick={() => handleEvolve(p)}
+                                                                                    style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                                                                >
+                                                                                    <span style={{ fontWeight: 'bold' }}>{p.nome.toUpperCase()}</span>
+                                                                                    <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>ID {p.id}</span>
+                                                                                </div>
+                                                                            ))
+                                                                        ) : (
+                                                                            <div style={{ padding: '10px', fontSize: '0.8rem', opacity: 0.5, textAlign: 'center' }}>Nessun Pokémon...</div>
+                                                                        )
+                                                                    ) : (
+                                                                        <div style={{ padding: '10px', fontSize: '0.8rem', opacity: 0.5, textAlign: 'center' }}>Scrivi per cercare...</div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="pkmn-identity-info">
+                                                                <h2 className="edit-pkmn-title" style={{ fontSize: '2.5rem', margin: 0, letterSpacing: '2px', lineHeight: 1 }}>{editingPkmn.nome?.toUpperCase()}</h2>
+                                                                <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+                                                                    <div className="type-badge-pill" style={{ 
+                                                                        display: 'flex', 
+                                                                        alignItems: 'center', 
+                                                                        gap: '8px', 
+                                                                        background: `linear-gradient(90deg, ${getTypeColor(editingPkmn.tipo1)}88, ${getTypeColor(editingPkmn.tipo1)}44)`,
+                                                                        padding: '4px 12px 4px 4px',
+                                                                        borderRadius: '20px',
+                                                                        border: `1px solid ${getTypeColor(editingPkmn.tipo1)}aa`,
+                                                                        backdropFilter: 'blur(5px)'
+                                                                    }}>
+                                                                        <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(editingPkmn.tipo1), width: '24px', height: '24px', margin: 0 }}>
+                                                                            <img src={getTypeIcon(editingPkmn.tipo1)} alt={editingPkmn.tipo1} className="type-icon-img" style={{ width: '12px' }} />
+                                                                        </div>
+                                                                        <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'white', letterSpacing: '1px' }}>{getTypeLabel(editingPkmn.tipo1).toUpperCase()}</span>
+                                                                    </div>
 
-                                    <div className="pkmn-header-edit-row" style={{ display: 'flex', gap: '15px', marginBottom: '25px', alignItems: 'flex-end' }}>
-                                        <div className="input-field" style={{ flex: 1 }}>
-                                            <label>SOPRANNOME</label>
-                                            <input 
-                                                type="text" 
-                                                value={editingPkmn.soprannome} 
-                                                onChange={(e) => handlePokeStatChange('soprannome', e.target.value)} 
-                                            />
-                                        </div>
-                                        <div className="input-field" style={{ width: '120px' }}>
-                                            <label>Lv. (1-20)</label>
-                                            <div style={{ display: 'flex', gap: '5px' }}>
-                                                <input 
-                                                    type="number" 
-                                                    min="1"
-                                                    max="20"
-                                                    value={editingPkmn.livello} 
-                                                    onChange={(e) => handlePokeStatChange('livello', e.target.value)} 
-                                                />
+                                                                    {editingPkmn.tipo2 && (
+                                                                        <div className="type-badge-pill" style={{ 
+                                                                            display: 'flex', 
+                                                                            alignItems: 'center', 
+                                                                            gap: '8px', 
+                                                                            background: `linear-gradient(90deg, ${getTypeColor(editingPkmn.tipo2)}88, ${getTypeColor(editingPkmn.tipo2)}44)`,
+                                                                            padding: '4px 12px 4px 4px',
+                                                                            borderRadius: '20px',
+                                                                            border: `1px solid ${getTypeColor(editingPkmn.tipo2)}aa`,
+                                                                            backdropFilter: 'blur(5px)'
+                                                                        }}>
+                                                                            <div className="pkmn-type-circle" style={{ backgroundColor: getTypeColor(editingPkmn.tipo2), width: '24px', height: '24px', margin: 0 }}>
+                                                                                <img src={getTypeIcon(editingPkmn.tipo2)} alt={editingPkmn.tipo2} className="type-icon-img" style={{ width: '12px' }} />
+                                                                            </div>
+                                                                            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'white', letterSpacing: '1px' }}>{getTypeLabel(editingPkmn.tipo2).toUpperCase()}</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* ACTION SECTION: EVOLUTION BUTTON */}
                                                 <button 
-                                                    className="btn-lvl-up" 
-                                                    title="Level Up!"
-                                                    onClick={() => handlePokeStatChange('livello', Math.min(20, (editingPkmn.livello || 1) + 1))}
+                                                    className={`btn-evo-master ${showEvoSearch ? 'active' : ''}`}
+                                                    onClick={() => {
+                                                        const nextState = !showEvoSearch;
+                                                        setShowEvoSearch(nextState);
+                                                        setSearchQuery('');
+                                                        if (nextState && fullPokeList.length === 0) {
+                                                            caricaPokedexLibrary();
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        width: '80px',
+                                                        height: '80px',
+                                                        borderRadius: '50%',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '5px',
+                                                        background: showEvoSearch ? 'rgba(255,255,255,0.1)' : 'linear-gradient(135deg, #8b5cf6, #d946ef)',
+                                                        border: showEvoSearch ? '1px solid rgba(139, 92, 246, 0.5)' : 'none',
+                                                        color: 'white',
+                                                        boxShadow: showEvoSearch ? 'none' : '0 10px 20px rgba(139, 92, 246, 0.3)',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                        flexShrink: 0
+                                                    }}
                                                 >
-                                                    <TrendingUp size={16} />
+                                                    <Zap size={24} color={showEvoSearch ? '#8b5cf6' : 'white'} />
+                                                    <span style={{ fontSize: '0.65rem', fontWeight: '900', letterSpacing: '1px', color: showEvoSearch ? '#8b5cf6' : 'white' }}>
+                                                        {showEvoSearch ? 'ANNULLA' : 'EVOLVI'}
+                                                    </span>
                                                 </button>
                                             </div>
-                                        </div>
-                                    </div>
 
-                                    {/* SEZIONE VITAMINE / ALLENAMENTO */}
-                                    <div className="vitamins-section" style={{ marginBottom: '25px', padding: '15px', borderRadius: '16px', background: 'rgba(251, 191, 36, 0.05)', border: '1px solid rgba(251, 191, 36, 0.1)' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                            <h4 className="edit-section-title" style={{ color: '#fbbf24', margin: 0 }}><Package size={16} /> Allenamento e Vitamine</h4>
-                                            <button 
-                                                className="btn-action-pkmn to-bench" 
-                                                style={{ padding: '4px 8px', fontSize: '0.7rem' }}
-                                                onClick={() => {
-                                                    ['hp', 'attacco', 'difesa', 'attacco_speciale', 'difesa_speciale', 'velocita'].forEach(s => {
-                                                        handlePokeStatChange(`ev_${s}`, 0);
-                                                    });
-                                                }}
-                                            >
-                                                Reset EV
-                                            </button>
-                                        </div>
-                                        <div className="vitamins-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
-                                            {[
-                                                { id: 'hp', label: 'HP', title: 'PS-Su (+4 HP EV)' },
-                                                { id: 'attacco', label: 'ATK', title: 'Proteina (+4 ATK EV)' },
-                                                { id: 'difesa', label: 'DEF', title: 'Ferro (+4 DEF EV)' },
-                                                { id: 'attacco_speciale', label: 'SATK', title: 'Calcio (+4 SP.ATK EV)' },
-                                                { id: 'difesa_speciale', label: 'SDEF', title: 'Zinco (+4 SP.DEF EV)' },
-                                                { id: 'velocita', label: 'SPD', title: 'Carburante (+4 VEL EV)' }
-                                            ].map(v => (
-                                                <div key={v.id} style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-                                                    <button className="vitamin-btn" onClick={() => handleUseVitamin(v.id)} title={v.title} style={{ width: '100%' }}>{v.label}</button>
+                                            <div className="pkmn-header-edit-row" style={{ display: 'flex', gap: '15px', marginBottom: '25px', alignItems: 'flex-end' }}>
+                                                <div className="input-field" style={{ flex: 1 }}>
+                                                    <label>SOPRANNOME</label>
                                                     <input 
-                                                        type="number" 
-                                                        min="0"
-                                                        max="252"
-                                                        value={editingPkmn[`ev_${v.id}`] || 0}
-                                                        onChange={(e) => handlePokeStatChange(`ev_${v.id}`, e.target.value)}
-                                                        style={{ width: '45px', fontSize: '0.75rem', textAlign: 'center', padding: '2px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: '4px', color: '#fbbf24' }}
+                                                        type="text" 
+                                                        value={editingPkmn.soprannome || ''} 
+                                                        onChange={(e) => handlePokeStatChange('soprannome', e.target.value)} 
                                                     />
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="iv-section" style={{ marginBottom: '25px', padding: '15px', borderRadius: '16px', background: 'rgba(96, 165, 250, 0.05)', border: '1px solid rgba(96, 165, 250, 0.1)' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                            <h4 className="edit-section-title" style={{ color: '#60a5fa', margin: 0 }}><Zap size={16} /> Individual Values (DNA 0-31)</h4>
-                                            <button 
-                                                className="btn-action-pkmn to-squad" 
-                                                style={{ padding: '4px 8px', fontSize: '0.7rem' }}
-                                                onClick={() => {
-                                                    ['hp', 'attacco', 'difesa', 'attacco_speciale', 'difesa_speciale', 'velocita'].forEach(s => {
-                                                        const randomIv = Math.floor(Math.random() * 32);
-                                                        handlePokeStatChange(`iv_${s}`, randomIv);
-                                                    });
-                                                }}
-                                            >
-                                                🎲 Genera Casuali
-                                            </button>
-                                        </div>
-                                        <div className="iv-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
-                                            {['hp', 'attacco', 'difesa', 'attacco_speciale', 'difesa_speciale', 'velocita'].map(s => (
-                                                <div key={s} style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-                                                    <span style={{ fontSize: '0.6rem', color: '#60a5fa', fontWeight: 'bold' }}>{s.substring(0,3).toUpperCase()}</span>
-                                                    <input 
-                                                        type="number" 
-                                                        min="0"
-                                                        max="31"
-                                                        value={editingPkmn[`iv_${s}`] !== undefined ? editingPkmn[`iv_${s}`] : 15}
-                                                        onChange={(e) => handlePokeStatChange(`iv_${s}`, e.target.value)}
-                                                        style={{ width: '45px', fontSize: '0.75rem', textAlign: 'center', padding: '2px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: '4px', color: '#60a5fa' }}
-                                                    />
+                                                <div className="input-field" style={{ width: '120px' }}>
+                                                    <label>Lv. (1-20)</label>
+                                                    <div style={{ display: 'flex', gap: '5px' }}>
+                                                        <input 
+                                                            type="number" 
+                                                            min="1"
+                                                            max="20"
+                                                            value={editingPkmn.livello} 
+                                                            onChange={(e) => handlePokeStatChange('livello', e.target.value)} 
+                                                        />
+                                                        <button 
+                                                            className="btn-lvl-up" 
+                                                            title="Level Up!"
+                                                            onClick={() => handlePokeStatChange('livello', Math.min(20, (editingPkmn.livello || 1) + 1))}
+                                                        >
+                                                            <TrendingUp size={16} />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                            </div>
+
 
                                     <div className="pkmn-stats-grid-master">
                                         {/* RIGA 1: VITALITÀ & RAPIDITÀ */}
@@ -1451,7 +1534,7 @@ export default function Party() {
                                                                                 pokemon_id: searchResult.pokemon_id,
                                                                                 immagine_url: searchResult.immagine_url,
                                                                                 nome: searchResult.nome.toUpperCase(),
-                                                                                soprannome: searchResult.nome.toUpperCase(),
+                                                                                soprannome: '',
                                                                                 livello: 5,
                                                                                 hp_attuale: searchResult.hp_base,
                                                                                 hp_max: searchResult.hp_base,
@@ -1460,11 +1543,25 @@ export default function Party() {
                                                                                 attacco_speciale: searchResult.spatk_base,
                                                                                 difesa_speciale: searchResult.spdef_base,
                                                                                 velocita: searchResult.speed_base,
+                                                                                // 💡 SALVIAMO LE BASI (Identità di Specie)
+                                                                                hp_base: searchResult.hp_base,
+                                                                                atk_base: searchResult.atk_base,
+                                                                                def_base: searchResult.def_base,
+                                                                                spatk_base: searchResult.spatk_base,
+                                                                                spdef_base: searchResult.spdef_base,
+                                                                                speed_base: searchResult.speed_base,
                                                                                 tipo1: searchResult.tipo1.toLowerCase(),
                                                                                 tipo2: searchResult.tipo2 ? searchResult.tipo2.toLowerCase() : null,
                                                                                 posizione_squadra: 99,
                                                                                 specie: searchResult,
-                                                                                // IV casuali di default per i nuovi pokemon (DNA unico)
+                                                                                // Bonus Iniziali
+                                                                                bonus_hp: 0,
+                                                                                bonus_attacco: 0,
+                                                                                bonus_difesa: 0,
+                                                                                bonus_attacco_speciale: 0,
+                                                                                bonus_difesa_speciale: 0,
+                                                                                bonus_velocita: 0,
+                                                                                // IV casuali di default
                                                                                 iv_hp: Math.floor(Math.random() * 32),
                                                                                 iv_attacco: Math.floor(Math.random() * 32),
                                                                                 iv_difesa: Math.floor(Math.random() * 32),
