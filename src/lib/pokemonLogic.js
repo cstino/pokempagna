@@ -1,8 +1,10 @@
 /**
- * Calcola le statistiche di un Pokémon in base alla formula ufficiale compressa (Scala 1-20).
+ * Calcola le statistiche di un Pokémon in base alla formula ufficiale (Scala 1-20 -> Real Level 12-50).
  * 
- * Formula HP: floor((((2 * Base + IV + floor(EV/4)) * Livello) / 20) + Livello + 10)
- * Altre Stat: floor((((2 * Base + IV + floor(EV/4)) * Livello) / 20) + 5)
+ * Formula HP: floor((((2 * Base + IV + floor(EV/4)) * RealLevel) / 100) + RealLevel + 10)
+ * Altre Stat: floor((((2 * Base + IV + floor(EV/4)) * RealLevel) / 100) + 5)
+ * 
+ * Dove RealLevel = (Level * 2) + 10
  * 
  * @param {Object} baseStats - { hp_base, atk_base, def_base, spatk_base, spdef_base, speed_base }
  * @param {number} level - Livello attuale (1-20)
@@ -11,12 +13,13 @@
  * @returns {Object} Statistiche finali calcolate
  */
 export function calculatePokemonStats(baseStats, level, evs = {}, ivs = {}) {
+    const realLevel = (level * 2) + 10;
     const calc = (base, ev = 0, iv = 0, isHp = false) => {
-        const inner = (2 * base + iv + Math.floor(ev / 4)) * level;
-        const result = Math.floor(inner / 20); // Scala compressa Level/20 invece di Level/100
+        const inner = (2 * base + iv + Math.floor(ev / 4)) * realLevel;
+        const result = Math.floor(inner / 100); 
         
         if (isHp) {
-            return result + level + 10;
+            return result + realLevel + 10;
         }
         return result + 5;
     };
