@@ -81,6 +81,11 @@ export default function Party() {
             )
             .subscribe();
 
+        if (profile?.campagna_corrente_id) {
+            caricaGiocatori();
+            caricaPokedexLibrary(); // Carica la libreria subito per il mapping delle immagini
+        }
+
         return () => {
             supabase.removeChannel(channel);
         };
@@ -415,6 +420,26 @@ export default function Party() {
             };
         });
         setShowEvoSearch(false);
+    };
+
+    // Utility per ottenere l'immagine corretta (Priorità: Immagine Custom Libreria > ID Nazionale Libreria > Fallback)
+    const getPkmnImage = (poke) => {
+        if (!poke) return '';
+        
+        // Cerchiamo la specie nella libreria caricata in memoria
+        const spec = fullPokeList.find(s => s.id === poke.pokemon_id) || 
+                   fullPokeList.find(s => s.pokemon_id === poke.pokemon_id);
+        
+        if (spec) {
+            // 1. Se c'è un'immagine custom caricata dal Master, usiamo quella
+            if (spec.immagine_url) return spec.immagine_url;
+            
+            // 2. Altrimenti usiamo l'ID nazionale salvato nella riga della libreria
+            return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${spec.pokemon_id}.png`;
+        }
+
+        // 3. Fallback estremo se la libreria non è ancora carica o la riga manca
+        return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`;
     };
 
     const handlePokeStatChange = (stat, value) => {
@@ -1110,7 +1135,7 @@ export default function Party() {
                                                     <div style={{ position: 'relative' }}>
                                                         <img 
                                                             className="pkmn-image-large" 
-                                                            src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${editingPkmn.pokemon_id}.png`} 
+                                                            src={getPkmnImage(editingPkmn)} 
                                                             alt={editingPkmn.nome} 
                                                             style={{ width: '120px', height: '120px', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))' }}
                                                         />
@@ -1147,8 +1172,15 @@ export default function Party() {
                                                                                     onClick={() => handleEvolve(p)}
                                                                                     style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                                                                                 >
-                                                                                    <span style={{ fontWeight: 'bold' }}>{p.nome.toUpperCase()}</span>
-                                                                                    <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>ID {p.id}</span>
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                                                        <img 
+                                                                                            src={p.immagine_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p.pokemon_id}.png`} 
+                                                                                            alt={p.nome} 
+                                                                                            style={{ width: '30px', height: '30px' }} 
+                                                                                        />
+                                                                                        <span style={{ fontWeight: 'bold' }}>{p.nome.toUpperCase()}</span>
+                                                                                    </div>
+                                                                                    <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>ID {p.pokemon_id}</span>
                                                                                 </div>
                                                                             ))
                                                                         ) : (
@@ -1619,7 +1651,7 @@ export default function Party() {
                                                                                 )}
                                                                             </div>
                                                                             <div className="pkmn-lvl-badge">Lv.{poke.livello}</div>
-                                                                            <img className="pkmn-image" src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`} alt={poke.soprannome || poke.nome} />
+                                                                            <img className="pkmn-image" src={getPkmnImage(poke)} alt={poke.soprannome || poke.nome} />
                                                                             <div className="pkmn-card-details">
                                                                                 <div className="pkmn-identity-stack">
                                                                                     <h3 className="pkmn-race-title">{poke.nome?.toUpperCase()}</h3>
@@ -1674,7 +1706,7 @@ export default function Party() {
                                                                             <div className="pkmn-lvl-badge" style={{ fontSize: '0.6rem' }}>Lv.{poke.livello}</div>
                                                                             <img 
                                                                                 className="pkmn-image-mini" 
-                                                                                src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`} 
+                                                                                src={getPkmnImage(poke)} 
                                                                                 alt={poke.nome} 
                                                                                 onError={(e) => { e.target.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'; }}
                                                                             />

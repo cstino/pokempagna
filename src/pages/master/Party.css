@@ -539,6 +539,7 @@
     padding-top: 8px;
 }
 
+
 .item-card-master {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border-subtle);
@@ -1227,16 +1228,24 @@
 }
 
 .compact-box-card-v3 {
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 12px;
     padding: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    border: 1px solid rgba(0,0,0,0.05);
+    border: 2px solid rgba(255, 255, 255, 0.15); /* Bordo più deciso */
     width: 140px;
-    height: 180px; /* Accorciata per evitare spazio vuoto */
+    height: 180px; 
     position: relative;
+    opacity: 0.7; /* Netta differenza con la squadra */
+    transition: all 0.2s ease;
+}
+
+.compact-box-card-v3:hover {
+    opacity: 1; /* Torna nitida al passaggio del mouse */
+    border-color: var(--primary-master);
+    transform: translateY(-2px);
 }
 
 .compact-box-card-v3 .pkmn-image-mini {
@@ -1670,7 +1679,7 @@
 /* --- MASTER POKEMON CARD PREMIUM (TCG STYLE) --- */
 .master-card-premium {
     background: var(--bg-card-master) !important;
-    border: 1px solid var(--border-master) !important;
+    border: 2px solid rgba(255, 255, 255, 0.2) !important; /* Bordo più visibile e spesso */
     border-radius: 20px !important;
     padding: 12px 12px 15px !important;
     position: relative;
@@ -1738,8 +1747,8 @@
 
 .master-card-premium .hp-section {
     width: 175px !important;
-    margin: -20px auto 0 !important;
-    /* Alzata di 20px per compattare il footer */
+    margin: -30px auto 0 !important;
+    /* Alzata di altri 10px per compattare come richiesto */
     display: flex !important;
     flex-direction: column !important;
     gap: 4px !important;
