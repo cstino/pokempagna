@@ -1404,13 +1404,21 @@ export default function Party() {
                                                 <div>
                                                     <h4 className="edit-section-title"><Info size={16} /> Strumento Tenuto</h4>
                                                     <div className="input-field full-width">
-                                                        <input 
-                                                            type="text" 
-                                                            placeholder="Nessuno strumento..." 
+                                                        <select 
                                                             value={editingPkmn.strumento_tenuto || ''} 
-                                                            onChange={(e) => handlePokeStatChange('strumento_tenuto', e.target.value)} 
-                                                            style={{ borderRadius: '12px' }}
-                                                        />
+                                                            onChange={(e) => handlePokeStatChange('strumento_tenuto', e.target.value)}
+                                                            className="master-select-premium"
+                                                        >
+                                                            <option value="">Nessuno strumento...</option>
+                                                            {playerItems
+                                                                .filter(pi => pi.oggetto?.attribuibile_pokemon)
+                                                                .map((pi, idx) => (
+                                                                    <option key={idx} value={pi.oggetto.nome}>
+                                                                        {pi.oggetto.nome} (x{pi.quantita})
+                                                                    </option>
+                                                                ))
+                                                            }
+                                                        </select>
                                                     </div>
                                                 </div>
                                                 <div>

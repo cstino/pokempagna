@@ -68,7 +68,8 @@ export default function OggettiMaster() {
                 descrizione: '',
                 categoria: 'STRUMENTO',
                 immagine_url: '',
-                utilizzabile_in_battaglia: false
+                utilizzabile_in_battaglia: false,
+                attribuibile_pokemon: false
             });
         }
         setIsEditing(true);
@@ -218,6 +219,7 @@ export default function OggettiMaster() {
                                         <th>Descrizione</th>
                                         <th>Categoria</th>
                                         <th>In Battaglia</th>
+                                        <th>Assegnabile</th>
                                         <th>Azioni</th>
                                     </tr>
                                 </thead>
@@ -246,6 +248,7 @@ export default function OggettiMaster() {
                                                 </span>
                                             </td>
                                             <td>{o.utilizzabile_in_battaglia ? <Check size={18} color="#10b981" /> : <X size={18} color="#ef4444" />}</td>
+                                            <td>{o.attribuibile_pokemon ? <Check size={18} color="#8b5cf6" /> : <X size={18} color="#64748b" />}</td>
                                             <td className="actions-cell-column">
                                                 <div className="actions-cell">
                                                     <button className="btn-icon" onClick={() => openEditModal(o)}><Edit2 size={16} /></button>
@@ -390,6 +393,15 @@ export default function OggettiMaster() {
                                             onChange={(e) => setEditForm({ ...editForm, utilizzabile_in_battaglia: e.target.checked })}
                                         />
                                         <label htmlFor="battaglia-check">Utilizzabile in Battaglia</label>
+                                    </div>
+                                    <div className="checkbox-field">
+                                        <input
+                                            type="checkbox"
+                                            id="holdable-check"
+                                            checked={editForm.attribuibile_pokemon || false}
+                                            onChange={(e) => setEditForm({ ...editForm, attribuibile_pokemon: e.target.checked })}
+                                        />
+                                        <label htmlFor="holdable-check">Assegnabile ai Pokémon</label>
                                     </div>
                                 </div>
                             </div>

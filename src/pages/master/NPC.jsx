@@ -1338,16 +1338,24 @@ export default function NPC() {
                                                 <div className="strategia-master-row" style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                                                     <div>
                                                         <h4 className="edit-section-title"><Info size={16} /> Strumento Tenuto</h4>
-                                                        <div className="input-field full-width">
-                                                            <input 
-                                                                type="text" 
-                                                                placeholder="Nessuno strumento..." 
-                                                                value={editingPkmn.strumento_tenuto || ''} 
-                                                                onChange={(e) => handlePokeStatChange('strumento_tenuto', e.target.value)} 
-                                                                style={{ borderRadius: '12px' }}
-                                                            />
-                                                        </div>
+                                                    <div className="input-field full-width">
+                                                        <select 
+                                                            value={editingPkmn.strumento_tenuto || ''} 
+                                                            onChange={(e) => handlePokeStatChange('strumento_tenuto', e.target.value)}
+                                                            className="master-select-premium"
+                                                        >
+                                                            <option value="">Nessuno strumento...</option>
+                                                            {allOggetti
+                                                                .filter(ogg => ogg.attribuibile_pokemon)
+                                                                .map((ogg, idx) => (
+                                                                    <option key={idx} value={ogg.nome}>
+                                                                        {ogg.nome}
+                                                                    </option>
+                                                                ))
+                                                            }
+                                                        </select>
                                                     </div>
+                                                </div>
                                                     <div>
                                                         <h4 className="edit-section-title"><Zap size={16} /> Progressione EXP</h4>
                                                         <div className="input-field full-width">
