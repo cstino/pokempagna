@@ -10,6 +10,8 @@ import './Squadra.css';
 gsap.registerPlugin(Draggable);
 
 
+
+
 export default function Squadra() {
     const { profile } = useAuth();
     const [loading, setLoading] = useState(true);
@@ -48,7 +50,7 @@ export default function Squadra() {
                 .single();
 
             setSlots(giaterData?.slot_squadra || 3);
-            
+
             // pokemon_giocatore ha già nome, tipo1, tipo2 e pokemon_id (che è il National Dex ID)
             // Non c'è alcun bisogno di incrociare con pokemon_campagna perché la dashboard Master 
             // aggiunge i PKMN ai giocatori scaricandoli direttamente da PokeAPI!
@@ -59,7 +61,7 @@ export default function Squadra() {
                 campagna_tipo2: p.tipo2,
                 campagna_img: null // Userà il fallback classico PokeAPI in base a p.pokemon_id
             }));
-            
+
             setPokemon(cleanData);
         } catch (err) {
             console.error("Errore recupero squadra:", err);
@@ -272,11 +274,11 @@ export default function Squadra() {
 
                         <div className="modal-pkmn-body">
                             <div className="modal-pkmn-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingBottom: '20px' }}>
-                                <h2 style={{ 
-                                    textAlign: 'left', 
-                                    margin: '0 0 12px 0', 
-                                    fontFamily: 'var(--font-display), sans-serif', 
-                                    fontWeight: 900, 
+                                <h2 style={{
+                                    textAlign: 'left',
+                                    margin: '0 0 12px 0',
+                                    fontFamily: 'var(--font-display), sans-serif',
+                                    fontWeight: 900,
                                     fontSize: '2.4rem',
                                     letterSpacing: '-0.02em',
                                     lineHeight: 1,
@@ -498,7 +500,7 @@ function PkmnCard({ pkmn, isBench, onClick, getHPColor }) {
     }
 
     const hpPct = (pkmn.hp_attuale / pkmn.hp_max) * 100;
-    
+
     // Funzione helper per le icone dei tipi (copiata da Party.jsx)
     const renderTypeIcon = (typeStr, isMini = false) => {
         if (!typeStr) return null;

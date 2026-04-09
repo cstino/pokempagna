@@ -674,7 +674,7 @@ export default function Party() {
                     giocatore_id: editForm.id,
                     pokemon_id: searchResult.id,
                     nome: searchResult.name.toUpperCase(),
-                    soprannome: searchResult.name.toUpperCase(),
+                    soprannome: '',
                     livello: 5,
                     hp_attuale: searchResult.stats[0].base_stat,
                     hp_max: searchResult.stats[0].base_stat,
@@ -1579,7 +1579,7 @@ export default function Party() {
                                                                             setEditingPkmn({
                                                                                 pokemon_id: searchResult.id,
                                                                                 nome: searchResult.nome.toUpperCase(),
-                                                                                soprannome: searchResult.nome.toUpperCase(),
+                                                                                soprannome: '',
                                                                                 livello: initialLevel,
                                                                                 hp_attuale: calculated.hp_max,
                                                                                 hp_max: calculated.hp_max,

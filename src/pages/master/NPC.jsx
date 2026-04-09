@@ -518,7 +518,7 @@ export default function NPC() {
                 giocatore_id: editForm.id,
                 pokemon_id: editingPkmn.pokemon_id,
                 nome: editingPkmn.nome?.toUpperCase(),
-                soprannome: (editingPkmn.soprannome || editingPkmn.nome)?.toUpperCase(),
+                soprannome: editingPkmn.soprannome?.toUpperCase() || '',
                 livello: editingPkmn.livello,
                 hp_attuale: editingPkmn.hp_attuale,
                 hp_max: editingPkmn.hp_max,
@@ -1385,7 +1385,7 @@ export default function NPC() {
                                                                     setEditingPkmn({
                                                                         pokemon_id: searchResult.id,
                                                                         nome: searchResult.nome.toUpperCase(),
-                                                                        soprannome: searchResult.nome.toUpperCase(),
+                                                                        soprannome: '',
                                                                         livello: initialLevel,
                                                                         hp_attuale: calculated.hp_max, 
                                                                         hp_max: calculated.hp_max,

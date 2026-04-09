@@ -683,6 +683,10 @@ export default function PokemonMaster() {
                                         <label>Difesa Sp.</label>
                                         <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editForm.spdef_base} onChange={(e) => setEditForm({ ...editForm, spdef_base: parseInt(e.target.value) })} />
                                     </div>
+                                    <div className="input-field">
+                                        <label>Velocità</label>
+                                        <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editForm.speed_base} onChange={(e) => setEditForm({ ...editForm, speed_base: parseInt(e.target.value) })} />
+                                    </div>
                                 </div>
                             </div>
 
