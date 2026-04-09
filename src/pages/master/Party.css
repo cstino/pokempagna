@@ -1543,7 +1543,7 @@
 /* MODAL NPC PREMIUM */
 .npc-modal-premium {
     width: 90% !important;
-    max-width: 800px !important;
+    max-width: 950px !important;
     border-radius: 32px !important;
     border: 2px solid rgba(167, 139, 250, 0.1);
     background: var(--bg-master);

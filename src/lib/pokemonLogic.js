@@ -11,7 +11,7 @@
  * @returns {Object} Statistiche finali calcolate
  */
 export function calculatePokemonStats(baseStats, level, evs = {}, ivs = {}) {
-    const calc = (base, ev = 0, iv = 15, isHp = false) => {
+    const calc = (base, ev = 0, iv = 0, isHp = false) => {
         const inner = (2 * base + iv + Math.floor(ev / 4)) * level;
         const result = Math.floor(inner / 20); // Scala compressa Level/20 invece di Level/100
         

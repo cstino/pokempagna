@@ -364,8 +364,10 @@ export default function Party() {
             
             // 1. Cerchiamo la specie attuale per ricalcolare la teoria "vecchia"
             // Lookup robusto: prova ID libreria, poi ID nazione, poi fallback
-            const currentLibrarySpecie = fullPokeList.find(s => s.id === prev.pokemon_id) || 
-                                       fullPokeList.find(s => s.pokemon_id === prev.pokemon_id) || 
+            const speciesId = prev.pokemon_id;
+            const currentLibrarySpecie = fullPokeList.find(s => String(s.id) === String(speciesId)) || 
+                                       fullPokeList.find(s => String(s.pokemon_id) === String(speciesId)) || 
+                                       prev.specie ||
                                        {
                                          hp_base: 50, atk_base: 50, def_base: 50, 
                                          spatk_base: 50, spdef_base: 50, speed_base: 50 
@@ -447,18 +449,21 @@ export default function Party() {
             const newValue = stat === 'soprannome' || stat === 'note' || stat === 'strumento_tenuto' ? value : (parseInt(value) || 0);
             const newState = { ...prev, [stat]: newValue };
 
-            // 💡 LOGICA DEI BONUS ESPLICITI
-            // Lookup robusto: prova ID libreria, poi ID nazione, poi fallback sicuro (50) per evitare NaN
-            const librarySpecies = fullPokeList.find(s => s.id === prev.pokemon_id) || 
-                                 fullPokeList.find(s => s.pokemon_id === prev.pokemon_id) || 
+            // 🛡️ LOOKUP ROBUSTO: Cerchiamo la specie originale per il ricalcolo
+            const speciesId = prev.pokemon_id;
+            const librarySpecies = fullPokeList.find(s => String(s.id) === String(speciesId)) || 
+                                 fullPokeList.find(s => String(s.pokemon_id) === String(speciesId)) || 
+                                 prev.specie || // Fallback all'oggetto salvato se presente
                                  { 
                                    hp_base: 50, atk_base: 50, def_base: 50, 
                                    spatk_base: 50, spdef_base: 50, speed_base: 50 
                                  };
+            
+            // Usiamo il calcolo "Puro" (IV=0 di default)
             const theory = calculatePokemonStats(librarySpecies, prev.livello || 1);
 
             if (stat === 'livello') {
-                // Ricalcoliamo la teoria al NUOVO livello
+                // Ricalcoliamo la teoria al NUOVO livello (IV=0 default)
                 const newTheory = calculatePokemonStats(librarySpecies, newValue);
                 
                 // Applichiamo i bonus esistenti (o calcolati se assenti)
@@ -1134,10 +1139,12 @@ export default function Party() {
                                                 <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
                                                     <div style={{ position: 'relative' }}>
                                                         <img 
-                                                            className="pkmn-image-large" 
+                                                            className="pkmn-image-tcg-large" 
                                                             src={getPkmnImage(editingPkmn)} 
                                                             alt={editingPkmn.nome} 
-                                                            style={{ width: '120px', height: '120px', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))' }}
+                                                            style={{ 
+                                                                width: '120px', height: '120px', filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.4))', zIndex: 2, position: 'relative', objectFit: 'contain'
+                                                            }}
                                                         />
                                                     </div>
                                                     <div style={{ flex: 1 }}>
@@ -1561,21 +1568,26 @@ export default function Party() {
                                                                         // Reset preventivo per evitare ghosting di dati vecchi
                                                                         setEditingPkmn(null);
                                                                         
+                                                                        // 🛡️ FIX FINALE: Calcolo "Puro" senza IV/EV (IV=0, EV=0)
+                                                                        const initialLevel = 5;
+                                                                        const calculated = calculatePokemonStats(searchResult, initialLevel, 
+                                                                            { hp: 0, attacco: 0, difesa: 0, attacco_speciale: 0, difesa_speciale: 0, velocita: 0 }, 
+                                                                            { hp: 0, attacco: 0, difesa: 0, attacco_speciale: 0, difesa_speciale: 0, velocita: 0 }
+                                                                        );
+
                                                                         setTimeout(() => {
                                                                             setEditingPkmn({
-                                                                                pokemon_id: searchResult.pokemon_id,
-                                                                                immagine_url: searchResult.immagine_url,
+                                                                                pokemon_id: searchResult.id,
                                                                                 nome: searchResult.nome.toUpperCase(),
-                                                                                soprannome: '',
-                                                                                livello: 5,
-                                                                                hp_attuale: searchResult.hp_base,
-                                                                                hp_max: searchResult.hp_base,
-                                                                                attacco: searchResult.atk_base,
-                                                                                difesa: searchResult.def_base,
-                                                                                attacco_speciale: searchResult.spatk_base,
-                                                                                difesa_speciale: searchResult.spdef_base,
-                                                                                velocita: searchResult.speed_base,
-                                                                                // 💡 SALVIAMO LE BASI (Identità di Specie)
+                                                                                soprannome: searchResult.nome.toUpperCase(),
+                                                                                livello: initialLevel,
+                                                                                hp_attuale: calculated.hp_max,
+                                                                                hp_max: calculated.hp_max,
+                                                                                attacco: calculated.attacco,
+                                                                                difesa: calculated.difesa,
+                                                                                attacco_speciale: calculated.attacco_speciale,
+                                                                                difesa_speciale: calculated.difesa_speciale,
+                                                                                velocita: calculated.velocita,
                                                                                 hp_base: searchResult.hp_base,
                                                                                 atk_base: searchResult.atk_base,
                                                                                 def_base: searchResult.def_base,
@@ -1586,20 +1598,15 @@ export default function Party() {
                                                                                 tipo2: searchResult.tipo2 ? searchResult.tipo2.toLowerCase() : null,
                                                                                 posizione_squadra: 99,
                                                                                 specie: searchResult,
-                                                                                // Bonus Iniziali
+                                                                                // Bonus Iniziali (Tutto parte da 0)
                                                                                 bonus_hp: 0,
                                                                                 bonus_attacco: 0,
                                                                                 bonus_difesa: 0,
                                                                                 bonus_attacco_speciale: 0,
                                                                                 bonus_difesa_speciale: 0,
                                                                                 bonus_velocita: 0,
-                                                                                // IV casuali di default
-                                                                                iv_hp: Math.floor(Math.random() * 32),
-                                                                                iv_attacco: Math.floor(Math.random() * 32),
-                                                                                iv_difesa: Math.floor(Math.random() * 32),
-                                                                                iv_attacco_speciale: Math.floor(Math.random() * 32),
-                                                                                iv_difesa_speciale: Math.floor(Math.random() * 32),
-                                                                                iv_velocita: Math.floor(Math.random() * 32),
+                                                                                // Reset parametri invisibili
+                                                                                iv_hp: 0, iv_attacco: 0, iv_difesa: 0, iv_attacco_speciale: 0, iv_difesa_speciale: 0, iv_velocita: 0,
                                                                                 ev_hp: 0, ev_attacco: 0, ev_difesa: 0, ev_attacco_speciale: 0, ev_difesa_speciale: 0, ev_velocita: 0
                                                                             });
                                                                             setSearchResult(null);
