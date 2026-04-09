@@ -2595,3 +2595,83 @@
     background: #fbbf24;
     color: #000;
 }
+
+/* --- STATS GRID V2 --- */
+.pkmn-stats-grid-v2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-group-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: all 0.2s ease;
+}
+
+.stat-group-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.stat-group-title {
+    font-size: 0.8rem;
+    font-weight: 900;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 5px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.stat-inputs-row {
+    display: flex;
+    gap: 10px;
+}
+
+.stat-input-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-input-container input {
+    width: 100%;
+    text-align: center !important;
+    font-size: 1.2rem !important;
+    padding: 10px !important;
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-radius: 12px !important;
+}
+
+.stat-sub-label {
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.6;
+}
+
+/* Rimuove le frecce dai campi numerici per un centraggio perfetto */
+.stat-input-container input::-webkit-outer-spin-button,
+.stat-input-container input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.stat-input-container input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.stat-input-container {
+    padding-bottom: 5px; /* Spazio extra per il respiro dell'etichetta */
+}

@@ -1308,64 +1308,94 @@ export default function Party() {
                                             </div>
 
 
-                                    <div className="pkmn-stats-grid-master">
-                                        {/* RIGA 1: VITALITÀ & RAPIDITÀ */}
-                                        <div className="stats-thematic-row vitalita-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '15px', borderRadius: '16px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)', marginBottom: '15px' }}>
-                                            <div className="input-field">
-                                                <label style={{ color: '#10b981' }}>HP Attuali</label>
-                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.hp_attuale} onChange={(e) => handlePokeStatChange('hp_attuale', e.target.value)} />
-                                            </div>
-                                            <div className="input-field">
-                                                <label style={{ color: '#10b981' }}>HP Max</label>
-                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.hp_max} onChange={(e) => handlePokeStatChange('hp_max', e.target.value)} />
-                                            </div>
-                                            <div className="input-field">
-                                                <label style={{ color: '#10b981', opacity: 0.7 }}>Vel. Base</label>
-                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.velocita} onChange={(e) => handlePokeStatChange('velocita', e.target.value)} />
-                                            </div>
-                                            <div className="input-field">
-                                                <label style={{ color: '#fbbf24', fontWeight: 'bold' }}>Vel. Attuale</label>
-                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.velocita_attuale || editingPkmn.velocita} onChange={(e) => handlePokeStatChange('velocita_attuale', e.target.value)} />
+                                    <div className="pkmn-stats-grid-v2">
+                                        {/* HP */}
+                                        <div className="stat-group-card" style={{ boxShadow: '0 4px 15px rgba(16, 185, 129, 0.1)' }}>
+                                            <div className="stat-group-title" style={{ color: '#10b981' }}>HP</div>
+                                            <div className="stat-inputs-row">
+                                                <div className="stat-input-container">
+                                                    <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.hp_max} onChange={(e) => handlePokeStatChange('hp_max', e.target.value)} />
+                                                    <span className="stat-sub-label">BASE</span>
+                                                </div>
+                                                <div className="stat-input-container">
+                                                    <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.hp_attuale} onChange={(e) => handlePokeStatChange('hp_attuale', e.target.value)} />
+                                                    <span className="stat-sub-label">ATTUALE</span>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        {/* RIGA 2: POTENZA OFFENSIVA */}
-                                        <div className="stats-thematic-row attacco-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '15px', borderRadius: '16px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', marginBottom: '15px' }}>
-                                            <div className="input-field">
-                                                <label style={{ color: '#ef4444', opacity: 0.7 }}>Atk Base</label>
-                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.attacco} onChange={(e) => handlePokeStatChange('attacco', e.target.value)} />
-                                            </div>
-                                            <div className="input-field">
-                                                <label style={{ color: '#fbbf24', fontWeight: 'bold' }}>Atk Attuale</label>
-                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.attacco_attuale || editingPkmn.attacco} onChange={(e) => handlePokeStatChange('attacco_attuale', e.target.value)} />
-                                            </div>
-                                            <div className="input-field">
-                                                <label style={{ color: '#ef4444', opacity: 0.7 }}>S.Atk Base</label>
-                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.attacco_speciale} onChange={(e) => handlePokeStatChange('attacco_speciale', e.target.value)} />
-                                            </div>
-                                            <div className="input-field">
-                                                <label style={{ color: '#fbbf24', fontWeight: 'bold' }}>S.Atk Attuale</label>
-                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.attacco_speciale_attuale || editingPkmn.attacco_speciale} onChange={(e) => handlePokeStatChange('attacco_speciale_attuale', e.target.value)} />
+                                        {/* VELOCITÀ */}
+                                        <div className="stat-group-card" style={{ boxShadow: '0 4px 15px rgba(251, 191, 36, 0.1)' }}>
+                                            <div className="stat-group-title" style={{ color: '#fbbf24' }}>Velocità</div>
+                                            <div className="stat-inputs-row">
+                                                <div className="stat-input-container">
+                                                    <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.velocita} onChange={(e) => handlePokeStatChange('velocita', e.target.value)} />
+                                                    <span className="stat-sub-label">BASE</span>
+                                                </div>
+                                                <div className="stat-input-container">
+                                                    <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.velocita_attuale || editingPkmn.velocita} onChange={(e) => handlePokeStatChange('velocita_attuale', e.target.value)} />
+                                                    <span className="stat-sub-label">ATTUALE</span>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        {/* RIGA 3: RESISTENZA DIFENSIVA */}
-                                        <div className="stats-thematic-row difesa-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '15px', borderRadius: '16px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
-                                            <div className="input-field">
-                                                <label style={{ color: '#3b82f6', opacity: 0.7 }}>Def Base</label>
-                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.difesa} onChange={(e) => handlePokeStatChange('difesa', e.target.value)} />
+                                        {/* ATTACCO */}
+                                        <div className="stat-group-card" style={{ boxShadow: '0 4px 15px rgba(239, 68, 68, 0.1)' }}>
+                                            <div className="stat-group-title" style={{ color: '#ef4444' }}>Attacco</div>
+                                            <div className="stat-inputs-row">
+                                                <div className="stat-input-container">
+                                                    <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.attacco} onChange={(e) => handlePokeStatChange('attacco', e.target.value)} />
+                                                    <span className="stat-sub-label">BASE</span>
+                                                </div>
+                                                <div className="stat-input-container">
+                                                    <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.attacco_attuale || editingPkmn.attacco} onChange={(e) => handlePokeStatChange('attacco_attuale', e.target.value)} />
+                                                    <span className="stat-sub-label">ATTUALE</span>
+                                                </div>
                                             </div>
-                                            <div className="input-field">
-                                                <label style={{ color: '#fbbf24', fontWeight: 'bold' }}>Def Attuale</label>
-                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.difesa_attuale || editingPkmn.difesa} onChange={(e) => handlePokeStatChange('difesa_attuale', e.target.value)} />
+                                        </div>
+
+                                        {/* ATTACCO SPECIALE */}
+                                        <div className="stat-group-card" style={{ boxShadow: '0 4px 15px rgba(139, 92, 246, 0.1)' }}>
+                                            <div className="stat-group-title" style={{ color: '#8b5cf6' }}>Attacco Sp.</div>
+                                            <div className="stat-inputs-row">
+                                                <div className="stat-input-container">
+                                                    <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.attacco_speciale} onChange={(e) => handlePokeStatChange('attacco_speciale', e.target.value)} />
+                                                    <span className="stat-sub-label">BASE</span>
+                                                </div>
+                                                <div className="stat-input-container">
+                                                    <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.attacco_speciale_attuale || editingPkmn.attacco_speciale} onChange={(e) => handlePokeStatChange('attacco_speciale_attuale', e.target.value)} />
+                                                    <span className="stat-sub-label">ATTUALE</span>
+                                                </div>
                                             </div>
-                                            <div className="input-field">
-                                                <label style={{ color: '#3b82f6', opacity: 0.7 }}>S.Def Base</label>
-                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.difesa_speciale} onChange={(e) => handlePokeStatChange('difesa_speciale', e.target.value)} />
+                                        </div>
+
+                                        {/* DIFESA */}
+                                        <div className="stat-group-card" style={{ boxShadow: '0 4px 15px rgba(59, 130, 246, 0.1)' }}>
+                                            <div className="stat-group-title" style={{ color: '#3b82f6' }}>Difesa</div>
+                                            <div className="stat-inputs-row">
+                                                <div className="stat-input-container">
+                                                    <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.difesa} onChange={(e) => handlePokeStatChange('difesa', e.target.value)} />
+                                                    <span className="stat-sub-label">BASE</span>
+                                                </div>
+                                                <div className="stat-input-container">
+                                                    <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.difesa_attuale || editingPkmn.difesa} onChange={(e) => handlePokeStatChange('difesa_attuale', e.target.value)} />
+                                                    <span className="stat-sub-label">ATTUALE</span>
+                                                </div>
                                             </div>
-                                            <div className="input-field">
-                                                <label style={{ color: '#fbbf24', fontWeight: 'bold' }}>S.Def Attuale</label>
-                                                <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.difesa_speciale_attuale || editingPkmn.difesa_speciale} onChange={(e) => handlePokeStatChange('difesa_speciale_attuale', e.target.value)} />
+                                        </div>
+
+                                        {/* DIFESA SPECIALE */}
+                                        <div className="stat-group-card" style={{ boxShadow: '0 4px 15px rgba(20, 184, 166, 0.1)' }}>
+                                            <div className="stat-group-title" style={{ color: '#14b8a6' }}>Difesa Sp.</div>
+                                            <div className="stat-inputs-row">
+                                                <div className="stat-input-container">
+                                                    <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.difesa_speciale} onChange={(e) => handlePokeStatChange('difesa_speciale', e.target.value)} />
+                                                    <span className="stat-sub-label">BASE</span>
+                                                </div>
+                                                <div className="stat-input-container">
+                                                    <input type="number" onWheel={(e) => e.currentTarget.blur()} value={editingPkmn.difesa_speciale_attuale || editingPkmn.difesa_speciale} onChange={(e) => handlePokeStatChange('difesa_speciale_attuale', e.target.value)} />
+                                                    <span className="stat-sub-label">ATTUALE</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
