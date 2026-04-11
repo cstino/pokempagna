@@ -716,7 +716,12 @@ export default function NPC() {
                                         <h3>{npc.nome}</h3>
                                         <span>Livello {npc.livello_allenatore}</span>
                                     </div>
-                                    <Edit2 size={16} className="edit-hint-icon" />
+                                    <div className="card-header-actions">
+                                        <button className="btn-icon-del-card" onClick={(e) => { e.stopPropagation(); rimuoviNPC(npc.id); }}>
+                                            <Trash2 size={16} />
+                                        </button>
+                                        <Edit2 size={16} className="edit-hint-icon" />
+                                    </div>
                                 </div>
 
                                 <div className="player-card-body">
@@ -741,9 +746,6 @@ export default function NPC() {
                                         <div className="stat-mini-box" title="Destrezza">
                                             <Shield size={14} color="#3b82f6" />
                                             <span>{npc.destrezza}</span>
-                                        </div>
-                                        <div className="stat-mini-box del" onClick={(e) => { e.stopPropagation(); rimuoviNPC(npc.id); }}>
-                                            <Trash2 size={14} color="#ef4444" />
                                         </div>
                                     </div>
                                 </div>
@@ -784,23 +786,14 @@ export default function NPC() {
                                         <Camera size={14} />
                                     </div>
                                 </div>
-                                <div className="modal-header-info">
-                                    <h2>Modifica NPC</h2>
-                                    <p>{editForm.nome}</p>
-                                </div>
-                                <div className="modal-header-info-master" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
-                                    <div className="npc-name-edit-wrapper" style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '20px' }}>
-                                        <label style={{ fontSize: '0.65rem', fontWeight: 900, color: '#818cf8', display: 'block', marginBottom: '4px' }}>NOME RAPIDO</label>
-                                        <input 
-                                            className="edit-npc-name-input-hero" 
-                                            value={editForm.nome} 
-                                            onChange={e => setEditForm({...editForm, nome: e.target.value})}
-                                            placeholder="Nome NPC..."
-                                            spellCheck="false"
-                                            onClick={(e) => e.stopPropagation()}
-                                            style={{ fontSize: '1rem', height: 'auto', width: '200px' }}
-                                        />
-                                    </div>
+                                <div className="modal-header-titles">
+                                    <label style={{ fontSize: '0.65rem', fontWeight: 900, color: '#818cf8', display: 'block', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>NOME NPC (CLICCA PER MODIFICARE)</label>
+                                    <input 
+                                        className="edit-npc-name-hero-input" 
+                                        value={editForm.nome}
+                                        onChange={e => setEditForm({...editForm, nome: e.target.value})}
+                                        spellCheck="false"
+                                    />
                                 </div>
                             </div>
                             <button className="modal-close" onClick={() => setIsEditing(false)}>
@@ -883,35 +876,6 @@ export default function NPC() {
                                         </div>
                                     </div>
 
-                                    <div className="edit-section">
-                                        <h4 className="edit-section-title"><Camera size={16} /> Immagine Profilo</h4>
-                                        <div className="avatar-interaction-v3">
-                                            <div 
-                                                className="avatar-preview-box-v3 clickable" 
-                                                onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                                                title="Clicca per cambiare immagine"
-                                            >
-                                                {editForm.immagine_profilo ? (
-                                                    <img src={editForm.immagine_profilo} alt="NPC Avatar" className="preview-image-v3" />
-                                                ) : (
-                                                    <div className="avatar-placeholder-v3">
-                                                        <Camera size={32} />
-                                                        <span>Carica Foto</span>
-                                                    </div>
-                                                )}
-                                                <div className="avatar-overlay-v3">
-                                                    <Edit2 size={18} />
-                                                    <span>Cambia</span>
-                                                </div>
-                                            </div>
-                                            <div className="avatar-help-text-v3">
-                                                <p>Il riquadro sopra è cliccabile per caricare una nuova immagine dal tuo dispositivo.</p>
-                                                <button className="btn-upload-v3" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
-                                                    <Upload size={16} /> Sfoglia File...
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
 
                                     <div className="edit-section">
                                         <h4 className="edit-section-title"><Shield size={16} /> Caratteristiche</h4>
@@ -1556,6 +1520,74 @@ export default function NPC() {
                 </div>,
                 document.body
             )}
+            {/* --- STILI LOCALI PER REFACTORING NPC --- */}
+            <style>{`
+                .card-header-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin-left: auto;
+                }
+
+                .btn-icon-del-card {
+                    background: rgba(239, 68, 68, 0.05);
+                    border: 1px solid rgba(239, 68, 68, 0.1);
+                    color: #ef4444;
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    opacity: 0.3;
+                }
+
+                .player-card:hover .btn-icon-del-card {
+                    opacity: 1;
+                }
+
+                .btn-icon-del-card:hover {
+                    background: #ef4444;
+                    color: white;
+                    transform: scale(1.1);
+                    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+                }
+
+                .modal-header-titles {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                    flex-grow: 1;
+                }
+
+                .edit-npc-name-hero-input {
+                    background: transparent;
+                    border: 1px solid transparent;
+                    border-radius: 8px;
+                    color: white;
+                    font-size: 1.8rem;
+                    font-weight: 900;
+                    padding: 4px 8px;
+                    margin-left: -8px;
+                    width: 100%;
+                    outline: none;
+                    transition: all 0.3s;
+                    font-family: var(--font-display);
+                }
+
+                .edit-npc-name-hero-input:hover {
+                    background: rgba(255, 255, 255, 0.03);
+                    border-color: rgba(255, 255, 255, 0.1);
+                }
+
+                .edit-npc-name-hero-input:focus {
+                    background: rgba(255, 255, 255, 0.05);
+                    border-color: var(--accent-primary);
+                    box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+                }
+            `}</style>
         </div>
     );
 }
