@@ -66,7 +66,7 @@ const CustomSelect = ({ label, options, value, onChange, placeholder, icon: Icon
             </div>
 
             {isOpen && (
-                <div className="custom-select-dropdown animate-float">
+                <div className="custom-select-dropdown animate-fade-in">
                     <div className="dropdown-search">
                         <Search size={14} />
                         <input 
