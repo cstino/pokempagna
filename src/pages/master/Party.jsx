@@ -816,13 +816,21 @@ export default function Party() {
                                             <Heart size={14} color="#ef4444" />
                                             <span>{player.forza}</span>
                                         </div>
-                                        <div className="stat-mini-box">
+                                        <div className="stat-mini-box" title="Destrezza">
                                             <Shield size={14} color="#3b82f6" />
                                             <span>{player.destrezza}</span>
                                         </div>
-                                        <div className="stat-mini-box">
-                                            <TrendingUp size={14} color="#fcd34d" />
-                                            <span>{player.punti_tlp}</span>
+                                        <div className="stat-mini-box" title="Intelligenza">
+                                            <BookOpen size={14} color="#34d399" />
+                                            <span>{player.altre_stats?.intelligenza || 0}</span>
+                                        </div>
+                                        <div className="stat-mini-box" title="Eloquenza">
+                                            <MessageCircle size={14} color="#f43f5e" />
+                                            <span>{player.altre_stats?.eloquenza || 0}</span>
+                                        </div>
+                                        <div className="stat-mini-box" title="Coraggio">
+                                            <Swords size={14} color="#fcd34d" />
+                                            <span>{player.altre_stats?.coraggio || 0}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -845,9 +853,14 @@ export default function Party() {
                                         <div className="avatar-initial">{editForm.nome?.[0]?.toUpperCase()}</div>
                                     )}
                                 </div>
-                                <div>
-                                    <h2>Modifica Allenatore</h2>
-                                    <p>{editForm.nome}</p>
+                                <div className="modal-header-titles">
+                                    <label style={{ fontSize: '0.65rem', fontWeight: 900, color: '#818cf8', display: 'block', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>NOME ALLENATORE (CLICCA PER MODIFICARE)</label>
+                                    <input 
+                                        className="edit-npc-name-hero-input" 
+                                        value={editForm.nome}
+                                        onChange={e => setEditForm({...editForm, nome: e.target.value})}
+                                        spellCheck="false"
+                                    />
                                 </div>
                             </div>
                             <button className="modal-close" onClick={() => setIsEditing(false)}>
@@ -1834,6 +1847,104 @@ export default function Party() {
                 </div>,
                 document.body
             )}
+            {/* --- STILI LOCALI PER REFACTORING PARTY --- */}
+            <style>{`
+                /* REFACTORING LAYOUT GRID E CARD */
+                .party-grid {
+                    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)) !important;
+                    gap: 24px !important;
+                }
+
+                .player-card {
+                    min-height: 200px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                }
+
+                .player-card-info {
+                    flex: 1;
+                    min-width: 0; 
+                    padding-right: 10px;
+                }
+
+                .player-card-info h3 {
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    max-width: 100%;
+                    display: block;
+                }
+
+                .hp-mini-row {
+                    margin: 15px 0;
+                }
+
+                .stats-mini-grid {
+                    display: grid;
+                    grid-template-columns: repeat(5, 1fr);
+                    gap: 8px;
+                    margin-top: auto;
+                }
+
+                .stat-mini-box {
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    padding: 6px 4px;
+                    border-radius: 10px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 4px;
+                    transition: all 0.2s;
+                }
+
+                .stat-mini-box:hover {
+                    background: rgba(255, 255, 255, 0.06);
+                    border-color: rgba(255, 255, 255, 0.1);
+                    transform: translateY(-2px);
+                }
+
+                .stat-mini-box span {
+                    font-size: 0.75rem;
+                    font-weight: 800;
+                    color: white;
+                }
+
+                /* MODAL HEADER STYLES */
+                .modal-header-titles {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                    flex-grow: 1;
+                }
+
+                .edit-npc-name-hero-input {
+                    background: transparent;
+                    border: 1px solid transparent;
+                    border-radius: 8px;
+                    color: white;
+                    font-size: 1.8rem;
+                    font-weight: 900;
+                    padding: 4px 8px;
+                    margin-left: -8px;
+                    width: 100%;
+                    outline: none;
+                    transition: all 0.3s;
+                    font-family: var(--font-display);
+                }
+
+                .edit-npc-name-hero-input:hover {
+                    background: rgba(255, 255, 255, 0.03);
+                    border-color: rgba(255, 255, 255, 0.1);
+                }
+
+                .edit-npc-name-hero-input:focus {
+                    background: rgba(255, 255, 255, 0.05);
+                    border-color: var(--accent-primary);
+                    box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+                }
+            `}</style>
         </div>
     );
 }
