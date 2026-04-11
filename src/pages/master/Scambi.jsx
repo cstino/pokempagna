@@ -619,7 +619,27 @@ export default function Scambi() {
                 }
 
                 .panel-header { padding: 20px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-subtle); }
-                .panel-content { padding: 20px; flex-grow: 1; overflow-y: auto; max-height: 700px; }
+                .panel-content { 
+                    padding: 20px; 
+                    flex-grow: 1; 
+                    overflow-y: auto; 
+                    max-height: 700px;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .empty-panel-state {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    flex-grow: 1;
+                    gap: 15px;
+                    color: var(--text-muted);
+                    text-align: center;
+                    opacity: 0.6;
+                    min-height: 300px;
+                }
 
                 .pkmn-selector-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
 
