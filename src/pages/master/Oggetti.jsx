@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Search, Plus, Edit2, Save, X, Loader2, Check, Info, Trash2, Package, Upload } from 'lucide-react';
+import { Search, Plus, Edit2, Save, X, Loader2, Check, Info, Trash2, Package, Upload, Zap } from 'lucide-react';
 import './Party.css';
 
 const CATEGORIZED_SPRITES = {
