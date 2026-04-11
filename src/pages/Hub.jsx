@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import PokeballLogo from '../components/PokeballLogo';
 import './Arena.css';
 
 const POKEMON_SPRITE_BASE = 'https://play.pokemonshowdown.com/sprites/ani/';
@@ -64,9 +65,6 @@ export default function Hub() {
             setBattleState(battle);
 
             if (battle.attiva) {
-                // In un'applicazione reale, qui farei il join con pokemon_nemici e pokemon_giocatori
-                // basandomi sugli ID salvati in pokemon_in_campo
-                // Per ora simuliamo i dati dall'array JSONB
                 const inCampo = battle.pokemon_in_campo || [];
                 setMasterPokemon(inCampo.filter(p => p.side === 'master'));
                 setPlayerPokemon(inCampo.filter(p => p.side === 'player'));
@@ -81,7 +79,6 @@ export default function Hub() {
     useEffect(() => {
         fetchBattleData();
 
-        // 🔗 Real-time Subscription
         const channel = supabase
             .channel('arena_sync')
             .on('postgres_changes', { event: '*', table: 'battaglia_attiva' }, () => {
@@ -98,8 +95,11 @@ export default function Hub() {
         return (
             <div className="arena-container flex-center">
                 <div className="arena-standby animate-fade-in">
+                    <div className="arena-pokeball-pulse">
+                        <PokeballLogo size={120} />
+                    </div>
                     <div className="arena-logo-big">POKÉMPAGNA</div>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem' }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.6 }}>
                         In attesa che il Master inizi il combattimento...
                     </p>
                 </div>
