@@ -1,168 +1,271 @@
-/* Arena.css - POKÉMPAGNA Battle Viewer */
+/* Arena.css - POKÉMPAGNA Modern Battle Hub */
 
 :root {
-  --arena-bg: #0f172a;
-  --master-color: rgba(239, 68, 68, 0.15);
-  --player-color: rgba(59, 130, 246, 0.15);
+  --hp-green: #10b981;
+  --hp-yellow: #f59e0b;
+  --hp-red: #ef4444;
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.15);
 }
 
-.arena-container {
+.arena-fullscreen {
   width: 100vw;
   height: 100vh;
-  background-color: var(--arena-bg);
-  background-image: 
-    radial-gradient(circle at 50% 50%, rgba(30, 41, 59, 1) 0%, rgba(15, 23, 42, 1) 100%),
-    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M54.826 10.518c-.326-.145-.69-.224-1.076-.224H6.25c-.386 0-.75.08-1.076.224l29.826 5.482 29.826-5.482z' fill='%231e293b' fill-opacity='0.2' fill-rule='evenodd'/%3E%3C/svg%3E");
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  position: relative;
-}
-
-/* Linea di demarcazione centrale */
-.arena-divider {
-  position: absolute;
-  top: 50%;
+  position: fixed;
+  top: 0;
   left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-  z-index: 10;
-  transform: translateY(-50%);
-}
-
-/* Aree Speculari */
-.arena-side {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding: 40px;
-  position: relative;
-  transition: all 0.5s ease;
-}
-
-.arena-side.master {
-  transform: rotate(180deg);
-  background: linear-gradient(to bottom, var(--master-color), transparent);
-}
-
-.arena-side.player {
-  background: linear-gradient(to top, var(--player-color), transparent);
-}
-
-/* Pokemon Arena Card */
-.pokemon-arena-card {
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 15px;
-  position: relative;
-  min-width: 250px;
+  background-color: #000;
+  color: white;
+  z-index: 1000;
 }
 
-.arena-sprite-container {
-  width: 180px;
-  height: 180px;
+/* Battle View with Dynamic Background */
+.arena-battle-view {
+  background-size: cover;
+  background-position: center;
+  transition: background-image 1.5s ease-in-out;
+  display: grid;
+  grid-template-rows: 1fr auto 1fr; /* Tre zone: Master, Centro, Player */
+  height: 100vh;
+  padding: 2vh 4vw;
+  position: relative;
+  overflow: hidden;
+  gap: 1vh;
+}
+
+/* Frosted Glass Overlay for visibility */
+.arena-battle-view::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(6px) saturate(1.2);
+  z-index: 1;
+}
+
+.arena-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 50%, transparent 10%, rgba(0,0,0,0.7) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Tiers Positioning */
+.arena-tier {
+  display: flex;
+  justify-content: center;
+  gap: clamp(10px, calc(8vw / var(--count, 1)), 80px);
+  z-index: 5;
+  flex-wrap: nowrap;
+  width: 100%;
+  max-width: 100%;
+  min-height: 0; /* Fondamentale per far funzionare flex-shrink dei figli */
+  height: 100%;
+}
+
+.master-tier { 
+  align-items: flex-start;
+}
+
+.player-tier { 
+  align-items: flex-end;
+}
+
+.arena-clash-zone { 
+  height: 5vh;
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+  z-index: 2;
+}
+
+/* Pokemon Modern Token */
+.pokemon-token-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%; /* Occupa tutta l'altezza della riga grid della tier */
+  max-height: 42vh; /* Sicurezza assoluta */
+  min-height: 0;
+  /* Formula aggressiva: i pokemon sono MAX size con 1-2, iniziano a rimpicciolire col 3° e si sgonfiano bene con l'8° */
+  --scale-factor: clamp(0.45, calc(3.5 / var(--count, 1)), 1.2);
+  gap: calc(5px * var(--scale-factor));
+  transition: all 0.5s ease;
+  flex: 0 1 auto;
+}
+
+.pokemon-token-main {
   position: relative;
+  flex: 1; /* Prende tutto lo spazio che avanza dalla card */
+  min-height: 0; /* Permette al contenitore di rimpicciolirsi se la riga grid si stringe */
+  width: calc(clamp(200px, 20vw, 450px) * var(--scale-factor));
+  display: flex;
+  justify-content: center;
+  z-index: 3;
+  animation: float-levitate 4s ease-in-out infinite; /* Animazione spostata qui: solo il pokemon respira */
 }
 
-.arena-sprite-container img {
-  width: 140%;
-  height: 140%;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-
-/* Piattaforma sotto il pokemon */
-.arena-platform {
-  position: absolute;
-  bottom: 0px;
-  width: 120px;
-  height: 30px;
-  background: rgba(255,255,255,0.05);
-  border-radius: 50%;
-  filter: blur(5px);
-  transform: translateZ(-1px);
-}
-
-/* HP Bar e Info */
-.arena-info-box {
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.1);
-  padding: 12px 20px;
-  border-radius: 12px;
+.token-inner {
   width: 100%;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  height: 100%;
+  display: flex;
+  justify-content: center;
 }
 
-.arena-name {
-  color: white;
-  font-family: var(--font-display);
-  font-size: 1.2rem;
-  font-weight: bold;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+/* Ancora gli sprite vicino all'HUD (In alto per i master, in basso per i player) */
+.master-tier .pokemon-token-main,
+.master-tier .token-inner {
+  align-items: flex-start;
+}
+
+.player-tier .pokemon-token-main,
+.player-tier .token-inner {
+  align-items: flex-end;
+}
+
+.token-inner img {
+  /* Ripristino le proporzioni native delle GIF per non far sballare le dimensioni dei pokemon "cicciotti" contro quelli "alati" */
+  width: auto;
+  height: auto;
+  /* Utilizzo la proprietà scale per ingrandirli tutti in proporzione, mantenendo il loro rapporto di grandezza logico */
+  transform: scale(calc(1.8 * var(--scale-factor)));
+  filter: drop-shadow(0 15px 30px rgba(0,0,0,0.8));
+  image-rendering: auto;
+}
+
+.master-tier .token-inner img {
+  transform-origin: top center;
+}
+
+.player-tier .token-inner img {
+  transform-origin: bottom center;
+}
+
+
+/* Minimalist Combatant HUD */
+.combatant-hud {
+  display: flex;
+  flex-direction: column;
+  gap: calc(6px * var(--scale-factor));
+  width: calc(240px * var(--scale-factor)); /* Larghezza fissa come richiesto, ma che scala */
+  z-index: 10;
+  transition: all 0.3s ease;
+  padding: calc(5px * var(--scale-factor));
+}
+
+.hud-header {
   display: flex;
   justify-content: space-between;
+  align-items: flex-end;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 4px 12px rgba(0, 0, 0, 1); /* Ombra marcata per leggibilità su sfondi chiari */
 }
 
-.arena-hp-bar-bg {
-  height: 10px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 5px;
+.hud-name {
+  font-family: var(--font-display);
+  font-size: calc(1.3rem * var(--scale-factor));
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #fff;
+  line-height: 1;
+  white-space: nowrap;
   overflow: hidden;
-  position: relative;
+  text-overflow: ellipsis;
 }
 
-.arena-hp-bar-fill {
+.hud-lv {
+  font-size: calc(0.9rem * var(--scale-factor));
+  font-weight: bold;
+  color: #fff;
+  opacity: 0.9;
+}
+
+/* HUD HP Bar */
+.hud-hp-container {
+  width: 100%;
+}
+
+.hud-hp-bg {
+  height: calc(8px * var(--scale-factor));
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+.hud-hp-fill {
   height: 100%;
-  background: linear-gradient(90deg, #10b981, #34d399);
-  transition: width 0.8s cubic-bezier(0.17, 0.67, 0.83, 0.67);
-  position: relative;
+  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.5s ease;
 }
 
-.arena-hp-bar-fill.warning { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-.arena-hp-bar-fill.danger { background: linear-gradient(90deg, #ef4444, #f87171); }
-
-/* Animazioni */
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+.hud-hp-text {
+  display: flex;
+  justify-content: flex-end;
+  font-size: calc(0.7rem * var(--scale-factor));
+  font-weight: 900;
+  margin-top: calc(3px * var(--scale-factor));
+  opacity: 0.9;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 1);
+  color: #fff;
 }
 
-.taking-damage {
-  animation: shake 0.2s ease-in-out infinite;
-  filter: brightness(2) saturate(2) sepia(1) hue-rotate(-50deg);
-}
 
-.fainting {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all 1s ease-in;
-}
-
-/* Standby Screen */
+/* Standby & Logo Styles */
 .arena-standby {
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  text-align: center;
+  background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
 }
 
 .arena-logo-big {
-  font-size: 5rem;
-  font-family: var(--font-display);
-  color: white;
-  text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-  letter-spacing: 5px;
+  font-size: 6rem;
+  font-weight: 900;
+  letter-spacing: 20px;
+  background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+  background-clip: text; /* Standard property */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 30px rgba(59, 130, 246, 0.3));
+}
+
+/* Animations */
+@keyframes float-levitate {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px) rotate(-1deg); }
+  75% { transform: translateX(10px) rotate(1deg); }
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+  filter: brightness(1.5) saturate(1.5);
+}
+
+.animate-fade-in {
+  animation: fade-in 1s ease-out forwards;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

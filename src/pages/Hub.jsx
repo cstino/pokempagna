@@ -5,42 +5,34 @@ import './Arena.css';
 
 const POKEMON_SPRITE_BASE = 'https://play.pokemonshowdown.com/sprites/ani/';
 
-const PokemonArenaCard = ({ pokemon, side }) => {
-    if (!pokemon) return null;
-
-    const hpPercent = (pokemon.hp / pokemon.hp_max) * 100;
-    const hpColorClass = hpPercent > 50 ? '' : hpPercent > 20 ? 'warning' : 'danger';
+const CombatantCard = ({ pokemon }) => {
+    const hpPercentage = (pokemon.hp / pokemon.hp_max) * 100;
     
-    // Pulizia nome per lo sprite (es: Pikachu -> pikachu)
-    const spriteName = (pokemon.nome_originale || pokemon.nome).toLowerCase().replace(' ', '');
-    const spriteUrl = `${POKEMON_SPRITE_BASE}${spriteName}.gif`;
+    const getHpColor = () => {
+        if (hpPercentage > 50) return '#22c55e'; // Verde
+        if (hpPercentage > 20) return '#eab308'; // Giallo/Arancio
+        return '#ef4444'; // Rosso
+    };
 
     return (
-        <div className={`pokemon-arena-card ${pokemon.is_damaged ? 'taking-damage' : ''}`}>
-            <div className="arena-sprite-container">
-                <div className="arena-platform" />
-                <img 
-                    src={spriteUrl} 
-                    alt={pokemon.nome} 
-                    onError={(e) => {
-                        // Fallback se lo sprite animato non esiste
-                        e.target.src = pokemon.immagine_url;
-                    }}
-                />
+        <div className="combatant-hud animate-fade-in">
+            <div className="hud-header">
+                <span className="hud-name">{pokemon.nome}</span>
+                <span className="hud-lv">Lv.{pokemon.livello}</span>
             </div>
             
-            <div className="arena-info-box">
-                <div className="arena-name">
-                    <span>{pokemon.nome}</span>
-                    <span>Lv.{pokemon.livello}</span>
-                </div>
-                <div className="arena-hp-bar-bg">
+            <div className="hud-hp-container">
+                <div className="hud-hp-bg">
                     <div 
-                        className={`arena-hp-bar-fill ${hpColorClass}`}
-                        style={{ width: `${hpPercent}%` }}
+                        className="hud-hp-fill" 
+                        style={{ 
+                            width: `${hpPercentage}%`,
+                            backgroundColor: getHpColor(),
+                            boxShadow: `0 0 10px ${getHpColor()}`
+                        }} 
                     />
                 </div>
-                <div style={{ textAlign: 'right', fontSize: '0.7rem', color: 'white', marginTop: '4px', opacity: 0.8 }}>
+                <div className="hud-hp-text">
                     {pokemon.hp} / {pokemon.hp_max} HP
                 </div>
             </div>
@@ -48,80 +40,106 @@ const PokemonArenaCard = ({ pokemon, side }) => {
     );
 };
 
+const PokemonToken = ({ pokemon, side }) => {
+    const spriteName = (pokemon.nome_originale || pokemon.nome).toLowerCase().replace(' ', '');
+    const spriteUrl = `${POKEMON_SPRITE_BASE}${spriteName}.gif`;
+
+    return (
+        <div className={`pokemon-token-wrapper ${pokemon.is_damaged ? 'animate-shake' : ''} ${side}`}>
+            {/* Se è Master, la Card sta SOPRA lo sprite */}
+            {side === 'master' && <CombatantCard pokemon={pokemon} />}
+
+            <div className="pokemon-token-main">
+                <div className="token-inner">
+                    <img 
+                        src={spriteUrl} 
+                        alt={pokemon.nome} 
+                        onError={(e) => {
+                            e.target.src = pokemon.immagine_url;
+                        }}
+                    />
+                </div>
+            </div>
+
+            {/* Se è Player, la Card sta SOTTO lo sprite */}
+            {side === 'player' && <CombatantCard pokemon={pokemon} />}
+        </div>
+    );
+};
+
 export default function Hub() {
     const [battleState, setBattleState] = useState(null);
-    const [masterPokemon, setMasterPokemon] = useState([]);
-    const [playerPokemon, setPlayerPokemon] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const fetchBattleData = async () => {
-        try {
-            const { data: battle, error: bError } = await supabase
-                .from('battaglia_attiva')
-                .select('*')
-                .single();
-
-            if (bError) throw bError;
-            setBattleState(battle);
-
-            if (battle.attiva) {
-                const inCampo = battle.pokemon_in_campo || [];
-                setMasterPokemon(inCampo.filter(p => p.side === 'master'));
-                setPlayerPokemon(inCampo.filter(p => p.side === 'player'));
-            }
-        } catch (err) {
-            console.error('Errore fetch Arena:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        fetchBattleData();
-
+        caricaDatiBattaglia();
+        
         const channel = supabase
-            .channel('arena_sync')
-            .on('postgres_changes', { event: '*', table: 'battaglia_attiva' }, () => {
-                fetchBattleData();
-            })
+            .channel('battle-hub')
+            .on('postgres_changes', { event: '*', table: 'battaglia_attiva' }, () => caricaDatiBattaglia())
             .subscribe();
 
         return () => supabase.removeChannel(channel);
     }, []);
 
-    if (loading) return <div className="arena-container flex-center"><div className="spinner" /></div>;
+    const caricaDatiBattaglia = async () => {
+        const { data } = await supabase.from('battaglia_attiva').select('*').single();
+        setBattleState(data);
+        setLoading(false);
+    };
+
+    if (loading) return (
+        <div className="arena-fullscreen flex-center bg-dark">
+            <PokeballLogo size={80} />
+        </div>
+    );
 
     if (!battleState?.attiva) {
         return (
-            <div className="arena-container flex-center">
+            <div className="arena-fullscreen">
                 <div className="arena-standby animate-fade-in">
                     <div className="arena-pokeball-pulse">
                         <PokeballLogo size={120} />
                     </div>
                     <div className="arena-logo-big">POKÉMPAGNA</div>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.6 }}>
-                        In attesa che il Master inizi il combattimento...
-                    </p>
+                    <p className="standby-text">In attesa che il Master inizi il combattimento...</p>
                 </div>
             </div>
         );
     }
 
-    return (
-        <div className="arena-container animate-fade-in">
-            <div className="arena-divider" />
+    const masterPokemon = (battleState.pokemon_in_campo || []).filter(p => p.side === 'master');
+    const playerPokemon = (battleState.pokemon_in_campo || []).filter(p => p.side === 'player');
 
-            {/* LATO MASTER (Ruotato 180°) */}
-            <div className="arena-side master">
+    // Mappa sfondi
+    const bgMap = {
+        arena: '/assets/arena-bg.png',
+        forest: '/assets/terrain-forest.png',
+        cave: '/assets/terrain-cave.png',
+        city: '/assets/terrain-city.png',
+        water: '/assets/terrain-water.png'
+    };
+
+    const currentBg = bgMap[battleState.sfondo] || bgMap.arena;
+
+    return (
+        <div className="arena-fullscreen arena-battle-view" style={{ backgroundImage: `url(${currentBg})` }}>
+            <div className="arena-overlay" />
+            
+            {/* LATO MASTER (Sopra) */}
+            <div className="arena-tier master-tier" style={{ '--count': masterPokemon.length }}>
                 {masterPokemon.map(p => (
-                    <PokemonArenaCard key={p.id} pokemon={p} side="master" />
+                    <PokemonToken key={p.id} pokemon={p} side="master" />
                 ))}
             </div>
 
-            {/* LATO GIOCATORI (Normale) */}
-            <div className="arena-side player">
+            {/* AREA CENTRALE DI DISTANZA */}
+            <div className="arena-clash-zone" />
+
+            {/* LATO PLAYER (Sotto) */}
+            <div className="arena-tier player-tier" style={{ '--count': playerPokemon.length }}>
                 {playerPokemon.map(p => (
-                    <PokemonArenaCard key={p.id} pokemon={p} side="player" />
+                    <PokemonToken key={p.id} pokemon={p} side="player" />
                 ))}
             </div>
         </div>

@@ -95,6 +95,13 @@
     gap: 8px;
 }
 
+.entity.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
 .entity-item {
     display: flex;
     align-items: center;
@@ -309,4 +316,64 @@
     color: white;
     font-weight: bold;
     font-size: 0.8rem;
+}
+
+/* Terrain Selector Bar */
+.terrain-selector-bar {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.terrain-selector-bar label {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.terrain-options {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+}
+
+.terrain-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.terrain-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.terrain-btn.active {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+}
+
+.terrain-btn .t-icon {
+    font-size: 1.2rem;
+}
+
+.terrain-btn .t-name {
+    font-size: 0.85rem;
+    font-weight: 500;
 }

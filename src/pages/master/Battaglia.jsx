@@ -12,13 +12,14 @@ export default function Battaglia() {
     const [npcs, setNpcs] = useState([]);
     const [allPokemon, setAllPokemon] = useState([]);
     
-    // Filtri per la selezione
+    const [library, setLibrary] = useState([]);
     const [selectedEntityId, setSelectedEntityId] = useState(null);
     const [entityType, setEntityType] = useState('player'); // 'player' | 'npc'
 
     useEffect(() => {
         caricaDatiBattaglia();
         caricaEntita();
+        caricaLibreria();
         
         const channel = supabase
             .channel('battaglia-panel')
@@ -34,19 +35,89 @@ export default function Battaglia() {
         setLoading(false);
     };
 
+    const caricaLibreria = async () => {
+        const { data } = await supabase.from('pokemon_campagna').select('*');
+        setLibrary(data || []);
+    };
+
+    const caricaEntita = async () => {
+        // Carica Giratori (Player + NPC)
+        const { data: enti } = await supabase
+            .from('giocatori')
+            .select('*')
+            .eq('campagna_corrente_id', profile.campagna_corrente_id);
+        
+        if (enti) {
+            setPlayers(enti.filter(e => e.ruolo === 'giocatore'));
+            setNpcs(enti.filter(e => e.ruolo === 'npc'));
+        }
+
+        // Carica tutti i Pokémon della campagna
+        const { data: pokes } = await supabase
+            .from('pokemon_giocatore')
+            .select('*');
+        setAllPokemon(pokes || []);
+    };
+
+    const terrains = [
+        { id: 'arena', name: 'Arena Tech', icon: '🏟️' },
+        { id: 'forest', name: 'Bosco Incantato', icon: '🌲' },
+        { id: 'cave', name: 'Caverna Cristalli', icon: '💎' },
+        { id: 'city', name: 'Città Cyber', icon: '🏙️' },
+        { id: 'water', name: 'Costa Tropicale', icon: '🌊' }
+    ];
+
+    const toggleArena = async () => {
+        const newState = !battleState.attiva;
+        await supabase
+            .from('battaglia_attiva')
+            .update({ attiva: newState })
+            .eq('id', battleState.id);
+    };
+
+    const cambiaSfondo = async (key) => {
+        await supabase
+            .from('battaglia_attiva')
+            .update({ sfondo: key })
+            .eq('id', battleState.id);
+    };
+
     const getPkmnImage = (p) => {
+        // 1. Cerchiamo la specie nella libreria della campagna usando l'ID salvato nel pokemon del giocatore
+        const specie = library.find(s => s.id === p.pokemon_id);
+        
+        if (specie) {
+            // 2. Se la specie ha un'immagine personalizzata (es. caricata da te), usiamo quella
+            if (specie.immagine_url) return specie.immagine_url;
+            
+            // 3. Altrimenti cerchiamo di estrarre l'ID nazionale dallo sprite_url (es. .../pokemon/6.png -> 6) 
+            //    o usiamo l'ID del record se non abbiamo altro
+            const nationalId = specie.sprite_url ? specie.sprite_url.split('/').pop().split('.')[0] : specie.id;
+            return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nationalId}.png`;
+        }
+
+        // Fallback estremo se non troviamo la specie nella libreria
         if (p.immagine_url) return p.immagine_url;
         return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p.pokemon_id}.png`;
     };
 
     const mandaInCampo = async (pokemon, side) => {
-        // Evitiamo duplicati se necessario, o permettiamoli se sono nemici diversi
+        // Cerchiamo il nome originale nella libreria per lo sprite animato dell'HUB
+        const specie = library.find(s => s.id === pokemon.pokemon_id);
+        const nomeOriginale = specie ? specie.nome : pokemon.nome;
+
+        // Recuperiamo il nome dell'allenatore dall'entità selezionata
+        const entita = players.find(p => p.id === selectedEntityId) || npcs.find(n => n.id === selectedEntityId);
+        const nomeAllenatore = entita ? entita.nome : 'Sconosciuto';
+
         const nuovoInCampo = [
             ...(battleState.pokemon_in_campo || []),
             {
-                id: crypto.randomUUID(), // Generiamo un ID istanza unico per il campo
+                id: crypto.randomUUID(), 
                 original_id: pokemon.id,
                 nome: pokemon.nome,
+                nome_originale: nomeOriginale,
+                allenatore: nomeAllenatore,
                 pokemon_id: pokemon.pokemon_id,
                 hp: pokemon.hp_attuale || pokemon.hp,
                 hp_max: pokemon.hp_max,
@@ -71,34 +142,6 @@ export default function Battaglia() {
             .eq('id', battleState.id);
     };
 
-    const applicaDanno = async (instanceId, ammontare) => {
-        const nuovoInCampo = battleState.pokemon_in_campo.map(p => {
-            if (p.id === instanceId) {
-                const newHp = Math.max(0, p.hp - ammontare);
-                return { ...p, hp: newHp, is_damaged: true };
-            }
-            return p;
-        });
-
-        await supabase
-            .from('battaglia_attiva')
-            .update({ pokemon_in_campo: nuovoInCampo })
-            .eq('id', battleState.id);
-
-        setTimeout(async () => {
-            // Ricarichiamo dallo stato attuale per evitare race conditions
-            const { data } = await supabase.from('battaglia_attiva').select('pokemon_in_campo').eq('id', battleState.id).single();
-            const resetInCampo = data.pokemon_in_campo.map(p => ({ 
-                ...p, 
-                is_damaged: p.id === instanceId ? false : p.is_damaged 
-            }));
-            
-            await supabase
-                .from('battaglia_attiva')
-                .update({ pokemon_in_campo: resetInCampo })
-                .eq('id', battleState.id);
-        }, 800);
-    };
 
     if (loading) return <div className="flex-center p-3xl"><Loader2 className="spin" /></div>;
 
@@ -119,6 +162,24 @@ export default function Battaglia() {
                     <Power size={18} />
                     {battleState?.attiva ? 'ARENA ATTIVA' : 'ATTIVA ARENA'}
                 </button>
+            </div>
+
+            {/* SELETTORE TERRENI */}
+            <div className="terrain-selector-bar animate-fade-in">
+                <label>Ambiente Arena:</label>
+                <div className="terrain-options">
+                    {terrains.map(t => (
+                        <button 
+                            key={t.id}
+                            className={`terrain-btn ${battleState?.sfondo === t.id ? 'active' : ''}`}
+                            onClick={() => cambiaSfondo(t.id)}
+                            title={t.name}
+                        >
+                            <span className="t-icon">{t.icon}</span>
+                            <span className="t-name">{t.name}</span>
+                        </button>
+                    ))}
+                </div>
             </div>
 
             <div className="battaglia-grid">
@@ -165,10 +226,15 @@ export default function Battaglia() {
 
                     {selectedEntityId && (
                         <div className="pokemon-selector animate-slide-up">
-                            <h3>Pokémon di { (players.find(p=>p.id===selectedEntityId) || npcs.find(n=>n.id===selectedEntityId))?.nome }</h3>
+                            <h3>Squadra di { (players.find(p=>p.id===selectedEntityId) || npcs.find(n=>n.id===selectedEntityId))?.nome }</h3>
                             <div className="pokemon-mini-grid">
                                 {allPokemon
-                                    .filter(p => p.giocatore_id === selectedEntityId)
+                                    .filter(p => {
+                                        if (p.giocatore_id !== selectedEntityId) return false;
+                                        const entita = players.find(e => e.id === selectedEntityId) || npcs.find(e => e.id === selectedEntityId);
+                                        const limit = entita?.slot_squadra || 3;
+                                        return p.posizione_squadra < limit;
+                                    })
                                     .map(p => (
                                         <div key={p.id} className="pokemon-select-btn" onClick={() => mandaInCampo(p, entityType === 'player' ? 'player' : 'master')}>
                                             <img src={getPkmnImage(p)} alt={p.nome} />
@@ -204,7 +270,6 @@ export default function Battaglia() {
                                         <span><strong>{p.nome}</strong> | {p.hp}/{p.hp_max} HP</span>
                                     </div>
                                     <div className="pkmn-field-actions">
-                                        <button className="btn-damage" onClick={() => applicaDanno(p.id, 10)}>-10</button>
                                         <button className="btn-remove" onClick={() => rimuoviDalCampo(p.id)}><Trash2 size={14} /></button>
                                     </div>
                                 </div>
@@ -223,7 +288,6 @@ export default function Battaglia() {
                                         <span><strong>{p.nome}</strong> | {p.hp}/{p.hp_max} HP</span>
                                     </div>
                                     <div className="pkmn-field-actions">
-                                        <button className="btn-damage" onClick={() => applicaDanno(p.id, 10)}>-10</button>
                                         <button className="btn-remove" onClick={() => rimuoviDalCampo(p.id)}><Trash2 size={14} /></button>
                                     </div>
                                 </div>
