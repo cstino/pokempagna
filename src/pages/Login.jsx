@@ -22,6 +22,17 @@ export default function Login() {
 
         try {
             if (isSignUp) {
+                // 🛡️ Controllo Whitelist
+                const { data: authorized, error: whiteError } = await supabase
+                    .from('whitelist')
+                    .select('email')
+                    .eq('email', email.toLowerCase())
+                    .single();
+
+                if (whiteError || !authorized) {
+                    throw new Error('Questa email non è autorizzata alla registrazione. Contatta il Master.');
+                }
+
                 await signUp(email, password, nome);
             } else {
                 await signIn(email, password);
