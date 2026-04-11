@@ -882,8 +882,8 @@ export default function OggettiMaster() {
                 }
                 .btn-add-effect {
                     background: rgba(139, 92, 246, 0.1);
-                    color: var(--accent-primary);
-                    border: 1px dashed var(--accent-primary);
+                    color: #a78bfa;
+                    border: 1px dashed rgba(139, 92, 246, 0.4);
                     padding: 8px;
                     border-radius: 8px;
                     font-size: 0.8rem;
