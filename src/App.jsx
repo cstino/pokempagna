@@ -27,6 +27,7 @@ import PokemonMaster from './pages/master/Pokemon';
 import OggettiMaster from './pages/master/Oggetti';
 import MosseMaster from './pages/master/Mosse';
 import GymBadges from './pages/master/GymBadges';
+import Scambi from './pages/master/Scambi';
 
 function ProtectedRoute({ children, requiredRole }) {
   const { user, profile, loading, signOut } = useAuth();
@@ -132,6 +133,7 @@ function AppRoutes() {
         <Route path="oggetti" element={<OggettiMaster />} />
         <Route path="mosse" element={<MosseMaster />} />
         <Route path="medaglie" element={<GymBadges />} />
+        <Route path="scambi" element={<Scambi />} />
         <Route path="battaglia" element={<Battaglia />} />
         <Route path="test-anim" element={<TestAnim />} />
       </Route>
