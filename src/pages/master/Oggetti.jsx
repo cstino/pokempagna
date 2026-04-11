@@ -451,11 +451,12 @@ export default function OggettiMaster() {
                                                     <div className="val-input-group">
                                                         <input 
                                                             type="number" 
-                                                            value={eff.val} 
-                                                            placeholder="Valore (es: +2 o -1)"
+                                                            value={eff.val === 0 ? '' : eff.val} 
+                                                            placeholder="0"
                                                             onChange={(e) => {
+                                                                const val = e.target.value === '' ? 0 : parseInt(e.target.value);
                                                                 const newEff = [...editForm.effetti];
-                                                                newEff[idx].val = parseInt(e.target.value) || 0;
+                                                                newEff[idx].val = val;
                                                                 setEditForm({ ...editForm, effetti: newEff });
                                                             }}
                                                         />
@@ -841,20 +842,20 @@ export default function OggettiMaster() {
                 }
                 .effect-row {
                     display: flex;
-                    gap: 8px;
+                    gap: 12px;
                     align-items: center;
                     background: var(--bg-card);
-                    padding: 8px;
-                    border-radius: 8px;
+                    padding: 12px;
+                    border-radius: 10px;
                     border: 1px solid var(--border-subtle);
                 }
                 .effect-row select {
                     background: var(--bg-secondary);
                     border: 1px solid var(--border-subtle);
                     color: white;
-                    padding: 4px 8px;
-                    border-radius: 6px;
-                    font-size: 0.8rem;
+                    padding: 8px 12px;
+                    border-radius: 8px;
+                    font-size: 0.85rem;
                 }
                 .val-input-group {
                     flex: 1;
@@ -864,9 +865,9 @@ export default function OggettiMaster() {
                     background: var(--bg-secondary);
                     border: 1px solid var(--border-subtle);
                     color: white;
-                    padding: 4px 8px;
-                    border-radius: 6px;
-                    font-size: 0.8rem;
+                    padding: 8px 12px;
+                    border-radius: 8px;
+                    font-size: 0.9rem;
                 }
                 .btn-del-mini {
                     background: rgba(239, 68, 68, 0.1);
