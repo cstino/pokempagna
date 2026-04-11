@@ -69,7 +69,10 @@ export default function OggettiMaster() {
                 categoria: 'STRUMENTO',
                 immagine_url: '',
                 utilizzabile_in_battaglia: false,
-                attribuibile_pokemon: false
+                attribuibile_pokemon: false,
+                durata: 'ISTANTANEO',
+                effetti: [],
+                vincoli_tipo: []
             });
         }
         setIsEditing(true);
@@ -405,6 +408,98 @@ export default function OggettiMaster() {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* 🚀 SPECIFICHE AVANZATE */}
+                            <div className="edit-section animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                                <h4 className="edit-section-title"><Zap size={16} /> Specifiche Avanzate</h4>
+                                <div className="edit-grid-1">
+                                    <div className="input-field">
+                                        <label>Durata dell'Effetto</label>
+                                        <select 
+                                            value={editForm.durata || 'ISTANTANEO'} 
+                                            onChange={(e) => setEditForm({ ...editForm, durata: e.target.value })}
+                                        >
+                                            <option value="ISTANTANEO">Istantaneo (Cura, Consumabile)</option>
+                                            <option value="ROUND">Durata in Round (Es: 5 Turni)</option>
+                                            <option value="FINE_BATTAGLIA">Fino a Fine Battaglia</option>
+                                            <option value="EQUIPAGGIATO">Fino a quando Equipaggiato</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="input-field">
+                                        <label>Bonus/Malus Statistiche</label>
+                                        <div className="effects-manager">
+                                            {(editForm.effetti || []).map((eff, idx) => (
+                                                <div key={idx} className="effect-row">
+                                                    <select 
+                                                        value={eff.stat} 
+                                                        onChange={(e) => {
+                                                            const newEff = [...editForm.effetti];
+                                                            newEff[idx].stat = e.target.value;
+                                                            setEditForm({ ...editForm, effetti: newEff });
+                                                        }}
+                                                    >
+                                                        <option value="hp">HP</option>
+                                                        <option value="attacco">Attacco</option>
+                                                        <option value="difesa">Difesa</option>
+                                                        <option value="attacco_speciale">Atk Sp.</option>
+                                                        <option value="difesa_speciale">Def Sp.</option>
+                                                        <option value="velocita">Velocità</option>
+                                                        <option value="precisione">Precisione</option>
+                                                        <option value="evasione">Evasione</option>
+                                                    </select>
+                                                    <div className="val-input-group">
+                                                        <input 
+                                                            type="number" 
+                                                            value={eff.val} 
+                                                            placeholder="Valore (es: +2 o -1)"
+                                                            onChange={(e) => {
+                                                                const newEff = [...editForm.effetti];
+                                                                newEff[idx].val = parseInt(e.target.value) || 0;
+                                                                setEditForm({ ...editForm, effetti: newEff });
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <button 
+                                                        className="btn-del-mini" 
+                                                        onClick={() => setEditForm({ ...editForm, effetti: editForm.effetti.filter((_, i) => i !== idx) })}
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            <button 
+                                                className="btn-add-effect"
+                                                onClick={() => setEditForm({ ...editForm, effetti: [...(editForm.effetti || []), { stat: 'attacco', val: 0 }] })}
+                                            >
+                                                <Plus size={14} /> Aggiungi Boost/Malus
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="input-field">
+                                        <label>Vincoli di Tipo (Solo per...)</label>
+                                        <div className="type-constraint-grid">
+                                            {['normale', 'fuoco', 'acqua', 'erba', 'elettro', 'ghiaccio', 'lotta', 'veleno', 'terra', 'volante', 'psico', 'coleottero', 'roccia', 'spettro', 'drago', 'buio', 'acciaio', 'folletto'].map(t => (
+                                                <button 
+                                                    key={t}
+                                                    className={`type-btn-mini ${editForm.vincoli_tipo?.includes(t) ? 'active' : ''}`}
+                                                    onClick={() => {
+                                                        const current = editForm.vincoli_tipo || [];
+                                                        const newTypes = current.includes(t) 
+                                                            ? current.filter(x => x !== t) 
+                                                            : [...current, t];
+                                                        setEditForm({ ...editForm, vincoli_tipo: newTypes });
+                                                    }}
+                                                >
+                                                    {t}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <p className="hint-text">Seleziona i tipi che possono usare questo oggetto. Se vuoto, è per tutti.</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="modal-footer-centered">
@@ -735,6 +830,108 @@ export default function OggettiMaster() {
                     font-size: 0.7rem;
                     color: var(--text-muted);
                     font-style: italic;
+                }
+
+                /* 🚀 ADVANCED SPECS STYLES */
+                .effects-manager {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    margin-top: 8px;
+                }
+                .effect-row {
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    background: var(--bg-card);
+                    padding: 8px;
+                    border-radius: 8px;
+                    border: 1px solid var(--border-subtle);
+                }
+                .effect-row select {
+                    background: var(--bg-secondary);
+                    border: 1px solid var(--border-subtle);
+                    color: white;
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                    font-size: 0.8rem;
+                }
+                .val-input-group {
+                    flex: 1;
+                }
+                .val-input-group input {
+                    width: 100%;
+                    background: var(--bg-secondary);
+                    border: 1px solid var(--border-subtle);
+                    color: white;
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                    font-size: 0.8rem;
+                }
+                .btn-del-mini {
+                    background: rgba(239, 68, 68, 0.1);
+                    color: #ef4444;
+                    border: 1px solid rgba(239, 68, 68, 0.2);
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 6px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                }
+                .btn-add-effect {
+                    background: rgba(139, 92, 246, 0.1);
+                    color: var(--accent-primary);
+                    border: 1px dashed var(--accent-primary);
+                    padding: 8px;
+                    border-radius: 8px;
+                    font-size: 0.8rem;
+                    font-weight: bold;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    transition: all 0.2s;
+                }
+                .btn-add-effect:hover {
+                    background: rgba(139, 92, 246, 0.2);
+                }
+                .type-constraint-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+                    gap: 6px;
+                    margin-top: 8px;
+                }
+                .type-btn-mini {
+                    padding: 6px;
+                    font-size: 0.6rem;
+                    text-transform: uppercase;
+                    font-weight: bold;
+                    border-radius: 6px;
+                    border: 1px solid var(--border-subtle);
+                    background: var(--bg-card);
+                    color: var(--text-muted);
+                    cursor: pointer;
+                    transition: 0.2s;
+                }
+                .type-btn-mini.active {
+                    background: var(--accent-primary);
+                    color: white;
+                    border-color: var(--accent-primary);
+                    box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+                }
+                .hint-text {
+                    font-size: 0.7rem;
+                    color: var(--text-muted);
+                    margin-top: 6px;
+                    font-style: italic;
+                }
+                .edit-grid-1 {
+                    display: grid;
+                    grid-template-columns: 1fr;
+                    gap: 20px;
                 }
             `}</style>
         </div>
