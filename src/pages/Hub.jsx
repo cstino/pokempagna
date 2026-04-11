@@ -54,6 +54,7 @@ const PokemonToken = ({ pokemon, side }) => {
                     <img 
                         src={spriteUrl} 
                         alt={pokemon.nome} 
+                        className={!pokemon.immagine_url?.includes('githubusercontent') ? 'is-custom' : ''}
                         onError={(e) => {
                             e.target.src = pokemon.immagine_url;
                         }}

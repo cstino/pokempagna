@@ -135,13 +135,22 @@
 }
 
 .token-inner img {
-  /* Ripristino le proporzioni native delle GIF per non far sballare le dimensioni dei pokemon "cicciotti" contro quelli "alati" */
+  /* Torniamo ad auto per lasciare che la GIF decida la sua proporzione naturale (Charizard > Pikachu) */
   width: auto;
   height: auto;
-  /* Utilizzo la proprietà scale per ingrandirli tutti in proporzione, mantenendo il loro rapporto di grandezza logico */
-  transform: scale(calc(1.8 * var(--scale-factor)));
+  /* Abbassiamo a 85px per contenere meglio i custom e farli sembrare meno giganti di Charizard */
+  max-width: calc(85px * var(--scale-factor));
+  max-height: calc(85px * var(--scale-factor));
+  /* Mantengo lo zoom a 2.6 per un look eroico */
+  transform: scale(calc(2.6 * var(--scale-factor)));
   filter: drop-shadow(0 15px 30px rgba(0,0,0,0.8));
   image-rendering: auto;
+}
+
+/* Fix per i Pokémon Custom: avendo spesso spazio vuoto sotto i piedi nel file PNG, 
+   li abbassiamo leggermente per "ancorarli" visivamente all'HUD */
+.token-inner img.is-custom {
+  transform: scale(calc(2.6 * var(--scale-factor))) translateY(12%);
 }
 
 .master-tier .token-inner img {
