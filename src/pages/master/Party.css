@@ -1007,7 +1007,7 @@
 
 .btn-confirm-action.success {
     background: var(--primary-master);
-    color: black;
+    color: white;
 }
 
 .btn-confirm-action:hover {
