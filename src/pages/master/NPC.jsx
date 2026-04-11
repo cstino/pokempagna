@@ -747,6 +747,18 @@ export default function NPC() {
                                             <Shield size={14} color="#3b82f6" />
                                             <span>{npc.destrezza}</span>
                                         </div>
+                                        <div className="stat-mini-box" title="Intelligenza">
+                                            <BookOpen size={14} color="#34d399" />
+                                            <span>{npc.altre_stats?.intelligenza || 0}</span>
+                                        </div>
+                                        <div className="stat-mini-box" title="Eloquenza">
+                                            <MessageCircle size={14} color="#f43f5e" />
+                                            <span>{npc.altre_stats?.eloquenza || 0}</span>
+                                        </div>
+                                        <div className="stat-mini-box" title="Coraggio">
+                                            <Swords size={14} color="#fcd34d" />
+                                            <span>{npc.altre_stats?.coraggio || 0}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1586,6 +1598,68 @@ export default function NPC() {
                     background: rgba(255, 255, 255, 0.05);
                     border-color: var(--accent-primary);
                     box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+                }
+
+                /* REFACTORING LAYOUT GRID E CARD */
+                .party-grid {
+                    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)) !important;
+                    gap: 24px !important;
+                }
+
+                .player-card {
+                    min-height: 200px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                }
+
+                .player-card-info {
+                    flex: 1;
+                    min-width: 0; /* Permette il troncamento dei figli */
+                    padding-right: 10px;
+                }
+
+                .player-card-info h3 {
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    max-width: 100%;
+                    display: block;
+                }
+
+                .hp-mini-row {
+                    margin: 15px 0;
+                }
+
+                .stats-mini-grid {
+                    display: grid;
+                    grid-template-columns: repeat(5, 1fr);
+                    gap: 8px;
+                    margin-top: auto;
+                }
+
+                .stat-mini-box {
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    padding: 6px 4px;
+                    border-radius: 10px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 4px;
+                    transition: all 0.2s;
+                }
+
+                .stat-mini-box:hover {
+                    background: rgba(255, 255, 255, 0.06);
+                    border-color: rgba(255, 255, 255, 0.1);
+                    transform: translateY(-2px);
+                }
+
+                .stat-mini-box span {
+                    font-size: 0.75rem;
+                    font-weight: 800;
+                    color: white;
                 }
             `}</style>
         </div>
