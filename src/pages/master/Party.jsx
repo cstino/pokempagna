@@ -125,8 +125,8 @@ export default function Party() {
         caricaDatiExtra(player.id);
     };
 
-    const caricaDatiExtra = async (playerId) => {
-        setLoadingExtra(true);
+    async function caricaDatiExtra(playerId, silent = false) {
+        if (!silent) setLoadingExtra(true);
         try {
             // Carica Zaino con Join su oggetti
             const { data: items, error: iErr } = await supabase
@@ -157,9 +157,9 @@ export default function Party() {
         } catch (err) {
             console.error("Errore caricamento dati extra:", err);
         } finally {
-            setLoadingExtra(false);
+            if (!silent) setLoadingExtra(false);
         }
-    };
+    }
 
     const updateCart = (oggId, delta) => {
         setAddCart(prev => ({
@@ -202,9 +202,9 @@ export default function Party() {
             message: "L'oggetto verrà rimosso permanentemente dallo zaino dell'allenatore.",
             type: 'error',
             onConfirm: async () => {
-                const previousZaino = [...zaino];
+                const previousZaino = [...playerItems];
                 // Optimistic UI
-                setZaino(prev => prev.filter(item => item.oggetto.id !== oggId));
+                setPlayerItems(prev => prev.filter(item => item.oggetto.id !== oggId));
                 setConfirmModal(null);
 
                 try {
@@ -215,11 +215,13 @@ export default function Party() {
                         .eq('oggetto_id', oggId);
                     
                     if (error) throw error;
-                    // Consolida il dato dal server
-                    caricaDatiExtra(playerId);
+                    // Aggiornamento Ottimistico
+                    setPlayerItems(prev => prev.filter(i => i.oggetto.id !== oggId));
+                    caricaDatiExtra(playerId, true); // Refresh silente
+                    setConfirmModal(null);
                 } catch (err) { 
                     console.error(err);
-                    setZaino(previousZaino); // Rollback
+                    setPlayerItems(previousZaino); // Rollback
                     alert("Errore durante la rimozione dell'oggetto. Operazione annullata.");
                 }
             }
@@ -227,9 +229,9 @@ export default function Party() {
     };
 
     const sottraiUno = async (item, playerId) => {
-        const previousZaino = [...zaino];
+        const previousZaino = [...playerItems];
         // Optimistic UI
-        setZaino(prev => prev.map(i => 
+        setPlayerItems(prev => prev.map(i => 
             i.oggetto.id === item.oggetto.id 
                 ? { ...i, quantita: Math.max(0, i.quantita - 1) } 
                 : i
@@ -252,7 +254,7 @@ export default function Party() {
             caricaDatiExtra(playerId);
         } catch (err) { 
             console.error(err);
-            setZaino(previousZaino); // Rollback
+            setPlayerItems(previousZaino); // Rollback
         }
     };
 
@@ -293,7 +295,11 @@ export default function Party() {
                         .delete()
                         .eq('id', pkmnId);
                     if (error) throw error;
-                    caricaDatiExtra(playerId);
+                    
+                    // Aggiornamento Ottimistico
+                    setPlayerPokemon(prev => prev.filter(p => p.id !== pkmnId));
+                    caricaDatiExtra(playerId, true); // Refresh silente
+                    setConfirmModal(null);
                 } catch (err) { 
                     console.error(err);
                     setPlayerPokemon(previousPokemon); // Rollback

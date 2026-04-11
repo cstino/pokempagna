@@ -153,8 +153,8 @@ export default function NPC() {
         caricaDatiExtra(npc.id);
     };
 
-    const caricaDatiExtra = async (npcId) => {
-        setLoadingExtra(true);
+    const caricaDatiExtra = async (npcId, silent = false) => {
+        if (!silent) setLoadingExtra(true);
         try {
             // Carica Zaino con Join su oggetti
             const { data: items, error: iErr } = await supabase
@@ -267,7 +267,10 @@ export default function NPC() {
                         .eq('giocatore_id', npcId)
                         .eq('oggetto_id', oggId);
                     if (error) throw error;
-                    caricaDatiExtra(npcId);
+                    
+                    // Aggiornamento Ottimistico
+                    setNpcItems(prev => prev.filter(i => i.oggetto.id !== oggId));
+                    caricaDatiExtra(npcId, true); // Refresh silente
                     setConfirmModal(null);
                 } catch (err) { console.error(err); }
             }
@@ -317,7 +320,10 @@ export default function NPC() {
                         .delete()
                         .eq('id', pkmnId);
                     if (error) throw error;
-                    caricaDatiExtra(npcId);
+                    
+                    // Aggiornamento Ottimistico
+                    setNpcPokemon(prev => prev.filter(p => p.id !== pkmnId));
+                    caricaDatiExtra(npcId, true); // Refresh silente
                     setConfirmModal(null);
                 } catch (err) { console.error(err); }
             }
