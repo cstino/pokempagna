@@ -1,4 +1,4 @@
-/* Arena.css - POKÉMPAGNA Modern Battle Hub */
+/* Arena.css - POKÉMPAGNA Modern Battle Hub (CLEAN v7) */
 
 :root {
   --hp-green: #10b981;
@@ -12,8 +12,7 @@
   width: 100vw;
   height: 100vh;
   position: fixed;
-  top: 0;
-  left: 0;
+  top: 0; left: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -22,28 +21,23 @@
   z-index: 1000;
 }
 
-/* Battle View with Dynamic Background */
 .arena-battle-view {
   background-size: cover;
   background-position: center;
   transition: background-image 1.5s ease-in-out;
   display: grid;
-  grid-template-rows: 1fr auto 1fr; /* Tre zone: Master, Centro, Player */
+  grid-template-rows: 42vh 16vh 42vh; 
   height: 100vh;
-  padding: 2vh 4vw;
+  padding: 0;
   position: relative;
   overflow: hidden;
-  gap: 1vh;
+  gap: 0;
 }
 
-/* Frosted Glass Overlay for visibility */
 .arena-battle-view::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(6px) saturate(1.2);
   z-index: 1;
@@ -51,10 +45,7 @@
 
 .arena-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   background: radial-gradient(circle at 50% 50%, transparent 10%, rgba(0,0,0,0.7) 100%);
   pointer-events: none;
   z-index: 2;
@@ -64,56 +55,33 @@
 .arena-tier {
   display: flex;
   justify-content: center;
-  gap: clamp(10px, calc(8vw / var(--count, 1)), 80px);
+  gap: clamp(20px, calc(10vw / var(--count, 1)), 100px);
   z-index: 5;
-  flex-wrap: nowrap;
   width: 100%;
-  max-width: 100%;
-  min-height: 0; /* Fondamentale per far funzionare flex-shrink dei figli */
-  height: 100%;
 }
 
-.master-tier { 
-  align-items: flex-start;
-}
-
-.player-tier { 
-  align-items: flex-end;
-}
-
-.arena-clash-zone { 
-  height: 5vh;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-}
+.master-tier { align-items: flex-start; }
+.player-tier { align-items: flex-end; }
 
 /* Pokemon Modern Token */
 .pokemon-token-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 100%; /* Occupa tutta l'altezza della riga grid della tier */
-  max-height: 42vh; /* Sicurezza assoluta */
-  min-height: 0;
-  /* Formula aggressiva: i pokemon sono MAX size con 1-2, iniziano a rimpicciolire col 3° e si sgonfiano bene con l'8° */
-  --scale-factor: clamp(0.45, calc(3.5 / var(--count, 1)), 1.2);
-  gap: calc(5px * var(--scale-factor));
+  gap: 5px; 
+  height: 100%;
+  --scale-factor: clamp(0.5, calc(3.5 / var(--count, 1)), 1.1);
   transition: all 0.5s ease;
-  flex: 0 1 auto;
 }
 
-.pokemon-token-main {
+.pokemon-token-v4 {
   position: relative;
-  flex: 1; /* Prende tutto lo spazio che avanza dalla card */
-  min-height: 0; /* Permette al contenitore di rimpicciolirsi se la riga grid si stringe */
-  width: calc(clamp(200px, 20vw, 450px) * var(--scale-factor));
+  flex: 1;
+  min-height: 0;
   display: flex;
   justify-content: center;
   z-index: 3;
-  animation: float-levitate 4s ease-in-out infinite; /* Animazione spostata qui: solo il pokemon respira */
+  width: calc(280px * var(--scale-factor));
 }
 
 .token-inner {
@@ -121,36 +89,27 @@
   height: 100%;
   display: flex;
   justify-content: center;
+  overflow: visible;
 }
 
-/* Ancora gli sprite vicino all'HUD (In alto per i master, in basso per i player) */
-.master-tier .pokemon-token-main,
-.master-tier .token-inner {
+/* Allineamento: Master in alto, Player in basso */
+.master-tier .token-inner { 
   align-items: flex-start;
+  padding-top: 1vh;
 }
-
-.player-tier .pokemon-token-main,
-.player-tier .token-inner {
+.player-tier .token-inner { 
   align-items: flex-end;
+  padding-bottom: 1vh;
 }
 
 .token-inner img {
-  /* Torniamo ad auto per lasciare che la GIF decida la sua proporzione naturale (Charizard > Pikachu) */
   width: auto;
   height: auto;
-  /* Abbassiamo a 85px per contenere meglio i custom e farli sembrare meno giganti di Charizard */
-  max-width: calc(85px * var(--scale-factor));
-  max-height: calc(85px * var(--scale-factor));
-  /* Mantengo lo zoom a 2.6 per un look eroico */
-  transform: scale(calc(2.6 * var(--scale-factor)));
+  max-width: calc(140px * var(--scale-factor));
+  max-height: calc(140px * var(--scale-factor));
+  transform: scale(calc(1.5 * var(--scale-factor) * var(--size-multi, 1.0)));
   filter: drop-shadow(0 15px 30px rgba(0,0,0,0.8));
   image-rendering: auto;
-}
-
-/* Fix per i Pokémon Custom: avendo spesso spazio vuoto sotto i piedi nel file PNG, 
-   li abbassiamo leggermente per "ancorarli" visivamente all'HUD */
-.token-inner img.is-custom {
-  transform: scale(calc(2.6 * var(--scale-factor))) translateY(12%);
 }
 
 .master-tier .token-inner img {
@@ -161,57 +120,41 @@
   transform-origin: bottom center;
 }
 
-
 /* Minimalist Combatant HUD */
 .combatant-hud {
   display: flex;
   flex-direction: column;
-  gap: calc(6px * var(--scale-factor));
-  width: calc(240px * var(--scale-factor)); /* Larghezza fissa come richiesto, ma che scala */
+  gap: 4px;
+  width: calc(230px * var(--scale-factor));
   z-index: 10;
-  transition: all 0.3s ease;
-  padding: calc(5px * var(--scale-factor));
+  padding: 8px;
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
 }
 
 .hud-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 4px 12px rgba(0, 0, 0, 1); /* Ombra marcata per leggibilità su sfondi chiari */
 }
 
 .hud-name {
   font-family: var(--font-display);
-  font-size: calc(1.3rem * var(--scale-factor));
+  font-size: calc(1.1rem * var(--scale-factor));
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 2px;
   color: #fff;
-  line-height: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.hud-lv {
-  font-size: calc(0.9rem * var(--scale-factor));
-  font-weight: bold;
-  color: #fff;
-  opacity: 0.9;
-}
-
-/* HUD HP Bar */
-.hud-hp-container {
-  width: 100%;
 }
 
 .hud-hp-bg {
-  height: calc(8px * var(--scale-factor));
+  height: 8px;
   background: rgba(0, 0, 0, 0.5);
   border-radius: 4px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.8);
 }
 
 .hud-hp-fill {
@@ -219,20 +162,7 @@
   transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.5s ease;
 }
 
-.hud-hp-text {
-  display: flex;
-  justify-content: flex-end;
-  font-size: calc(0.7rem * var(--scale-factor));
-  font-weight: 900;
-  margin-top: calc(3px * var(--scale-factor));
-  opacity: 0.9;
-  letter-spacing: 1px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 1);
-  color: #fff;
-}
-
-
-/* Standby & Logo Styles */
+/* Standby & Logo */
 .arena-standby {
   height: 100%;
   display: flex;
@@ -245,36 +175,7 @@
 .arena-logo-big {
   font-size: 6rem;
   font-weight: 900;
-  letter-spacing: 20px;
   background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
-  background-clip: text; /* Standard property */
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 30px rgba(59, 130, 246, 0.3));
-}
-
-/* Animations */
-@keyframes float-levitate {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-15px); }
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10px) rotate(-1deg); }
-  75% { transform: translateX(10px) rotate(1deg); }
-}
-
-.animate-shake {
-  animation: shake 0.4s ease-in-out;
-  filter: brightness(1.5) saturate(1.5);
-}
-
-.animate-fade-in {
-  animation: fade-in 1s ease-out forwards;
-}
-
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }

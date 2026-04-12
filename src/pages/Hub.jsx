@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabase';
 import PokeballLogo from '../components/PokeballLogo';
 import './Arena.css';
 
-const POKEMON_SPRITE_BASE = 'https://play.pokemonshowdown.com/sprites/ani/';
 
 const CombatantCard = ({ pokemon }) => {
     const hpPercentage = (pokemon.hp / pokemon.hp_max) * 100;
@@ -41,23 +40,39 @@ const CombatantCard = ({ pokemon }) => {
 };
 
 const PokemonToken = ({ pokemon, side }) => {
-    const spriteName = (pokemon.nome_originale || pokemon.nome).toLowerCase().replace(' ', '');
-    const spriteUrl = `${POKEMON_SPRITE_BASE}${spriteName}.gif`;
+    // Usiamo direttamente l'immagine in alta definizione (Official Artwork) per tutti
+    const imageUrl = pokemon.immagine_url;
+    // Refresh check: aggiornato sistema proporzioni tier v3
+    
+    // Calcoliamo un moltiplicatore basato sull'altezza reale (se presente)
+    // Se altezza è '0.4 m' -> 0.4. Se manca -> 1.0
+    const h = parseFloat(pokemon.altezza) || 1.1;
+    let sizeMulti = 1.0;
+    
+    if (h < 0.6) {
+        sizeMulti = 0.75; // PICCOLI (es. Pikachu)
+    } else if (h < 1.1) {
+        sizeMulti = 0.95; // MEDIO-PICCOLI (es. Wartortle, Bulbasaur)
+    } else if (h < 1.6) {
+        sizeMulti = 1.15; // MEDIO-GRANDI (es. Lucario, Pidgeot)
+    } else {
+        sizeMulti = 1.40; // GRANDI/GIGANTI (es. Charizard, M'Adame, Gyarados)
+    }
 
     return (
-        <div className={`pokemon-token-wrapper ${pokemon.is_damaged ? 'animate-shake' : ''} ${side}`}>
+        <div 
+            className={`pokemon-token-wrapper ${pokemon.is_damaged ? 'animate-shake' : ''} ${side}`}
+            style={{ '--size-multi': sizeMulti }}
+        >
             {/* Se è Master, la Card sta SOPRA lo sprite */}
             {side === 'master' && <CombatantCard pokemon={pokemon} />}
 
-            <div className="pokemon-token-main">
+            <div className="pokemon-token-v4">
                 <div className="token-inner">
                     <img 
-                        src={spriteUrl} 
+                        src={imageUrl} 
                         alt={pokemon.nome} 
-                        className={!pokemon.immagine_url?.includes('githubusercontent') ? 'is-custom' : ''}
-                        onError={(e) => {
-                            e.target.src = pokemon.immagine_url;
-                        }}
+                        className="is-custom"
                     />
                 </div>
             </div>
