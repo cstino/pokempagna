@@ -35,6 +35,7 @@ export default function Squadra() {
     const fetchSquadra = async () => {
         setLoading(true);
         try {
+            // 1. Recupera i Pokémon del giocatore
             const { data: pkmnData, error: pkmnError } = await supabase
                 .from('pokemon_giocatore')
                 .select('*')
@@ -42,6 +43,21 @@ export default function Squadra() {
                 .order('posizione_squadra', { ascending: true });
 
             if (pkmnError) throw pkmnError;
+
+            // 2. Recupera i dati della specie dalla libreria campagna (manual join)
+            const speciesIds = [...new Set((pkmnData || []).map(p => p.pokemon_id))];
+            let speciesMap = {};
+            
+            if (speciesIds.length > 0) {
+                const { data: specData } = await supabase
+                    .from('pokemon_campagna')
+                    .select('*')
+                    .in('id', speciesIds);
+                
+                (specData || []).forEach(s => {
+                    speciesMap[s.id] = s;
+                });
+            }
 
             const { data: giaterData } = await supabase
                 .from('giocatori')
@@ -51,16 +67,18 @@ export default function Squadra() {
 
             setSlots(giaterData?.slot_squadra || 3);
 
-            // pokemon_giocatore ha già nome, tipo1, tipo2 e pokemon_id (che è il National Dex ID)
-            // Non c'è alcun bisogno di incrociare con pokemon_campagna perché la dashboard Master 
-            // aggiunge i PKMN ai giocatori scaricandoli direttamente da PokeAPI!
-            const cleanData = (pkmnData || []).map(p => ({
-                ...p,
-                campagna_nome: p.soprannome || p.nome || 'Sconosciuto',
-                campagna_tipo1: p.tipo1,
-                campagna_tipo2: p.tipo2,
-                campagna_img: null // Userà il fallback classico PokeAPI in base a p.pokemon_id
-            }));
+            const cleanData = (pkmnData || []).map(p => {
+                const sp = speciesMap[p.pokemon_id] || {};
+                return {
+                    ...p,
+                    specie_nome: sp.nome || p.nome || 'Sconosciuto',
+                    campagna_nome: p.soprannome || sp.nome || p.nome || 'Sconosciuto',
+                    campagna_tipo1: sp.tipo1 || p.tipo1,
+                    campagna_tipo2: sp.tipo2 || p.tipo2,
+                    campagna_img: sp.immagine_url || null,
+                    real_pokemon_id: sp.pokemon_id || p.pokemon_id
+                };
+            });
 
             setPokemon(cleanData);
         } catch (err) {
@@ -266,8 +284,8 @@ export default function Squadra() {
                         <div className="modal-pkmn-bg">
                             <button className="modal-close-btn" onClick={() => setSelectedPkmn(null)}>✕</button>
                             <img
-                                src={selectedPkmn.campagna_img || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${selectedPkmn.pokemon_id}.png`}
-                                alt={selectedPkmn.soprannome}
+                                src={selectedPkmn.campagna_img || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${selectedPkmn.real_pokemon_id}.png`}
+                                alt={selectedPkmn.campagna_nome}
                                 className="modal-pkmn-img"
                             />
                         </div>
@@ -521,12 +539,13 @@ function PkmnCard({ pkmn, isBench, onClick, getHPColor }) {
             <div className="pkmn-image-container">
                 <img
                     className="pkmn-image"
-                    src={pkmn.campagna_img || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pkmn.pokemon_id}.png`}
-                    alt={pkmn.soprannome}
+                    src={pkmn.campagna_img || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pkmn.real_pokemon_id}.png`}
+                    alt={pkmn.campagna_nome}
                 />
             </div>
             <div className="pkmn-card-details">
-                <h3>{pkmn.soprannome || 'Senza Nome'}</h3>
+                <h3 style={{ textTransform: 'uppercase' }}>{pkmn.specie_nome}</h3>
+                {pkmn.soprannome && <p className="pkmn-nickname-sub">"{pkmn.soprannome}"</p>}
                 <div className="hp-section">
                     <div className="hp-info"><span>HP</span><span>{pkmn.hp_attuale}/{pkmn.hp_max}</span></div>
                     <div className="hp-bar-bg"><div className="hp-bar-fill" style={{ width: `${hpPct}%`, backgroundColor: getHPColor(pkmn.hp_attuale, pkmn.hp_max) }} /></div>

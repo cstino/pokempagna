@@ -1,122 +1,293 @@
-import { useState, useRef } from 'react';
-import { Swords, Flame, Droplets, Target, Leaf } from 'lucide-react';
-import BattleAnimations from '../../components/animations/BattleAnimations';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
+import { Swords, Zap, Info, Shield, Loader2, PlayCircle, AlertCircle } from 'lucide-react';
+import { getTypeColor, getTypeLabel } from '../../lib/typeColors';
+import './Combat.css';
 
 export default function Combat() {
-    const playerPkmnRef = useRef(null);
-    const opponentPkmnRef = useRef(null);
-    const [trigger, setTrigger] = useState(0);
-    const [animType, setAnimType] = useState('fire_1');
-    const [battleLog, setBattleLog] = useState("Arena Pronta! Scegli un livello di potenza per testare.");
+    const { profile } = useAuth();
+    const [loading, setLoading] = useState(true);
+    const [squadra, setSquadra] = useState([]);
+    const [activeBattle, setActiveBattle] = useState(null);
+    const [selectedPkmn, setSelectedPkmn] = useState(null);
+    const [moves, setMoves] = useState([]);
+    const [slots, setSlots] = useState(3);
+    const [infoMove, setInfoMove] = useState(null);
 
-    const handleMove = (type) => {
-        setAnimType(type);
-        setTrigger(prev => prev + 1);
-        
-        const [kind, level] = type.split('_');
-        const levelNames = { 1: 'Base', 2: 'Avanzato', 3: 'Ultra' };
-        const kindNames = { fire: 'Fuoco', water: 'Acqua', grass: 'Erba', physical: 'Fisico' };
-        
-        setBattleLog(`Pokémon usa mossa ${kindNames[kind]} di livello ${levelNames[level]}!`);
+    useEffect(() => {
+        if (profile) {
+            fetchInitialData();
+            
+            // Sottoscrizione real-time alla battaglia
+            const channel = supabase
+                .channel('combat-controller')
+                .on('postgres_changes', { event: '*', table: 'battaglia_attiva' }, () => fetchBattleState())
+                .subscribe();
+
+            return () => supabase.removeChannel(channel);
+        }
+    }, [profile]);
+
+    const fetchInitialData = async () => {
+        setLoading(true);
+        await Promise.all([fetchSquadra(), fetchBattleState()]);
+        setLoading(false);
     };
 
-    const MoveButton = ({ type, color, icon: Icon, label }) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{label}</span>
-            <div style={{ display: 'flex', gap: '4px' }}>
-                {[1, 2, 3].map(lvl => (
+    const fetchSquadra = async () => {
+        const { data: pkmn } = await supabase
+            .from('pokemon_giocatore')
+            .select('*')
+            .eq('giocatore_id', profile.id)
+            .order('posizione_squadra', { ascending: true });
+        
+        // 2. Recupera i dati della specie dalla libreria campagna (manual join)
+        const speciesIds = [...new Set((pkmn || []).map(p => p.pokemon_id))];
+        let speciesMap = {};
+        
+        if (speciesIds.length > 0) {
+            const { data: specData } = await supabase
+                .from('pokemon_campagna')
+                .select('*')
+                .in('id', speciesIds);
+            
+            (specData || []).forEach(s => {
+                speciesMap[s.id] = s;
+            });
+        }
+
+        const { data: giat } = await supabase
+            .from('giocatori')
+            .select('slot_squadra')
+            .eq('id', profile.id)
+            .single();
+
+        const limit = giat?.slot_squadra || 3;
+        setSlots(limit);
+        const titolari = (pkmn || []).filter(p => p.posizione_squadra < limit);
+        
+        // Mappatura per risolvere l'ID Nazionale correto (Manuale)
+        const mappedTitolari = titolari.map(p => {
+            const sp = speciesMap[p.pokemon_id] || {};
+            return {
+                ...p,
+                specie_nome: sp.nome || p.nome || 'Sconosciuto',
+                real_pokemon_id: sp.pokemon_id || p.pokemon_id,
+                nome_originale: sp.nome || p.nome
+            };
+        });
+
+        setSquadra(mappedTitolari);
+        
+        // Seleziona il primo per default se non c'è selezione
+        if (mappedTitolari.length > 0 && !selectedPkmn) {
+            selectPokemon(mappedTitolari[0]);
+        }
+    };
+
+    const fetchBattleState = async () => {
+        const { data } = await supabase.from('battaglia_attiva').select('*').single();
+        setActiveBattle(data);
+    };
+
+    const selectPokemon = async (pkmn) => {
+        setSelectedPkmn(pkmn);
+        const { data: movesData } = await supabase
+            .from('mosse_pokemon')
+            .select(`
+                *,
+                info:mosse_disponibili (descrizione, categoria, potenza, precisione)
+            `)
+            .eq('pokemon_giocatore_id', pkmn.id)
+            .eq('attiva', true);
+        setMoves(movesData || []);
+    };
+
+    const isPkmnInField = (pkmnId) => {
+        if (!activeBattle?.pokemon_in_campo) return false;
+        return activeBattle.pokemon_in_campo.some(p => p.original_id === pkmnId);
+    };
+
+    const getPkmnInFieldData = (pkmnId) => {
+        if (!activeBattle?.pokemon_in_campo) return null;
+        return activeBattle.pokemon_in_campo.find(p => p.original_id === pkmnId);
+    };
+
+    const mandaInCampo = async () => {
+        if (!selectedPkmn || isPkmnInField(selectedPkmn.id)) return;
+
+        const nuovoInCampo = [
+            ...(activeBattle.pokemon_in_campo || []),
+            {
+                id: crypto.randomUUID(),
+                original_id: selectedPkmn.id,
+                nome: selectedPkmn.soprannome || selectedPkmn.nome,
+                nome_originale: selectedPkmn.nome_originale,
+                allenatore: profile.nome,
+                pokemon_id: selectedPkmn.real_pokemon_id,
+                hp: selectedPkmn.hp_attuale,
+                hp_max: selectedPkmn.hp_max,
+                livello: selectedPkmn.livello,
+                immagine_url: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${selectedPkmn.real_pokemon_id}.png`,
+                side: 'player',
+                is_damaged: false
+            }
+        ];
+
+        await supabase
+            .from('battaglia_attiva')
+            .update({ pokemon_in_campo: nuovoInCampo })
+            .eq('id', activeBattle.id);
+    };
+
+    if (loading) return <div className="combat-controller-container flex-center"><Loader2 className="spin" size={40} /></div>;
+
+    const currentFieldData = selectedPkmn ? getPkmnInFieldData(selectedPkmn.id) : null;
+    const isCurrentlyActive = !!currentFieldData;
+
+    return (
+        <div className="combat-controller-container animate-fade-in">
+            <div className="page-header">
+                <div>
+                    <h1 className="page-title"><Swords size={28} color="#ef4444" /> Combat Controller</h1>
+                    <p className="page-subtitle">Gestisci i tuoi Pokémon nell'arena</p>
+                </div>
+            </div>
+
+            {/* TEAM SELECTOR */}
+            <div className="team-selector-bar">
+                {squadra.map(pkmn => (
                     <button 
-                        key={lvl}
-                        className="btn btn-secondary" 
-                        onClick={() => handleMove(`${type}_${lvl}`)}
-                        style={{ 
-                            padding: '6px 10px',
-                            fontSize: '0.8rem',
-                            borderColor: color, 
-                            color: color,
-                            background: animType === `${type}_${lvl}` ? `${color}22` : 'transparent'
-                        }}
+                        key={pkmn.id} 
+                        className={`team-member-btn ${selectedPkmn?.id === pkmn.id ? 'active' : ''}`}
+                        onClick={() => selectPokemon(pkmn)}
                     >
-                        lvl {lvl}
+                        <img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pkmn.real_pokemon_id}.png`} alt={pkmn.nome} />
+                        <span className={`status-dot ${isPkmnInField(pkmn.id) ? 'in-battle' : pkmn.hp_attuale <= 0 ? 'fainted' : ''}`} />
                     </button>
                 ))}
             </div>
+
+            {selectedPkmn ? (
+                <>
+                    {/* ACTIVE PKMN CARD */}
+                    <div className="active-pkmn-display shadow-lg">
+                        <div className="pkmn-mini-avatar">
+                            <img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${selectedPkmn.real_pokemon_id}.png`} style={{ width: '60px' }} />
+                        </div>
+                        <div className="active-info-main">
+                            <div className="flex-between">
+                                <h2 style={{ textTransform: 'uppercase' }}>{selectedPkmn.specie_nome}</h2>
+                                <span style={{ fontWeight: 800, color: 'var(--accent-primary)' }}>LV. {selectedPkmn.livello}</span>
+                            </div>
+                            {selectedPkmn.soprannome && (
+                                <p style={{ fontSize: '0.8rem', opacity: 0.7, fontStyle: 'italic', marginTop: '-4px', marginBottom: '8px' }}>
+                                    "{selectedPkmn.soprannome}"
+                                </p>
+                            )}
+                            <div className="hp-bar-controller">
+                                <div 
+                                    className="hp-bar-fill" 
+                                    style={{ 
+                                        width: `${((currentFieldData?.hp || selectedPkmn.hp_attuale) / selectedPkmn.hp_max) * 100}%`,
+                                        background: getHPColor((currentFieldData?.hp || selectedPkmn.hp_attuale), selectedPkmn.hp_max)
+                                    }} 
+                                />
+                            </div>
+                            <div className="flex-between" style={{ marginTop: '4px', fontSize: '0.75rem', fontWeight: 700 }}>
+                                <span>HP</span>
+                                <span>{currentFieldData?.hp || selectedPkmn.hp_attuale} / {selectedPkmn.hp_max}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ACTION AREA */}
+                    {!isCurrentlyActive ? (
+                        <div className="empty-combat-state animate-pop-in">
+                            <PlayCircle size={48} opacity={0.3} />
+                            <p style={{ marginTop: '15px', fontWeight: 600 }}>Questo Pokémon è in panchina.</p>
+                            <button className="btn-send-to-field" onClick={mandaInCampo}>
+                                <Zap size={18} fill="currentColor" /> Manda in Campo
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="moves-grid animate-slide-up">
+                            {moves.length > 0 ? (
+                                moves.map(move => (
+                                    <button 
+                                        key={move.id} 
+                                        className="move-btn"
+                                        style={{ '--type-color': getTypeColor(move.tipo) }}
+                                        onClick={() => console.log("Mossa usata:", move.nome)}
+                                    >
+                                        <span className="move-type-tag">{getTypeLabel(move.tipo)}</span>
+                                        <span className="move-name">{move.nome}</span>
+                                        <div className="move-footer">
+                                            <span className="pp-count">PP {move.pp_attuale}/{move.pp_max}</span>
+                                            <div className="move-info-trigger" onClick={(e) => {
+                                                e.stopPropagation();
+                                                setInfoMove(move);
+                                            }}>
+                                                <Info size={14} />
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="empty-combat-state" style={{ gridColumn: 'span 2' }}>
+                                    <AlertCircle size={32} opacity={0.3} />
+                                    <p>Nessuna mossa attiva configurata.</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </>
+            ) : (
+                <div className="empty-combat-state">
+                    <p>Seleziona un Pokémon dalla tua squadra</p>
+                </div>
+            )}
+
+            {/* MODALE INFO MOSSA */}
+            {infoMove && (
+                <div className="modal-overlay" onClick={() => setInfoMove(null)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '350px' }}>
+                        <div className="flex-between" style={{ marginBottom: '15px' }}>
+                            <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, textTransform: 'uppercase' }}>{infoMove.nome}</h3>
+                            <button onClick={() => setInfoMove(null)} className="btn-circle">✕</button>
+                        </div>
+                        <div className="move-pop-meta" style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
+                            <span className="type-tag" style={{ background: getTypeColor(infoMove.tipo), color: 'white', padding: '4px 10px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 900 }}>
+                                {getTypeLabel(infoMove.tipo)}
+                            </span>
+                            <span className="cat-tag" style={{ background: 'rgba(255,255,255,0.1)', padding: '4px 10px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 800 }}>
+                                {infoMove.info?.categoria?.toUpperCase()}
+                            </span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
+                            <div className="info-box-mini">
+                                <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)' }}>POTENZA</span>
+                                <span style={{ fontWeight: 800 }}>{infoMove.info?.potenza || '--'}</span>
+                            </div>
+                            <div className="info-box-mini">
+                                <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)' }}>PRECISIONE</span>
+                                <span style={{ fontWeight: 800 }}>{infoMove.info?.precisione || '--'}%</span>
+                            </div>
+                        </div>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                            {infoMove.info?.descrizione || "Nessuna descrizione disponibile."}
+                        </p>
+                    </div>
+                </div>
+            )}
         </div>
     );
+}
 
-    return (
-        <div className="animate-fade-in" style={{ paddingTop: '70px', paddingLeft: 'var(--space-md)', paddingRight: 'var(--space-md)', paddingBottom: 'var(--space-xl)' }}>
-            <div className="page-header" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Swords size={32} color="#ef4444" />
-                    Combat Arena (v2 - Levels)
-                </h1>
-                <p className="page-subtitle">Test del nuovo sistema a 3 livelli su Punto B</p>
-            </div>
-
-            <div className="card" style={{ padding: 'var(--space-xl)', background: 'var(--bg-card)', position: 'relative', overflow: 'hidden' }}>
-                <div style={{
-                    perspective: '1000px',
-                    width: '100%',
-                    height: '400px',
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-around',
-                    marginBottom: 'var(--space-xl)',
-                    background: 'radial-gradient(circle at 50% 50%, rgba(45, 45, 143, 0.1) 0%, transparent 70%)',
-                    borderRadius: 'var(--radius-xl)'
-                }}>
-                    <div className="pokemon-slot" ref={playerPkmnRef} style={{ position: 'relative', zIndex: 2 }}>
-                        <img 
-                            src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png" 
-                            alt="Charmander" 
-                            className="pokemon-sprite animate-float"
-                            style={{ width: '150px', height: '150px', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.3))' }}
-                        />
-                        <div style={{ position: 'absolute', bottom: '-10px', left: '25px', width: '100px', height: '20px', background: 'rgba(0, 0, 0, 0.2)', borderRadius: '50%', filter: 'blur(5px)' }}></div>
-                    </div>
-
-                    <div style={{ zIndex: 1, position: 'absolute', left: '50%', transform: 'translateX(-50%)', opacity: 0.2 }}>
-                        <Swords size={120} color="var(--accent-primary)" />
-                    </div>
-
-                    <div className="pokemon-slot" ref={opponentPkmnRef} style={{ position: 'relative', zIndex: 2 }}>
-                        <img 
-                            src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png" 
-                            alt="Bulbasaur" 
-                            className="pokemon-sprite animate-float" 
-                            style={{ width: '150px', height: '150px', transform: 'scaleX(-1)', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.3))' }}
-                        />
-                        <div style={{ position: 'absolute', bottom: '-10px', left: '25px', width: '100px', height: '20px', background: 'rgba(0, 0, 0, 0.2)', borderRadius: '50%', filter: 'blur(5px)' }}></div>
-                    </div>
-
-                    <BattleAnimations 
-                        trigger={trigger}
-                        type={animType}
-                        endPos={{ x: window.innerWidth > 800 ? 550 : 250, y: 180 }} 
-                    />
-                </div>
-
-                <div style={{ textAlign: 'center', marginBottom: 'var(--space-xl)', minHeight: '1.5em' }}>
-                    <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontWeight: '500' }}>{battleLog}</p>
-                </div>
-
-                <div className="flex-center" style={{ gap: 'var(--space-xl)', flexWrap: 'wrap', background: 'rgba(0,0,0,0.05)', padding: 'var(--space-lg)', borderRadius: 'var(--radius-lg)' }}>
-                    <MoveButton type="fire" color="#ef4444" icon={Flame} label="Fuoco" />
-                    <MoveButton type="water" color="#3b82f6" icon={Droplets} label="Acqua" />
-                    <MoveButton type="grass" color="#10b981" icon={Leaf} label="Erba" />
-                    <MoveButton type="physical" color="#eab308" icon={Target} label="Fisico" />
-                </div>
-            </div>
-
-            <div className="card" style={{ marginTop: 'var(--space-xl)', border: '1px dashed var(--border-subtle)', background: 'transparent' }}>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.6' }}>
-                    📌 <strong>Logica Aggiornata:</strong> Le mosse ora hanno 3 livelli di intensità. 
-                    L'origine è fissata sul bersaglio (Punto B) per massimizzare l'impatto visivo e semplificare la gestione delle traiettorie.
-                    Utilizza <code>fire_1</code>, <code>fire_2</code>, <code>fire_3</code> ecc.
-                </p>
-            </div>
-        </div>
-    );
+function getHPColor(current, max) {
+    const pct = (current / max) * 100;
+    if (pct > 50) return '#10b981';
+    if (pct > 20) return '#f59e0b';
+    return '#ef4444';
 }
