@@ -97,7 +97,10 @@ export default function Squadra() {
                     *,
                     info:mosse_disponibili (
                         descrizione,
-                        categoria
+                        categoria,
+                        effetto,
+                        danni,
+                        accuratezza
                     )
                 `)
                 .eq('pokemon_giocatore_id', pkmnId);
@@ -357,8 +360,32 @@ export default function Squadra() {
                                                         {longPressedMove.info.categoria.toUpperCase()}
                                                     </span>
                                                 </div>
-                                                <div className="move-pop-desc">
-                                                    {longPressedMove.info.descrizione || "Nessuna descrizione disponibile per questa mossa."}
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px', marginTop: '10px' }}>
+                                                    <div className="info-box-mini" style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '8px' }}>
+                                                        <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)' }}>POTENZA</span>
+                                                        <span style={{ fontWeight: 800 }}>{longPressedMove.info?.danni || '--'}</span>
+                                                    </div>
+                                                    <div className="info-box-mini" style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '8px' }}>
+                                                        <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)' }}>PRECISIONE</span>
+                                                        <span style={{ fontWeight: 800 }}>{longPressedMove.info?.accuratezza ? (longPressedMove.info.accuratezza.includes('%') ? longPressedMove.info.accuratezza : `${longPressedMove.info.accuratezza}%`) : '--%'}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="move-pop-desc" style={{ textAlign: 'left', marginTop: '5px' }}>
+                                                    {longPressedMove.info.effetto && (
+                                                        <div style={{ marginBottom: '12px', fontSize: '0.95rem', color: '#fff', lineHeight: 1.5 }}>
+                                                            {longPressedMove.info.effetto}
+                                                        </div>
+                                                    )}
+                                                    {longPressedMove.info.descrizione && (
+                                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: 1.4, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px' }}>
+                                                            "{longPressedMove.info.descrizione}"
+                                                        </div>
+                                                    )}
+                                                    {(!longPressedMove.info.effetto && !longPressedMove.info.descrizione) && (
+                                                        <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                                                            Nessuna informazione aggiuntiva.
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </>
                                         )}
