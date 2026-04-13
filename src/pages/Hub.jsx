@@ -39,13 +39,25 @@ const CombatantCard = ({ pokemon }) => {
     );
 };
 
-const PokemonToken = ({ pokemon, side }) => {
-    // Usiamo direttamente l'immagine in alta definizione (Official Artwork) per tutti
-    const imageUrl = pokemon.immagine_url;
-    // Refresh check: aggiornato sistema proporzioni tier v3
+// --- CONFIGURAZIONE VISIVA ---
+const USE_GIFS = true; // Imposta a 'false' per tornare alle immagini HD
+// -----------------------------
+
+const PokemonTokenAnimated = ({ pokemon, side }) => {
+    // Calcolo dell'immagine: GIF 3D HD (xyani) o Artwork HD con fallback
+    let imageUrl = pokemon.immagine_url;
+    let isGif = false;
+
+    // Se le GIF sono attive, usiamo il server 'xyani' che contiene i modelli 3D nitidi
+    if (USE_GIFS && pokemon.nome) {
+        const cleanName = (pokemon.nome_originale || pokemon.nome).toLowerCase().split(' ')[0].replace(/[^a-z0-9]/g, '');
+        //xyani è il server per le animazioni 3D moderne
+        imageUrl = `https://play.pokemonshowdown.com/sprites/xyani/${cleanName}.gif`;
+        isGif = true;
+    }
     
-    // Calcoliamo un moltiplicatore basato sull'altezza reale (se presente)
-    // Se altezza è '0.4 m' -> 0.4. Se manca -> 1.0
+    // Refresh forzato v7: Logica XY-ANI 3D
+    
     const h = parseFloat(pokemon.altezza) || 1.1;
     let sizeMulti = 1.0;
     
@@ -72,7 +84,15 @@ const PokemonToken = ({ pokemon, side }) => {
                     <img 
                         src={imageUrl} 
                         alt={pokemon.nome} 
-                        className="is-custom"
+                        className={`pokemon-sprite ${isGif ? 'is-gif' : 'is-hd'} ${pokemon.pokedex_id >= 1000 ? 'is-custom' : ''}`}
+                        onError={(e) => {
+                            // Fallback se la GIF non esiste
+                            if (isGif) {
+                                e.target.src = pokemon.immagine_url;
+                                e.target.classList.remove('is-gif');
+                                e.target.classList.add('is-hd');
+                            }
+                        }}
                     />
                 </div>
             </div>
@@ -143,20 +163,28 @@ export default function Hub() {
             <div className="arena-overlay" />
             
             {/* LATO MASTER (Sopra) */}
-            <div className="arena-tier master-tier" style={{ '--count': masterPokemon.length }}>
-                {masterPokemon.map(p => (
-                    <PokemonToken key={p.id} pokemon={p} side="master" />
-                ))}
+            <div className="arena-tier master-tier" style={{ '--count': battleState.pokemon_in_campo.filter(p => p.side === 'master').length }}>
+                {battleState.pokemon_in_campo
+                    .filter(p => p.side === 'master')
+                    .map(p => (
+                        <PokemonTokenAnimated key={p.id} pokemon={p} side="master" />
+                    ))
+                }
             </div>
 
-            {/* AREA CENTRALE DI DISTANZA */}
-            <div className="arena-clash-zone" />
+            {/* Zona Scontro (Centrale) */}
+            <div className="arena-clash-zone">
+                {/* Eventuali effetti o log di battaglia */}
+            </div>
 
-            {/* LATO PLAYER (Sotto) */}
-            <div className="arena-tier player-tier" style={{ '--count': playerPokemon.length }}>
-                {playerPokemon.map(p => (
-                    <PokemonToken key={p.id} pokemon={p} side="player" />
-                ))}
+            {/* Fascia Player (Sotto) */}
+            <div className="arena-tier player-tier" style={{ '--count': battleState.pokemon_in_campo.filter(p => p.side === 'player').length }}>
+                {battleState.pokemon_in_campo
+                    .filter(p => p.side === 'player')
+                    .map(p => (
+                        <PokemonTokenAnimated key={p.id} pokemon={p} side="player" />
+                    ))
+                }
             </div>
         </div>
     );

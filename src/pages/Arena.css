@@ -26,7 +26,7 @@
   background-position: center;
   transition: background-image 1.5s ease-in-out;
   display: grid;
-  grid-template-rows: 42vh 16vh 42vh; 
+  grid-template-rows: 40vh 20vh 40vh; 
   height: 100vh;
   padding: 0;
   position: relative;
@@ -95,11 +95,11 @@
 /* Allineamento: Master in alto, Player in basso */
 .master-tier .token-inner { 
   align-items: flex-start;
-  padding-top: 1vh;
+  padding-top: 3vh; /* Più spazio dalla barra HP */
 }
 .player-tier .token-inner { 
   align-items: flex-end;
-  padding-bottom: 1vh;
+  padding-bottom: 3vh; /* Più spazio dalla barra HP */
 }
 
 .token-inner img {
@@ -107,9 +107,29 @@
   height: auto;
   max-width: calc(140px * var(--scale-factor));
   max-height: calc(140px * var(--scale-factor));
-  transform: scale(calc(1.5 * var(--scale-factor) * var(--size-multi, 1.0)));
+  /* Base scale per le immagini HD */
+  transform: scale(calc(1.4 * var(--scale-factor) * var(--size-multi, 1.0)));
   filter: drop-shadow(0 15px 30px rgba(0,0,0,0.8));
   image-rendering: auto;
+  transition: transform 0.3s ease;
+}
+
+/* OTTIMIZZAZIONE GIF ANIMATE 3D HD */
+.token-inner img.is-gif {
+  /* Zoom ricalibrato a 2.2x per evitare che i giganti occupino il centro */
+  transform: scale(calc(2.2 * var(--scale-factor) * var(--size-multi, 1.0)));
+  image-rendering: auto;
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.6));
+}
+
+.master-tier .token-inner img.is-gif {
+  transform: scale(calc(2.2 * var(--scale-factor) * var(--size-multi, 1.0)));
+  transform-origin: top center;
+}
+
+.player-tier .token-inner img.is-gif {
+  transform: scale(calc(2.2 * var(--scale-factor) * var(--size-multi, 1.0)));
+  transform-origin: bottom center;
 }
 
 .master-tier .token-inner img {
