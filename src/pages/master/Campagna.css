@@ -91,7 +91,7 @@
     letter-spacing: 1px;
 }
 
-.form-group input, 
+.form-group input,
 .form-group textarea {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -276,7 +276,10 @@
     text-transform: uppercase;
 }
 
-.role-badge.giocatore { background: rgba(86, 227, 255, 0.1); color: #56e3ff; }
+.role-badge.giocatore {
+    background: rgba(86, 227, 255, 0.1);
+    color: #56e3ff;
+}
 
 /* MASTER BUTTONS */
 .btn-master {
@@ -334,7 +337,8 @@
 
 .sessions-timeline {
     display: flex;
-    flex-direction: column-reverse; /* Recenti in alto */
+    flex-direction: column-reverse;
+    /* Recenti in alto */
     gap: var(--space-lg);
     position: relative;
 }
@@ -402,6 +406,7 @@
         flex-direction: column;
         gap: 12px;
     }
+
     .session-number {
         width: 36px;
         height: 36px;

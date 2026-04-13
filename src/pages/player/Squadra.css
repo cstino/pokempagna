@@ -10,6 +10,39 @@
     min-height: 100vh;
 }
 
+.error-toast {
+    position: fixed;
+    top: 90px; /* Abbassato per evitare sovrapposizioni con la top navigation bar */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(239, 68, 68, 0.2);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    color: #fca5a5;
+    padding: 14px 28px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 900;
+    font-size: 0.9rem;
+    z-index: 999999; /* massimo per superare la navbar */
+    box-shadow: 0 10px 40px rgba(239, 68, 68, 0.3), inset 0 0 10px rgba(239, 68, 68, 0.1);
+    letter-spacing: 0.5px;
+    animation: toastSlideDown 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes toastSlideDown {
+    from {
+        transform: translate(-50%, -20px);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+}
+
 .bench-header {
     margin-top: -42px !important;
     /* 🛡️ Abbassata la scritta box di 8px */
@@ -443,7 +476,6 @@
 /* -- Swap Panel INLINE (Contained in modal body) -- */
 .modal-pkmn-body {
     position: relative;
-    /* Garantisce che l'overlay assoluto sia relativo al body della modale */
 }
 
 .move-swap-overlay-inline {
@@ -457,6 +489,8 @@
     z-index: 50;
     display: flex;
     align-items: flex-end;
+    border-radius: 32px; /* same as pkmn-detail-modal-custom */
+    overflow: hidden;
 }
 
 .move-swap-panel-inline {

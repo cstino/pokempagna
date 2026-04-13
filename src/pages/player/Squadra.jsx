@@ -23,14 +23,40 @@ export default function Squadra() {
     const [longPressedMove, setLongPressedMove] = useState(null);
     const longPressTimerRef = useRef(null);
     const [errorMsg, setErrorMsg] = useState("");
+    const [battleActive, setBattleActive] = useState(false);
 
     const scrollContainerRef = useRef(null);
 
     useEffect(() => {
         if (profile) {
             fetchSquadra();
+            checkBattleStatus();
+
+            const channel = supabase
+                .channel('squadra-battle-status')
+                .on('postgres_changes', { event: '*', table: 'battaglia_attiva' }, (payload) => {
+                    if (payload.new) {
+                        setBattleActive(payload.new.attiva);
+                    } else {
+                        checkBattleStatus();
+                    }
+                })
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
         }
     }, [profile]);
+
+    const checkBattleStatus = async () => {
+        try {
+            const { data } = await supabase.from('battaglia_attiva').select('attiva').single();
+            if (data) setBattleActive(data.attiva);
+        } catch (e) {
+            console.error("Errore fetch status battaglia:", e);
+        }
+    };
 
     const fetchSquadra = async () => {
         setLoading(true);
@@ -103,10 +129,9 @@ export default function Squadra() {
                         accuratezza
                     )
                 `)
-                .eq('pokemon_giocatore_id', pkmnId);
+                .eq('pokemon_giocatore_id', pkmnId)
+                .order('id', { ascending: true }); // Stabilità dell'ordine
             if (error) throw error;
-            // Ordiniamo per far sì che le attive siano coerenti, o usiamo un campo posizione se esistesse.
-            // Per ora usiamo il flag 'attiva' e la data di creazione o ID per la stabilità.
             setMoves(data || []);
         } catch (err) {
             console.error("Errore recupero mosse:", err);
@@ -115,26 +140,52 @@ export default function Squadra() {
 
     const handleMoveSwap = async (newMoveId, slotIdx) => {
         if (!selectedPkmn) return;
+        
+        if (battleActive) {
+            showError("È in corso una lotta! Non puoi cambiare mosse ora.");
+            return;
+        }
 
         try {
-            const activeMoves = moves.filter(m => m.attiva);
-            const currentMoveAtSlot = activeMoves[slotIdx];
+            const activeMovesAll = moves.filter(m => m.attiva);
+            const currentMoveAtSlot = activeMovesAll[slotIdx]; // Wait! Dobbiamo allinearci alla logica di rendering!
+            
+            // La logica di rendering prende le prime 4 attive in modo sicuro
+            const equippedMoves = [0, 1, 2, 3].map(i => activeMovesAll[i]).filter(Boolean);
+            const actualMoveInSlot = equippedMoves[slotIdx];
+            const newMove = moves.find(m => m.id === newMoveId);
 
-            // 1. Disattiva la mossa attuale in quello slot (se esiste)
-            if (currentMoveAtSlot) {
-                await supabase
-                    .from('mosse_pokemon')
-                    .update({ attiva: false })
-                    .eq('id', currentMoveAtSlot.id);
+            if (!newMove) return;
+
+            // Al posto di spostare e disattivare a random (che causerebbe shift visivi nei layout siccome non abbiamo un campo slot_idx), 
+            // scambiamo proprio il CONTENUTO della mossa. Gli UUID delle righe rimangono fissi ma le loro stats si invertono.
+            // In questo modo la mossa appare ISTANTANEAMENTE e PERFETTAMENTE dove abbiamo cliccato!
+            
+            if (actualMoveInSlot) {
+                // Aggiorniamo lo slot attuale (Row X) con i dati della "nuova" mossa scelta
+                await supabase.from('mosse_pokemon').update({
+                    mossa_id: newMove.mossa_id,
+                    nome: newMove.nome,
+                    tipo: newMove.tipo,
+                    pp_attuale: newMove.pp_attuale,
+                    pp_max: newMove.pp_max,
+                    attiva: true // Assicuriamoci che rimanga attivo
+                }).eq('id', actualMoveInSlot.id);
+
+                // Aggiorniamo la riga della "nuova" mossa (Row Y) coi dati della mossa rimpiazzata
+                await supabase.from('mosse_pokemon').update({
+                    mossa_id: actualMoveInSlot.mossa_id,
+                    nome: actualMoveInSlot.nome,
+                    tipo: actualMoveInSlot.tipo,
+                    pp_attuale: actualMoveInSlot.pp_attuale,
+                    pp_max: actualMoveInSlot.pp_max,
+                    attiva: false // Passa in panchina!
+                }).eq('id', newMove.id);
+            } else {
+                // Caso Edge: se lo slot era COMPLETAMENTE vuoto (meno di 4 mosse equipaggiate)
+                // Invece di swappare, просто la rendiamo attiva.
+                await supabase.from('mosse_pokemon').update({ attiva: true }).eq('id', newMoveId);
             }
-
-            // 2. Attiva la nuova mossa
-            const { error } = await supabase
-                .from('mosse_pokemon')
-                .update({ attiva: true })
-                .eq('id', newMoveId);
-
-            if (error) throw error;
 
             setShowingSwapFor(null);
             fetchMoves(selectedPkmn.id);
@@ -145,6 +196,11 @@ export default function Squadra() {
     };
 
     const handleSwap = async (pkmnId, isMakingTitolare) => {
+        if (battleActive) {
+            showError("È in corso una lotta! Non puoi spostare i Pokémon.");
+            return;
+        }
+
         try {
             let newPos;
 
@@ -181,7 +237,7 @@ export default function Squadra() {
 
     const showError = (msg) => {
         setErrorMsg(msg);
-        setTimeout(() => setErrorMsg(""), 3000);
+        setTimeout(() => setErrorMsg(""), 1500);
     };
 
     const getHPColor = (current, max) => {
@@ -226,7 +282,7 @@ export default function Squadra() {
     return (
         <div className="squadra-page animate-fade-in">
             {errorMsg && (
-                <div className="error-toast animate-slide-up">
+                <div className="error-toast">
                     <AlertCircle size={20} />
                     {errorMsg}
                 </div>
@@ -435,8 +491,8 @@ export default function Squadra() {
                                 <h4 className="stats-title">Set Mosse (4 Slot Attivi)</h4>
                                 <div className="pkmn-moves-grid">
                                     {[0, 1, 2, 3].map(idx => {
-                                        const activeMoves = moves.filter(m => m.attiva);
-                                        const move = activeMoves[idx];
+                                        const activeMovesAll = moves.filter(m => m.attiva);
+                                        const move = activeMovesAll[idx];
 
                                         return (
                                             <div
@@ -459,6 +515,10 @@ export default function Squadra() {
                                                             className="btn-move-swap"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
+                                                                if (battleActive) {
+                                                                    showError("È in corso una lotta! Non puoi cambiare mosse ora.");
+                                                                    return;
+                                                                }
                                                                 setShowingSwapFor(idx);
                                                             }}
                                                             title="Cambia mossa"
@@ -467,7 +527,13 @@ export default function Squadra() {
                                                         </button>
                                                     </div>
                                                 ) : (
-                                                    <div className="move-empty-placeholder" onClick={() => setShowingSwapFor(idx)}>
+                                                    <div className="move-empty-placeholder" onClick={() => {
+                                                        if (battleActive) {
+                                                            showError("È in corso una lotta! Non puoi cambiare mosse ora.");
+                                                            return;
+                                                        }
+                                                        setShowingSwapFor(idx);
+                                                    }}>
                                                         <Plus size={14} />
                                                         <span>Slot Vuoto</span>
                                                     </div>
@@ -477,18 +543,24 @@ export default function Squadra() {
                                     })}
                                 </div>
                             </div>
+                        </div>
 
-                            {/* PANEL PER SWAP MOSSE INACTIVE - ORA DENTRO IL BODY */}
-                            {showingSwapFor !== null && (
-                                <div className="move-swap-overlay-inline animate-fade-in">
-                                    <div className="move-swap-panel-inline animate-slide-up">
-                                        <div className="swap-panel-header">
-                                            <h3>Cambia Mossa</h3>
-                                            <button className="btn-close-swap" onClick={() => setShowingSwapFor(null)}><XCircle size={20} /></button>
-                                        </div>
-                                        <div className="inactive-moves-list">
-                                            {moves.filter(m => !m.attiva).length > 0 ? (
-                                                moves.filter(m => !m.attiva).map(m => (
+                        {/* PANEL PER SWAP MOSSE INACTIVE - SPOSTATO FUORI DAL BODY SCROLLABILE */}
+                        {showingSwapFor !== null && (
+                            <div className="move-swap-overlay-inline animate-fade-in" onClick={() => setShowingSwapFor(null)}>
+                                <div className="move-swap-panel-inline animate-slide-up" onClick={e => e.stopPropagation()}>
+                                    <div className="swap-panel-header">
+                                        <h3>Cambia Mossa</h3>
+                                        <button className="btn-close-swap" onClick={() => setShowingSwapFor(null)}><XCircle size={20} /></button>
+                                    </div>
+                                    <div className="inactive-moves-list">
+                                        {(() => {
+                                            const activeMovesAll = moves.filter(m => m.attiva);
+                                            const equippedMoves = [0, 1, 2, 3].map(i => activeMovesAll[i]).filter(Boolean);
+                                            const unequippedMoves = moves.filter(m => !equippedMoves.find(em => em.id === m.id));
+                                            
+                                            return unequippedMoves.length > 0 ? (
+                                                unequippedMoves.map(m => (
                                                     <div key={m.id} className="inactive-move-card" onClick={() => handleMoveSwap(m.id, showingSwapFor)}>
                                                         <div className="move-info-main">
                                                             <span className="move-name-v2">{m.nome}</span>
@@ -505,12 +577,12 @@ export default function Squadra() {
                                                     <AlertCircle size={32} opacity={0.3} />
                                                     <p>Il Pokémon non conosce altre mosse.</p>
                                                 </div>
-                                            )}
-                                        </div>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
