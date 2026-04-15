@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Swords, Power, Users, Shield, Zap, Heart, Trash2, Plus, Users2, Search, Loader2 } from 'lucide-react';
+import LivePokemonCard from '../../components/master/LivePokemonCard';
 import './Battaglia.css';
 
 export default function Battaglia() {
     const { profile } = useAuth();
     const [battleState, setBattleState] = useState(null);
+    const [clickedPkmn, setClickedPkmn] = useState(null);
     const [loading, setLoading] = useState(true);
     const [players, setPlayers] = useState([]);
     const [npcs, setNpcs] = useState([]);
@@ -123,6 +125,17 @@ export default function Battaglia() {
                 hp_max: pokemon.hp_max,
                 livello: pokemon.livello,
                 immagine_url: getPkmnImage(pokemon),
+                condizione_stato: pokemon.condizione_stato || null,
+                stati_volatili: [],
+                modificatori_stat: {
+                    attacco: 0,
+                    difesa: 0,
+                    attacco_speciale: 0,
+                    difesa_speciale: 0,
+                    velocita: 0,
+                    elusione: 0,
+                    precisione: 0
+                },
                 side: side,
                 is_damaged: false
             }
@@ -136,6 +149,17 @@ export default function Battaglia() {
 
     const rimuoviDalCampo = async (instanceId) => {
         const nuovoInCampo = battleState.pokemon_in_campo.filter(p => p.id !== instanceId);
+        await supabase
+            .from('battaglia_attiva')
+            .update({ pokemon_in_campo: nuovoInCampo })
+            .eq('id', battleState.id);
+    };
+
+    const updateBattleStateLive = async (instanceId, updates) => {
+        if (!battleState) return;
+        const nuovoInCampo = battleState.pokemon_in_campo.map(p => 
+            p.id === instanceId ? { ...p, ...updates } : p
+        );
         await supabase
             .from('battaglia_attiva')
             .update({ pokemon_in_campo: nuovoInCampo })
@@ -264,13 +288,13 @@ export default function Battaglia() {
                                 <div className="empty-field-hint">Nessun nemico in campo</div>
                             )}
                             {(battleState.pokemon_in_campo || []).filter(p => p.side === 'master').map(p => (
-                                <div key={p.id} className="pkmn-field-item master">
+                                <div key={p.id} className="pkmn-field-item master hoverable transition-transform" onClick={() => setClickedPkmn(p)} style={{ cursor: 'pointer' }}>
                                     <div className="pkmn-field-info">
                                         <img src={p.immagine_url} width={30} />
                                         <span><strong>{p.nome}</strong> | {p.hp}/{p.hp_max} HP</span>
                                     </div>
                                     <div className="pkmn-field-actions">
-                                        <button className="btn-remove" onClick={() => rimuoviDalCampo(p.id)}><Trash2 size={14} /></button>
+                                        <button className="btn-remove" onClick={(e) => { e.stopPropagation(); rimuoviDalCampo(p.id); }}><Trash2 size={14} /></button>
                                     </div>
                                 </div>
                             ))}
@@ -282,13 +306,13 @@ export default function Battaglia() {
                                 <div className="empty-field-hint">Nessun alleato in campo</div>
                             )}
                             {(battleState.pokemon_in_campo || []).filter(p => p.side === 'player').map(p => (
-                                <div key={p.id} className="pkmn-field-item player">
+                                <div key={p.id} className="pkmn-field-item player hoverable transition-transform" onClick={() => setClickedPkmn(p)} style={{ cursor: 'pointer' }}>
                                     <div className="pkmn-field-info">
                                         <img src={p.immagine_url} width={30} />
                                         <span><strong>{p.nome}</strong> | {p.hp}/{p.hp_max} HP</span>
                                     </div>
                                     <div className="pkmn-field-actions">
-                                        <button className="btn-remove" onClick={() => rimuoviDalCampo(p.id)}><Trash2 size={14} /></button>
+                                        <button className="btn-remove" onClick={(e) => { e.stopPropagation(); rimuoviDalCampo(p.id); }}><Trash2 size={14} /></button>
                                     </div>
                                 </div>
                             ))}
@@ -296,6 +320,19 @@ export default function Battaglia() {
                     </div>
                 </div>
             </div>
+
+            {clickedPkmn && (
+                <LivePokemonCard 
+                    pokemonId={clickedPkmn.original_id}
+                    tableName={clickedPkmn.side === 'master' ? 'pokemon_nemici' : 'pokemon_giocatore'}
+                    onClose={() => setClickedPkmn(null)}
+                    isBattleMode={true}
+                    battleStateId={battleState?.id}
+                    battleInstanceId={clickedPkmn.id}
+                    pokemonInCampo={battleState?.pokemon_in_campo?.find(x => x.id === clickedPkmn.id)}
+                    updateBattleState={updateBattleStateLive}
+                />
+            )}
         </div>
     );
 }

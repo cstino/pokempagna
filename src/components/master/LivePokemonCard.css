@@ -1,0 +1,19 @@
+.custom-live-modal {
+    z-index: 99999;
+}
+
+.custom-live-modal .live-battle-dashboard {
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.05);
+}
+
+.custom-live-modal .live-battle-dashboard button:hover {
+    background: #444 !important;
+}
+
+.custom-live-modal .modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+.custom-live-modal .modal-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
