@@ -566,6 +566,7 @@ export default function NPC() {
                             nome: mDetails?.nome || 'Mossa',
                             tipo: mDetails?.tipo || 'normale',
                             pp_attuale: mDetails?.pp_max || 20,
+                            pp_max: mDetails?.pp_max || 20,
                             attiva: true
                         };
                     });
@@ -592,6 +593,7 @@ export default function NPC() {
                             nome: mDetails?.nome || 'Mossa',
                             tipo: mDetails?.tipo || 'normale',
                             pp_attuale: mDetails?.pp_max || 20,
+                            pp_max: mDetails?.pp_max || 20,
                             attiva: true
                         };
                     });

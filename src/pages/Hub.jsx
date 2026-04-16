@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import PokeballLogo from '../components/PokeballLogo';
+import { STATUS_CONDITIONS, VOLATILE_STATUS } from '../lib/statusEffects';
 import './Arena.css';
 
 
@@ -34,6 +35,47 @@ const CombatantCard = ({ pokemon }) => {
                 <div className="hud-hp-text">
                     {pokemon.hp} / {pokemon.hp_max} HP
                 </div>
+            </div>
+
+            {/* STATUS & MODIFIERS CONTAINER */}
+            <div className="hud-status-row">
+                {pokemon.condizione_stato && STATUS_CONDITIONS[pokemon.condizione_stato] && (
+                    <div className="hud-badge status-badge" style={{ backgroundColor: STATUS_CONDITIONS[pokemon.condizione_stato].color }}>
+                        {STATUS_CONDITIONS[pokemon.condizione_stato].nome.toUpperCase()}
+                    </div>
+                )}
+                
+                {pokemon.stati_volatili && pokemon.stati_volatili.map(v => {
+                    const eff = VOLATILE_STATUS[v] || { nome: v, color: '#6366f1' };
+                    return (
+                        <div key={v} className="hud-badge volatile-badge" style={{ backgroundColor: eff.color }}>
+                            {eff.nome.toUpperCase()}
+                        </div>
+                    );
+                })}
+
+                {pokemon.modificatori_stat && Object.entries(pokemon.modificatori_stat).map(([stat, val]) => {
+                    if (!val || val === 0) return null;
+                    const translate = {
+                        attacco: 'Att',
+                        difesa: 'Dif',
+                        attacco_speciale: 'SpA',
+                        difesa_speciale: 'SpD',
+                        velocita: 'Vel',
+                        elusione: 'Elu',
+                        precisione: 'Pre'
+                    };
+                    const isPositive = val > 0;
+                    const arrow = isPositive ? '⇑' : '⇓';
+                    const arrows = arrow.repeat(Math.abs(val));
+                    const color = isPositive ? '#34d399' : '#ef4444';
+                    
+                    return (
+                        <div key={stat} className="hud-badge mod-badge" style={{ color, borderColor: color }}>
+                            {translate[stat] || stat.substring(0,3).toUpperCase()}{arrows}
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

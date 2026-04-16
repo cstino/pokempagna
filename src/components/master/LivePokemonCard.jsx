@@ -172,6 +172,7 @@ export default function LivePokemonCard({
                         nome: mDetails?.nome || 'Mossa',
                         tipo: mDetails?.tipo || 'normale',
                         pp_attuale: mDetails?.pp_max || 20,
+                        pp_max: mDetails?.pp_max || 20,
                         attiva: true
                     };
                 });
@@ -203,7 +204,7 @@ export default function LivePokemonCard({
 
     // Gestione LIVE BATTLE STATE
     const handleLiveStatDrop = (stat, amount) => {
-        const newValue = Math.min(Math.max((liveModificatoriStat[stat] || 0) + amount, -6), 6);
+        const newValue = Math.min(Math.max((liveModificatoriStat[stat] || 0) + amount, -4), 4);
         const newMods = { ...liveModificatoriStat, [stat]: newValue };
         setLiveModificatoriStat(newMods);
         if (isBattleMode && updateBattleState) updateBattleState(battleInstanceId, { modificatori_stat: newMods });
