@@ -42,6 +42,9 @@ export default function LivePokemonCard({
     const [liveModificatoriStat, setLiveModificatoriStat] = useState({
         attacco: 0, difesa: 0, attacco_speciale: 0, difesa_speciale: 0, velocita: 0, elusione: 0, precisione: 0
     });
+    const [volatileInput, setVolatileInput] = useState('');
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
     useEffect(() => {
         caricaDatiBase();
@@ -161,11 +164,19 @@ export default function LivePokemonCard({
             await supabase.from('mosse_pokemon').delete().eq('pokemon_giocatore_id', pokemonId);
             
             if (selectedPkmnMoveIds.length > 0) {
-                const movesToInsert = selectedPkmnMoveIds.map(mid => ({
-                    pokemon_giocatore_id: pokemonId,
-                    mossa_id: mid
-                }));
-                await supabase.from('mosse_pokemon').insert(movesToInsert);
+                const movesToInsert = selectedPkmnMoveIds.map(mid => {
+                    const mDetails = allAvailableMoves.find(m => m.id === mid);
+                    return {
+                        pokemon_giocatore_id: pokemonId,
+                        mossa_id: mid,
+                        nome: mDetails?.nome || 'Mossa',
+                        tipo: mDetails?.tipo || 'normale',
+                        pp_attuale: mDetails?.pp_max || 20,
+                        attiva: true
+                    };
+                });
+                const { error: movesErr } = await supabase.from('mosse_pokemon').insert(movesToInsert);
+                if (movesErr) throw movesErr;
             }
 
             // 3. Se in battaglia, aggiorna gli HP massimi/attuali in diretta sulla scheda
@@ -296,45 +307,130 @@ export default function LivePokemonCard({
                                     <div>
                                         <div style={{ marginBottom: '15px' }}>
                                             <h4 style={{ fontSize: '0.8rem', color: '#aaa', marginBottom: '10px' }}>CONDIZIONE DI STATO</h4>
-                                            <select 
-                                                className="master-select-premium"
-                                                value={liveCondizioneStato || ""} 
-                                                onChange={(e) => setLiveStatus(e.target.value === "" ? null : e.target.value)}
-                                                style={{ width: '100%', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.5)', border: '1px solid #333', color: 'white' }}
-                                            >
-                                                <option value="">-- Nessuna --</option>
-                                                {Object.values(STATUS_CONDITIONS).map(sc => (
-                                                    <option key={sc.id} value={sc.id}>{sc.nome}</option>
-                                                ))}
-                                            </select>
+                                            <div style={{ position: 'relative' }}>
+                                                <div 
+                                                    onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.5)', border: '1px solid #333', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                                >
+                                                    {liveCondizioneStato && STATUS_CONDITIONS[liveCondizioneStato] ? (
+                                                        <>
+                                                        {React.createElement(STATUS_CONDITIONS[liveCondizioneStato].icon, { size: 16, color: STATUS_CONDITIONS[liveCondizioneStato].color })}
+                                                        <span style={{ color: STATUS_CONDITIONS[liveCondizioneStato].color, fontWeight: 'bold' }}>{STATUS_CONDITIONS[liveCondizioneStato].nome}</span>
+                                                        </>
+                                                    ) : (
+                                                        <span style={{ color: '#888' }}>-- Nessuna --</span>
+                                                    )}
+                                                </div>
+                                                
+                                                {showStatusDropdown && (
+                                                    <React.Fragment>
+                                                        {/* Sfondo invisibile per chiudere cliccando fuori */}
+                                                        <div 
+                                                            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }}
+                                                            onClick={() => setShowStatusDropdown(false)}
+                                                        />
+                                                        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#1e293b', border: '1px solid #333', borderRadius: '8px', maxHeight: '250px', overflowY: 'auto', zIndex: 11, marginTop: '4px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
+                                                            <div 
+                                                                onClick={() => { setLiveStatus(null); setShowStatusDropdown(false); }}
+                                                                style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid #333', color: '#888' }}
+                                                                onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
+                                                                onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                                                            >
+                                                                -- Nessuna --
+                                                            </div>
+                                                            {Object.values(STATUS_CONDITIONS).map(sc => (
+                                                                <div 
+                                                                    key={sc.id} 
+                                                                    onClick={() => { setLiveStatus(sc.id); setShowStatusDropdown(false); }}
+                                                                    style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                                                    onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
+                                                                    onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                                                                >
+                                                                    <sc.icon size={16} color={sc.color} />
+                                                                    <span style={{ color: sc.color, fontWeight: 'bold' }}>{sc.nome}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </React.Fragment>
+                                                )}
+                                            </div>
                                         </div>
 
                                         <div>
                                             <h4 style={{ fontSize: '0.8rem', color: '#aaa', marginBottom: '10px' }}>AGGIUNGI EFFETTO VOLATILE</h4>
-                                            <select 
-                                                className="master-select-premium"
-                                                value="" 
-                                                onChange={(e) => {
-                                                    if(e.target.value && !liveStatiVolatili.includes(e.target.value)) {
-                                                        toggleLiveVolatile(e.target.value);
-                                                    }
-                                                }}
-                                                style={{ width: '100%', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.5)', border: '1px solid #333', color: 'white', marginBottom: '10px' }}
-                                            >
-                                                <option value="">-- Seleziona per Aggiungere --</option>
-                                                {Object.values(VOLATILE_STATUS).map(vs => (
-                                                    <option key={vs.id} value={vs.id} disabled={liveStatiVolatili.includes(vs.id)}>{vs.nome}</option>
-                                                ))}
-                                            </select>
+                                            <form onSubmit={(e) => {
+                                                e.preventDefault();
+                                                const val = volatileInput.trim();
+                                                if(val && !liveStatiVolatili.includes(val)) {
+                                                    toggleLiveVolatile(val);
+                                                    setVolatileInput('');
+                                                    setShowSuggestions(false);
+                                                }
+                                            }}>
+                                                <div style={{ position: 'relative' }}>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Cerca o scrivi effetto a mano (poi Invio)..."
+                                                        value={volatileInput}
+                                                        onFocus={() => setShowSuggestions(true)}
+                                                        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                                                        onChange={(e) => setVolatileInput(e.target.value)}
+                                                        style={{ width: '100%', padding: '10px', borderRadius: '8px', background: 'rgba(0,0,0,0.5)', border: '1px solid #333', color: 'white', marginBottom: '10px' }}
+                                                    />
+                                                    
+                                                    {showSuggestions && (
+                                                        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#1e293b', border: '1px solid #333', borderRadius: '8px', maxHeight: '200px', overflowY: 'auto', zIndex: 10 }}>
+                                                            {Object.values(VOLATILE_STATUS)
+                                                                .filter(vs => vs.nome.toLowerCase().includes(volatileInput.toLowerCase()))
+                                                                .map(vs => (
+                                                                    <div 
+                                                                        key={vs.id} 
+                                                                        onClick={() => {
+                                                                            if(!liveStatiVolatili.includes(vs.nome)) {
+                                                                                toggleLiveVolatile(vs.nome);
+                                                                            }
+                                                                            setVolatileInput('');
+                                                                            setShowSuggestions(false);
+                                                                        }}
+                                                                        style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}
+                                                                        onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
+                                                                        onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                                                                    >
+                                                                        <vs.icon size={14} color={vs.color} />
+                                                                        {vs.nome}
+                                                                    </div>
+                                                            ))}
+                                                            {volatileInput.trim() !== '' && !Object.values(VOLATILE_STATUS).some(vs => vs.nome.toLowerCase() === volatileInput.trim().toLowerCase()) && (
+                                                                <div 
+                                                                    onClick={() => {
+                                                                        const val = volatileInput.trim();
+                                                                        if(!liveStatiVolatili.includes(val)) {
+                                                                            toggleLiveVolatile(val);
+                                                                        }
+                                                                        setVolatileInput('');
+                                                                        setShowSuggestions(false);
+                                                                    }}
+                                                                    style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#60a5fa' }}
+                                                                    onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
+                                                                    onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                                                                >
+                                                                    <Info size={14} /> Crea custom "{volatileInput}"
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </form>
                                             
                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                                {liveStatiVolatili.map(vsId => {
-                                                    const vs = VOLATILE_STATUS[vsId];
-                                                    if(!vs) return null;
-                                                    const Icon = vs.icon;
+                                                {liveStatiVolatili.map(vsText => {
+                                                    const knownVs = Object.values(VOLATILE_STATUS).find(v => v.nome.toLowerCase() === vsText.toLowerCase());
+                                                    const bgColor = knownVs ? knownVs.color : '#3b82f6';
+                                                    const RenderIcon = knownVs ? knownVs.icon : Info;
+                                                    
                                                     return (
-                                                        <div key={vs.id} onClick={() => toggleLiveVolatile(vs.id)} style={{ cursor: 'pointer', padding: '6px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px', background: vs.color, border: `1px solid ${vs.color}`, color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                                                            <Icon size={14} /> {vs.nome} <X size={14} style={{marginLeft: '4px', opacity: 0.7}}/>
+                                                        <div key={vsText} onClick={() => toggleLiveVolatile(vsText)} style={{ cursor: 'pointer', padding: '6px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px', background: bgColor, border: `1px solid ${bgColor}`, color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                                            <RenderIcon size={14} /> {vsText} <X size={14} style={{marginLeft: '4px', opacity: 0.7}}/>
                                                         </div>
                                                     )
                                                 })}
