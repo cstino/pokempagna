@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import PokeballLogo from '../components/PokeballLogo';
 import { STATUS_CONDITIONS, VOLATILE_STATUS } from '../lib/statusEffects';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import './Arena.css';
 
 
@@ -16,67 +17,76 @@ const CombatantCard = ({ pokemon }) => {
 
     return (
         <div className="combatant-hud animate-fade-in">
-            <div className="hud-header">
-                <span className="hud-name">{pokemon.nome}</span>
-                <span className="hud-lv">Lv.{pokemon.livello}</span>
-            </div>
-            
-            <div className="hud-hp-container">
-                <div className="hud-hp-bg">
-                    <div 
-                        className="hud-hp-fill" 
-                        style={{ 
-                            width: `${hpPercentage}%`,
-                            backgroundColor: getHpColor(),
-                            boxShadow: `0 0 10px ${getHpColor()}`
-                        }} 
-                    />
+            {/* RIGA 1: NOME, LIVELLO, BARRA HP */}
+            <div className="hud-riga-1">
+                <div className="hud-header">
+                    <span className="hud-name">{pokemon.nome}</span>
+                    <span className="hud-lv">Lv.{pokemon.livello}</span>
+                </div>
+                
+                <div className="hud-hp-container">
+                    <div className="hud-hp-bg">
+                        <div 
+                            className="hud-hp-fill" 
+                            style={{ 
+                                width: `${hpPercentage}%`,
+                                backgroundColor: getHpColor(),
+                                boxShadow: `0 0 10px ${getHpColor()}`
+                            }} 
+                        />
+                    </div>
                 </div>
                 <div className="hud-hp-text">
                     {pokemon.hp} / {pokemon.hp_max} HP
                 </div>
             </div>
 
-            {/* STATUS & MODIFIERS CONTAINER */}
-            <div className="hud-status-row">
-                {pokemon.condizione_stato && STATUS_CONDITIONS[pokemon.condizione_stato] && (
-                    <div className="hud-badge status-badge" style={{ backgroundColor: STATUS_CONDITIONS[pokemon.condizione_stato].color }}>
-                        {STATUS_CONDITIONS[pokemon.condizione_stato].nome.toUpperCase()}
-                    </div>
-                )}
-                
-                {pokemon.stati_volatili && pokemon.stati_volatili.map(v => {
-                    const eff = VOLATILE_STATUS[v] || { nome: v, color: '#6366f1' };
-                    return (
-                        <div key={v} className="hud-badge volatile-badge" style={{ backgroundColor: eff.color }}>
-                            {eff.nome.toUpperCase()}
+            {/* RIGA 2: CONDIZIONI & VOLATILI */}
+            {(pokemon.condizione_stato || (pokemon.stati_volatili && pokemon.stati_volatili.length > 0)) && (
+                <div className="hud-riga-2">
+                    {pokemon.condizione_stato && STATUS_CONDITIONS[pokemon.condizione_stato] && (
+                        <div className="hud-badge arena-status-badge" style={{ backgroundColor: STATUS_CONDITIONS[pokemon.condizione_stato].color }}>
+                            {STATUS_CONDITIONS[pokemon.condizione_stato].nome.substring(0,3).toUpperCase() + '.'}
                         </div>
-                    );
-                })}
-
-                {pokemon.modificatori_stat && Object.entries(pokemon.modificatori_stat).map(([stat, val]) => {
-                    if (!val || val === 0) return null;
-                    const translate = {
-                        attacco: 'Att',
-                        difesa: 'Dif',
-                        attacco_speciale: 'SpA',
-                        difesa_speciale: 'SpD',
-                        velocita: 'Vel',
-                        elusione: 'Elu',
-                        precisione: 'Pre'
-                    };
-                    const isPositive = val > 0;
-                    const arrow = isPositive ? '⇑' : '⇓';
-                    const arrows = arrow.repeat(Math.abs(val));
-                    const color = isPositive ? '#34d399' : '#ef4444';
+                    )}
                     
-                    return (
-                        <div key={stat} className="hud-badge mod-badge" style={{ color, borderColor: color }}>
-                            {translate[stat] || stat.substring(0,3).toUpperCase()}{arrows}
-                        </div>
-                    );
-                })}
-            </div>
+                    {pokemon.stati_volatili && pokemon.stati_volatili.map(v => {
+                        const eff = VOLATILE_STATUS[v] || { nome: v, color: '#6366f1' };
+                        return (
+                            <div key={v} className="hud-badge arena-volatile-badge" style={{ backgroundColor: eff.color }}>
+                                {eff.nome.substring(0,3).toUpperCase() + '.'}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* RIGA 3: MODIFICATORI STATISTICHE */}
+            {pokemon.modificatori_stat && Object.values(pokemon.modificatori_stat).some(v => v !== 0) && (
+                <div className="hud-riga-3">
+                    {Object.entries(pokemon.modificatori_stat).map(([stat, val]) => {
+                        if (!val || val === 0) return null;
+                        const translate = {
+                            attacco: 'Att', difesa: 'Dif', attacco_speciale: 'SpA',
+                            difesa_speciale: 'SpD', velocita: 'Vel', elusione: 'Elu', precisione: 'Pre'
+                        };
+                        const isPositive = val > 0;
+                        const ArrowIcon = isPositive ? ChevronUp : ChevronDown;
+                        const color = isPositive ? '#34d399' : '#ef4444';
+                        
+                        return (
+                            <div key={stat} className="hud-badge mod-badge" style={{ color, borderColor: color }}>
+                                <span>{translate[stat] || stat.substring(0,3).toUpperCase()}</span>
+                                <div className="mod-arrows">
+                                    {Array.from({ length: Math.abs(val) }).map((_, i) => (
+                                        <ArrowIcon key={i} size={12} strokeWidth={4} style={{ marginLeft: i === 0 ? '2px' : '-4px' }} />
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 };

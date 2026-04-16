@@ -60,8 +60,11 @@
   width: 100%;
 }
 
-.master-tier { align-items: flex-start; }
-.player-tier { align-items: flex-end; }
+.master-tier { align-items: stretch; padding-top: 1vh; }
+.player-tier { align-items: stretch; padding-bottom: 3vh; }
+
+.master-tier .pokemon-token-wrapper { justify-content: flex-start; }
+.player-tier .pokemon-token-wrapper { justify-content: flex-end; }
 
 /* Pokemon Modern Token */
 .pokemon-token-wrapper {
@@ -140,46 +143,108 @@
   transform-origin: bottom center;
 }
 
-/* Minimalist Combatant HUD */
+/* Videogame-Style Combatant HUD */
 .combatant-hud {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  width: calc(230px * var(--scale-factor));
+  gap: 2px;
+  width: calc(240px * var(--scale-factor));
+  height: calc(130px * var(--scale-factor)); /* ALTEZZA FISSA sufficiente a ospitare 3 righe piene evitando overflow/tagli in basso */
+  justify-content: flex-start;
   z-index: 10;
-  padding: 8px;
-  background: rgba(15, 23, 42, 0.7);
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  backdrop-filter: blur(8px);
+  padding: 0;
+  margin: 10px 0;
+}
+
+.hud-riga-1 {
+  flex-direction: column;
+  margin-bottom: 6px;
+  width: 100%;
+}
+
+.hud-riga-2, .hud-riga-3 {
+  display: flex;
+  width: 100%;
+}
+
+.hud-riga-2 {
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: flex-start;
+  margin-bottom: 4px;
+  padding: 0 4px;
+}
+
+.hud-riga-3 {
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: flex-start;
+  padding: 0 4px;
 }
 
 .hud-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+  padding: 0 2px;
 }
 
 .hud-name {
   font-family: var(--font-display);
-  font-size: calc(1.1rem * var(--scale-factor));
+  font-size: calc(1.3rem * var(--scale-factor));
   font-weight: 900;
   text-transform: uppercase;
   color: #fff;
+  text-shadow: 
+    -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000,
+    2px 2px 0 rgba(0,0,0,0.8), 0 4px 6px rgba(0,0,0,0.6);
+  letter-spacing: 0.5px;
+}
+
+.hud-lv {
+  font-weight: 900;
+  color: #fbbf24;
+  font-size: calc(0.9rem * var(--scale-factor));
+  text-shadow: 
+    -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000,
+    1px 2px 2px rgba(0,0,0,0.8);
+}
+
+.hud-hp-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .hud-hp-bg {
-  height: 8px;
-  background: rgba(0, 0, 0, 0.5);
+  width: 100%;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.7);
   border-radius: 4px;
+  border: 1px solid rgba(0,0,0,0.9);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  transform: skewX(-15deg);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.15);
+  margin: 2px 4px 0 4px;
 }
 
 .hud-hp-fill {
   height: 100%;
   transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.5s ease;
+  box-shadow: inset 0 3px 3px rgba(255,255,255,0.3); /* Effetto gloss */
+}
+
+.hud-hp-text {
+  font-weight: 900;
+  font-size: calc(0.8rem * var(--scale-factor));
+  color: #fff;
+  text-shadow: 
+    -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000,
+    1px 2px 2px rgba(0,0,0,0.8);
+  white-space: nowrap;
+  text-align: right;
+  margin-top: 3px;
+  padding-right: 6px;
 }
 
 /* Standby & Logo */
@@ -200,39 +265,42 @@
   -webkit-text-fill-color: transparent;
 }
 
-/* Status & Modifiers */
+/* Status & Modifiers (Legacy - kept for safety if needed, overridden by rigid rows above) */
 .hud-status-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 4px;
+  display: none;
 }
 
 .hud-badge {
-  font-size: 0.6rem;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
+  font-size: calc(0.6rem * var(--scale-factor));
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 12px;
   text-transform: uppercase;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-}
-
-.mod-badge {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.3);
+  border: 1px solid rgba(0,0,0,0.6);
   letter-spacing: 0.5px;
 }
 
-.status-badge {
-  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
-  border: 1px solid rgba(255,255,255,0.2);
+.mod-badge {
+  background: rgba(0, 0, 0, 0.75);
+  border-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
-.volatile-badge {
-  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
-  border: 1px solid rgba(255,255,255,0.2);
+.mod-arrows {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arena-status-badge, .arena-volatile-badge {
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.8);
+  min-width: calc(45px * var(--scale-factor)); /* Fissa i riquadri di Riga 2 affinchè VEL e TEN siano identici geometricamente */
+  text-align: center;
 }
