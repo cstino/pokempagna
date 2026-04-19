@@ -40,53 +40,50 @@ const CombatantCard = ({ pokemon }) => {
                     {pokemon.hp} / {pokemon.hp_max} HP
                 </div>
             </div>
+        </div>
+    );
+};
 
-            {/* RIGA 2: CONDIZIONI & VOLATILI */}
-            {(pokemon.condizione_stato || (pokemon.stati_volatili && pokemon.stati_volatili.length > 0)) && (
-                <div className="hud-riga-2">
-                    {pokemon.condizione_stato && STATUS_CONDITIONS[pokemon.condizione_stato] && (
-                        <div className="hud-badge arena-status-badge" style={{ backgroundColor: STATUS_CONDITIONS[pokemon.condizione_stato].color }}>
-                            {STATUS_CONDITIONS[pokemon.condizione_stato].nome.substring(0,3).toUpperCase() + '.'}
+const PokemonStatusColumn = ({ pokemon }) => {
+    return (
+        <div className="pokemon-status-column">
+            {/* CONDIZIONI & VOLATILI */}
+            {pokemon.condizione_stato && STATUS_CONDITIONS[pokemon.condizione_stato] && (
+                <div className="hud-badge arena-status-badge" style={{ backgroundColor: STATUS_CONDITIONS[pokemon.condizione_stato].color }}>
+                    {STATUS_CONDITIONS[pokemon.condizione_stato].nome.substring(0,3).toUpperCase() + '.'}
+                </div>
+            )}
+            
+            {pokemon.stati_volatili && pokemon.stati_volatili.map(v => {
+                const eff = VOLATILE_STATUS[v] || { nome: v, color: '#6366f1' };
+                return (
+                    <div key={v} className="hud-badge arena-volatile-badge" style={{ backgroundColor: eff.color }}>
+                        {eff.nome.substring(0,3).toUpperCase() + '.'}
+                    </div>
+                );
+            })}
+
+            {/* MODIFICATORI STATISTICHE */}
+            {pokemon.modificatori_stat && Object.entries(pokemon.modificatori_stat).map(([stat, val]) => {
+                if (!val || val === 0) return null;
+                const translate = {
+                    attacco: 'ATT', difesa: 'DIF', attacco_speciale: 'SPA',
+                    difesa_speciale: 'SPD', velocita: 'VEL', elusione: 'ELU', precisione: 'PRE'
+                };
+                const isPositive = val > 0;
+                const ArrowIcon = isPositive ? ChevronUp : ChevronDown;
+                const color = isPositive ? '#34d399' : '#ef4444';
+                
+                return (
+                    <div key={stat} className="hud-badge mod-badge" style={{ color, borderColor: color }}>
+                        <span className="mod-stat-name">{translate[stat] || stat.substring(0,3).toUpperCase()}</span>
+                        <div className="mod-arrows">
+                            {Math.abs(val) > 1 && <span className="mod-multiplier">{Math.abs(val)}</span>}
+                            <ArrowIcon size={12} strokeWidth={4} />
                         </div>
-                    )}
-                    
-                    {pokemon.stati_volatili && pokemon.stati_volatili.map(v => {
-                        const eff = VOLATILE_STATUS[v] || { nome: v, color: '#6366f1' };
-                        return (
-                            <div key={v} className="hud-badge arena-volatile-badge" style={{ backgroundColor: eff.color }}>
-                                {eff.nome.substring(0,3).toUpperCase() + '.'}
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-
-            {/* RIGA 3: MODIFICATORI STATISTICHE */}
-            {pokemon.modificatori_stat && Object.values(pokemon.modificatori_stat).some(v => v !== 0) && (
-                <div className="hud-riga-3">
-                    {Object.entries(pokemon.modificatori_stat).map(([stat, val]) => {
-                        if (!val || val === 0) return null;
-                        const translate = {
-                            attacco: 'Att', difesa: 'Dif', attacco_speciale: 'SpA',
-                            difesa_speciale: 'SpD', velocita: 'Vel', elusione: 'Elu', precisione: 'Pre'
-                        };
-                        const isPositive = val > 0;
-                        const ArrowIcon = isPositive ? ChevronUp : ChevronDown;
-                        const color = isPositive ? '#34d399' : '#ef4444';
-                        
-                        return (
-                            <div key={stat} className="hud-badge mod-badge" style={{ color, borderColor: color }}>
-                                <span>{translate[stat] || stat.substring(0,3).toUpperCase()}</span>
-                                <div className="mod-arrows">
-                                    {Array.from({ length: Math.abs(val) }).map((_, i) => (
-                                        <ArrowIcon key={i} size={12} strokeWidth={4} style={{ marginLeft: i === 0 ? '2px' : '-4px' }} />
-                                    ))}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+                    </div>
+                );
+            })}
         </div>
     );
 };
@@ -133,19 +130,23 @@ const PokemonTokenAnimated = ({ pokemon, side }) => {
 
             <div className="pokemon-token-v4">
                 <div className="token-inner">
-                    <img 
-                        src={imageUrl} 
-                        alt={pokemon.nome} 
-                        className={`pokemon-sprite ${isGif ? 'is-gif' : 'is-hd'} ${pokemon.pokedex_id >= 1000 ? 'is-custom' : ''}`}
-                        onError={(e) => {
-                            // Fallback se la GIF non esiste
-                            if (isGif) {
-                                e.target.src = pokemon.immagine_url;
-                                e.target.classList.remove('is-gif');
-                                e.target.classList.add('is-hd');
-                            }
-                        }}
-                    />
+                    <div className="sprite-anchor">
+                        <img 
+                            src={imageUrl} 
+                            alt={pokemon.nome} 
+                            className={`pokemon-sprite ${isGif ? 'is-gif' : 'is-hd'} ${pokemon.pokedex_id >= 1000 ? 'is-custom' : ''}`}
+                            onError={(e) => {
+                                // Fallback se la GIF non esiste
+                                if (isGif) {
+                                    e.target.src = pokemon.immagine_url;
+                                    e.target.classList.remove('is-gif');
+                                    e.target.classList.add('is-hd');
+                                }
+                            }}
+                        />
+                        {/* Colonna stati ancorata al wrapper dello sprite */}
+                        <PokemonStatusColumn pokemon={pokemon} />
+                    </div>
                 </div>
             </div>
 

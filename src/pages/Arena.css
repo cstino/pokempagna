@@ -60,8 +60,8 @@
   width: 100%;
 }
 
-.master-tier { align-items: stretch; padding-top: 1vh; }
-.player-tier { align-items: stretch; padding-bottom: 3vh; }
+.master-tier { align-items: stretch; padding-top: 0.5vh; }
+.player-tier { align-items: stretch; padding-bottom: 0.5vh; }
 
 .master-tier .pokemon-token-wrapper { justify-content: flex-start; }
 .player-tier .pokemon-token-wrapper { justify-content: flex-end; }
@@ -93,55 +93,57 @@
   display: flex;
   justify-content: center;
   overflow: visible;
+  position: relative;
 }
 
 /* Allineamento: Master in alto, Player in basso */
 .master-tier .token-inner { 
   align-items: flex-start;
-  padding-top: 3vh; /* Più spazio dalla barra HP */
+  padding-top: 8vh; /* Abbassati verso il centro */
 }
 .player-tier .token-inner { 
   align-items: flex-end;
-  padding-bottom: 3vh; /* Più spazio dalla barra HP */
+  padding-bottom: 8vh; /* Alzati verso il centro */
 }
+
+.sprite-anchor {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  /* Lo scale del contenitore deve gestire solo il fattore di affollamento (count) 
+     e il moltiplicatore di taglia (size-multi), non l'ingrandimento base 1.4x/2.2x */
+  transform: scale(calc(var(--scale-factor) * var(--size-multi, 1.0)));
+  transition: transform 0.3s ease;
+}
+
+/* Rimuoviamo il raddoppio dello scale dall'anchor, lo spostiamo sull'img */
+.sprite-anchor:has(.is-gif) {
+  transform: scale(calc(var(--scale-factor) * var(--size-multi, 1.0)));
+}
+
+.master-tier .sprite-anchor { 
+  transform-origin: top center; 
+  /* Rimosso translateY per permettere il bounce naturale col padding-top */
+}
+.player-tier .sprite-anchor { transform-origin: bottom center; }
 
 .token-inner img {
   width: auto;
   height: auto;
-  max-width: calc(140px * var(--scale-factor));
-  max-height: calc(140px * var(--scale-factor));
-  /* Base scale per le immagini HD */
-  transform: scale(calc(1.4 * var(--scale-factor) * var(--size-multi, 1.0)));
+  max-width: 140px;
+  max-height: 140px;
+  /* L'ingrandimento base 1.4x o 2.2x torna qui, così non influisce sulle etichette */
+  transform: scale(1.4);
   filter: drop-shadow(0 15px 30px rgba(0,0,0,0.8));
   image-rendering: auto;
-  transition: transform 0.3s ease;
 }
 
-/* OTTIMIZZAZIONE GIF ANIMATE 3D HD */
 .token-inner img.is-gif {
-  /* Zoom ricalibrato a 2.2x per evitare che i giganti occupino il centro */
-  transform: scale(calc(2.2 * var(--scale-factor) * var(--size-multi, 1.0)));
-  image-rendering: auto;
-  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.6));
+  transform: scale(2.2);
 }
 
-.master-tier .token-inner img.is-gif {
-  transform: scale(calc(2.2 * var(--scale-factor) * var(--size-multi, 1.0)));
-  transform-origin: top center;
-}
-
-.player-tier .token-inner img.is-gif {
-  transform: scale(calc(2.2 * var(--scale-factor) * var(--size-multi, 1.0)));
-  transform-origin: bottom center;
-}
-
-.master-tier .token-inner img {
-  transform-origin: top center;
-}
-
-.player-tier .token-inner img {
-  transform-origin: bottom center;
-}
+/* Rimosse logiche trasformazione singola immagine, ora gestite da .sprite-anchor */
 
 /* Videogame-Style Combatant HUD */
 .combatant-hud {
@@ -149,11 +151,11 @@
   flex-direction: column;
   gap: 2px;
   width: calc(240px * var(--scale-factor));
-  height: calc(130px * var(--scale-factor)); /* ALTEZZA FISSA sufficiente a ospitare 3 righe piene evitando overflow/tagli in basso */
+  height: calc(75px * var(--scale-factor)); /* Ridotto dopo lo spostamento delle icone in colonna */
   justify-content: flex-start;
   z-index: 10;
   padding: 0;
-  margin: 10px 0;
+  margin: 0;
 }
 
 .hud-riga-1 {
@@ -162,24 +164,17 @@
   width: 100%;
 }
 
-.hud-riga-2, .hud-riga-3 {
+/* .hud-riga-2 e .hud-riga-3 rimosse dal HUD e spostate in .pokemon-status-column */
+.pokemon-status-column {
+  position: absolute;
+  top: -10px;
+  right: -75px; /* Spostato più a destra per allinearsi con la barra HP */
   display: flex;
-  width: 100%;
-}
-
-.hud-riga-2 {
-  flex-wrap: wrap;
-  gap: 5px;
-  justify-content: flex-start;
-  margin-bottom: 4px;
-  padding: 0 4px;
-}
-
-.hud-riga-3 {
-  flex-wrap: wrap;
-  gap: 5px;
-  justify-content: flex-start;
-  padding: 0 4px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  z-index: 20;
+  pointer-events: none;
 }
 
 .hud-header {
@@ -271,10 +266,12 @@
 }
 
 .hud-badge {
-  font-size: calc(0.6rem * var(--scale-factor));
+  font-size: 0.65rem;
   font-weight: 900;
-  padding: 3px 8px;
-  border-radius: 12px;
+  padding: 1px 5px;
+  width: 48px; /* Più stretto per non sembrare gigante */
+  height: 18px;
+  border-radius: 4px;
   text-transform: uppercase;
   color: white;
   display: flex;
@@ -290,7 +287,18 @@
   border-color: rgba(0, 0, 0, 0.9);
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 2px;
+}
+
+.mod-stat-name {
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+
+.mod-multiplier {
+  font-size: 0.85em;
+  margin-right: 1px;
 }
 
 .mod-arrows {
@@ -301,6 +309,5 @@
 
 .arena-status-badge, .arena-volatile-badge {
   text-shadow: 1px 1px 0 rgba(0,0,0,0.8);
-  min-width: calc(45px * var(--scale-factor)); /* Fissa i riquadri di Riga 2 affinchè VEL e TEN siano identici geometricamente */
   text-align: center;
 }
