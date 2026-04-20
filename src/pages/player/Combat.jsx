@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Zap, Info, Loader2, PlayCircle, AlertCircle, ChevronDown } from 'lucide-react';
+import { Zap, Info, Loader2, PlayCircle, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { getTypeColor, getTypeLabel, getTypeIcon } from '../../lib/typeColors';
+import { STATUS_CONDITIONS, VOLATILE_STATUS } from '../../lib/statusEffects';
 import './Combat.css';
 
 export default function Combat() {
@@ -15,6 +16,10 @@ export default function Combat() {
     const [slots, setSlots] = useState(3);
     const [infoMove, setInfoMove] = useState(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    
+    // Target Selection State
+    const [pendingMove, setPendingMove] = useState(null);
+    const [selectedTargets, setSelectedTargets] = useState([]);
 
     useEffect(() => {
         if (profile) {
@@ -98,7 +103,8 @@ export default function Combat() {
                         pp_max,
                         danni,
                         accuratezza,
-                        effetto
+                        effetto,
+                        priorita
                     )
                 `)
                 .eq('pokemon_giocatore_id', pkmn.id);
@@ -154,6 +160,48 @@ export default function Combat() {
             .eq('id', activeBattle.id);
     };
 
+    const confermaMossa = async () => {
+        if (!pendingMove || selectedTargets.length === 0) return;
+
+        const movePriority = pendingMove.info?.priorita || 0;
+        const pkmnSpeed = selectedPkmn.velocita || 0;
+        const totalInit = movePriority + pkmnSpeed;
+
+        const nuovaAzione = {
+            id: crypto.randomUUID(),
+            pkmn_id: selectedPkmn.id,
+            pkmn_nome: selectedPkmn.soprannome || selectedPkmn.nome,
+            pkmn_livello: selectedPkmn.livello,
+            allenatore: profile.nome,
+            mossa_id: pendingMove.id,
+            mossa_nome: pendingMove.nome,
+            mossa_tipo: pendingMove.tipo,
+            valore_iniziativa: totalInit,
+            bersagli: selectedTargets.map(t => t.nome)
+        };
+
+        const nuovaCoda = [...(activeBattle.mosse_in_coda || []), nuovaAzione];
+
+        const { error } = await supabase
+            .from('battaglia_attiva')
+            .update({ mosse_in_coda: nuovaCoda })
+            .eq('id', activeBattle.id);
+
+        if (!error) {
+            setPendingMove(null);
+            setSelectedTargets([]);
+            alert(`Mossa ${pendingMove.nome} pianificata con iniziativa ${totalInit}!`);
+        }
+    };
+
+    const toggleTarget = (target) => {
+        if (selectedTargets.find(t => t.id === target.id)) {
+            setSelectedTargets(selectedTargets.filter(t => t.id !== target.id));
+        } else {
+            setSelectedTargets([...selectedTargets, target]);
+        }
+    };
+
     if (loading) return <div className="combat-controller-container flex-center"><Loader2 className="spin" size={40} /></div>;
 
     const currentFieldData = selectedPkmn ? getPkmnInFieldData(selectedPkmn.id) : null;
@@ -172,7 +220,54 @@ export default function Combat() {
                                     <img src={selectedPkmn.campagna_img || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${selectedPkmn.real_pokemon_id}.png`} alt={selectedPkmn.specie_nome} />
                                 </div>
                                 <div className="pkmn-name-block">
-                                    <span className="pkmn-species">{selectedPkmn.specie_nome}</span>
+                                    <div className="pkmn-main-row">
+                                        <span className="pkmn-species">{selectedPkmn.specie_nome}</span>
+                                        {/* Status badges row */}
+                                        <div className="pkmn-status-row">
+                                            {currentFieldData?.condizione_stato && STATUS_CONDITIONS[currentFieldData.condizione_stato] && (
+                                                <span 
+                                                    className="combat-status-badge" 
+                                                    style={{ backgroundColor: STATUS_CONDITIONS[currentFieldData.condizione_stato].color }}
+                                                >
+                                                    {STATUS_CONDITIONS[currentFieldData.condizione_stato].nome.substring(0,3).toUpperCase()}
+                                                </span>
+                                            )}
+                                            {currentFieldData?.stati_volatili && currentFieldData.stati_volatili.map(v => {
+                                                const s = VOLATILE_STATUS[v] || { nome: v, color: '#6366f1' };
+                                                return (
+                                                    <span 
+                                                        key={v} 
+                                                        className="combat-status-badge volatile" 
+                                                        style={{ backgroundColor: s.color }}
+                                                    >
+                                                        {s.nome.substring(0,3).toUpperCase()}
+                                                    </span>
+                                                );
+                                            })}
+
+                                            {/* Stat Modifiers */}
+                                            {currentFieldData?.modificatori_stat && Object.entries(currentFieldData.modificatori_stat).map(([stat, val]) => {
+                                                if (!val || val === 0) return null;
+                                                const translate = {
+                                                    attacco: 'ATT', difesa: 'DIF', attacco_speciale: 'SPA',
+                                                    difesa_speciale: 'SPD', velocita: 'VEL', elusione: 'ELU', precisione: 'PRE'
+                                                };
+                                                const isPositive = val > 0;
+                                                const ArrowIcon = isPositive ? ChevronUp : ChevronDown;
+                                                const color = isPositive ? '#34d399' : '#ef4444';
+                                                
+                                                return (
+                                                    <span key={stat} className="combat-status-badge mod" style={{ color, borderColor: color, background: 'rgba(0,0,0,0.6)' }}>
+                                                        <span style={{ fontSize: '0.8em', opacity: 0.9 }}>{translate[stat] || stat.substring(0,3).toUpperCase()}</span>
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '1px', marginLeft: '2px' }}>
+                                                            {Math.abs(val) > 1 && <span style={{ fontSize: '0.8em' }}>{Math.abs(val)}</span>}
+                                                            <ArrowIcon size={10} strokeWidth={4} />
+                                                        </span>
+                                                    </span>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                     {selectedPkmn.soprannome && <span className="pkmn-nickname">"{selectedPkmn.soprannome}"</span>}
                                 </div>
                             </div>
@@ -217,7 +312,7 @@ export default function Combat() {
                                         key={move.id} 
                                         className="move-btn"
                                         style={{ '--type-color': getTypeColor(move.tipo) }}
-                                        onClick={() => console.log("Mossa usata:", move.nome)}
+                                        onClick={() => setPendingMove(move)}
                                     >
                                         <div className="move-type-circle-combat">
                                             <img src={getTypeIcon(move.tipo)} alt={move.tipo} />
@@ -293,9 +388,94 @@ export default function Combat() {
                     </div>
                 </div>
             )}
+
+            {/* OVERLAY SELEZIONE BERSAGLIO */}
+            {pendingMove && (
+                <div className="modal-overlay target-selector-overlay">
+                    <div className="modal-content animate-pop-in">
+                        <div className="flex-between" style={{ marginBottom: '20px' }}>
+                            <div className="target-select-title">
+                                <span style={{ fontSize: '0.8rem', opacity: 0.7, textTransform: 'uppercase' }}>Seleziona Bersagli per</span>
+                                <h3 style={{ textTransform: 'uppercase', color: getTypeColor(pendingMove.tipo) }}>{pendingMove.nome}</h3>
+                            </div>
+                            <button onClick={() => setPendingMove(null)} className="btn-circle">✕</button>
+                        </div>
+
+                        <div className="target-selection-columns">
+                            {/* COLONNA AVVERSARI (MASTER) */}
+                            <div className="target-column">
+                                <label className="column-label master">AVVERSARI</label>
+                                <div className="target-list-inner">
+                                    {(activeBattle?.pokemon_in_campo || [])
+                                        .filter(p => p.side === 'master')
+                                        .map(p => (
+                                        <div 
+                                            key={p.id} 
+                                            className={`target-card ${selectedTargets.find(t => t.id === p.id) ? 'selected' : ''}`}
+                                            onClick={() => toggleTarget(p)}
+                                        >
+                                            <div className="target-img">
+                                                <img src={p.immagine_url} alt={p.nome} />
+                                                {p.original_id === selectedPkmn?.id && (
+                                                    <span className="active-attacker-dot" title="Attaccante"></span>
+                                                )}
+                                            </div>
+                                            <div className="target-info">
+                                                <span className="target-name">{p.nome}</span>
+                                                <span className="target-trainer"><i>{p.allenatore}</i></span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {(activeBattle?.pokemon_in_campo || []).filter(p => p.side === 'master').length === 0 && (
+                                        <div className="empty-col-hint">Nessuno in campo</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* COLONNA ALLEATI (ALTRI GIOCATORI) */}
+                            <div className="target-column">
+                                <label className="column-label player">ALLEATI</label>
+                                <div className="target-list-inner">
+                                    {(activeBattle?.pokemon_in_campo || [])
+                                        .filter(p => p.side === 'player')
+                                        .map(p => (
+                                        <div 
+                                            key={p.id} 
+                                            className={`target-card ${selectedTargets.find(t => t.id === p.id) ? 'selected' : ''}`}
+                                            onClick={() => toggleTarget(p)}
+                                        >
+                                            <div className="target-img">
+                                                <img src={p.immagine_url} alt={p.nome} />
+                                                {p.original_id === selectedPkmn?.id && (
+                                                    <span className="active-attacker-dot" title="Attaccante"></span>
+                                                )}
+                                            </div>
+                                            <div className="target-info">
+                                                <span className="target-name">{p.nome}</span>
+                                                <span className="target-trainer"><i>{p.allenatore}</i></span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {(activeBattle?.pokemon_in_campo || []).filter(p => p.side === 'player').length === 0 && (
+                                        <div className="empty-col-hint">Nessuno in campo</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <button 
+                            className="btn-confirm-action" 
+                            disabled={selectedTargets.length === 0}
+                            onClick={confermaMossa}
+                        >
+                            Conferma Azione
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
-}
+};
 
 function getHPColor(current, max) {
     const pct = (current / max) * 100;

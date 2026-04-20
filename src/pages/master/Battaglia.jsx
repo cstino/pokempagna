@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Swords, Power, Users, Shield, Zap, Heart, Trash2, Plus, Users2, Search, Loader2 } from 'lucide-react';
+import { Swords, Power, Users, Shield, Zap, Heart, Trash2, Plus, Users2, Search, Loader2, ChevronLeft, ChevronRight, Info, Clock, CheckCircle2 } from 'lucide-react';
+import { getTypeColor, getTypeIcon } from '../../lib/typeColors';
 import LivePokemonCard from '../../components/master/LivePokemonCard';
 import './Battaglia.css';
 
@@ -17,6 +18,13 @@ export default function Battaglia() {
     const [library, setLibrary] = useState([]);
     const [selectedEntityId, setSelectedEntityId] = useState(null);
     const [entityType, setEntityType] = useState('player'); // 'player' | 'npc'
+    
+    // Master Combat Console State
+    const [activeMasterIndex, setActiveMasterIndex] = useState(0);
+    const [masterMoves, setMasterMoves] = useState([]);
+    const [loadingMoves, setLoadingMoves] = useState(false);
+    const [pendingMasterMove, setPendingMasterMove] = useState(null);
+    const [selectedMasterTargets, setSelectedMasterTargets] = useState([]);
 
     useEffect(() => {
         caricaDatiBattaglia();
@@ -30,6 +38,46 @@ export default function Battaglia() {
 
         return () => supabase.removeChannel(channel);
     }, []);
+    
+    const masterInField = (battleState?.pokemon_in_campo || []).filter(p => p.side === 'master');
+    const activeMasterPkmn = masterInField[activeMasterIndex] || null;
+
+    useEffect(() => {
+        if (activeMasterPkmn) {
+            caricaMosseMaster(activeMasterPkmn);
+        } else {
+            setMasterMoves([]);
+        }
+    }, [activeMasterPkmn?.id]);
+
+    const caricaMosseMaster = async (pkmn) => {
+        setLoadingMoves(true);
+        try {
+            const { data, error } = await supabase
+                .from('mosse_pokemon')
+                .select(`
+                    *,
+                    info:mosse_disponibili (
+                        descrizione,
+                        categoria,
+                        pp_max,
+                        danni,
+                        accuratezza,
+                        effetto,
+                        priorita
+                    )
+                `)
+                .eq('pokemon_giocatore_id', pkmn.original_id);
+            
+            if (error) throw error;
+            setMasterMoves((data || []).filter(m => m.attiva));
+        } catch (err) {
+            console.error("Errore caricaMosseMaster:", err);
+            setMasterMoves([]);
+        } finally {
+            setLoadingMoves(false);
+        }
+    };
 
     const caricaDatiBattaglia = async () => {
         const { data } = await supabase.from('battaglia_attiva').select('*').single();
@@ -166,6 +214,73 @@ export default function Battaglia() {
             .eq('id', battleState.id);
     };
 
+    const toggleHaAgito = async (instanceId) => {
+        const pkmn = battleState.pokemon_in_campo.find(x => x.id === instanceId);
+        if (!pkmn) return;
+        await updateBattleStateLive(instanceId, { ha_agito: !pkmn.ha_agito });
+    };
+
+    const svuotaTurni = async () => {
+        if (!window.confirm("Sei sicuro di voler svuotare la coda dei turni?")) return;
+        const resetCampo = (battleState.pokemon_in_campo || []).map(p => ({ ...p, ha_agito: false }));
+        await supabase
+            .from('battaglia_attiva')
+            .update({ 
+                mosse_in_coda: [],
+                pokemon_in_campo: resetCampo 
+            })
+            .eq('id', battleState.id);
+    };
+
+    const confermaMossaMaster = async () => {
+        if (!pendingMasterMove || selectedMasterTargets.length === 0) return;
+
+        const movePriority = pendingMasterMove.info?.priorita || 0;
+        const pkmnSpeed = activeMasterPkmn.velocita || 0;
+        const totalInit = movePriority + pkmnSpeed;
+
+        const nuovaAzione = {
+            id: crypto.randomUUID(),
+            pkmn_id: activeMasterPkmn.id,
+            pkmn_nome: activeMasterPkmn.nome,
+            pkmn_livello: activeMasterPkmn.livello,
+            allenatore: "LATO MASTER",
+            mossa_id: pendingMasterMove.id,
+            mossa_nome: pendingMasterMove.nome,
+            mossa_tipo: pendingMasterMove.tipo,
+            valore_iniziativa: totalInit,
+            bersagli: selectedMasterTargets.map(t => t.nome)
+        };
+
+        const nuovaCoda = [...(battleState.mosse_in_coda || []), nuovaAzione];
+
+        await supabase
+            .from('battaglia_attiva')
+            .update({ mosse_in_coda: nuovaCoda })
+            .eq('id', battleState.id);
+
+        setPendingMasterMove(null);
+        setSelectedMasterTargets([]);
+        setActiveMasterIndex(prev => (prev < masterInField.length - 1 ? prev + 1 : prev));
+    };
+
+    const toggleTargetMaster = (target) => {
+        if (selectedMasterTargets.find(t => t.id === target.id)) {
+            setSelectedMasterTargets(selectedMasterTargets.filter(t => t.id !== target.id));
+        } else {
+            setSelectedMasterTargets([...selectedMasterTargets, target]);
+        }
+    };
+
+    const rimuoviTurno = async (index) => {
+        const nuovaCoda = [...(battleState.mosse_in_coda || [])];
+        nuovaCoda.splice(index, 1);
+        await supabase
+            .from('battaglia_attiva')
+            .update({ mosse_in_coda: nuovaCoda })
+            .eq('id', battleState.id);
+    };
+
 
     if (loading) return <div className="flex-center p-3xl"><Loader2 className="spin" /></div>;
 
@@ -284,16 +399,29 @@ export default function Battaglia() {
                     <div className="field-management">
                         <div className="field-side-group">
                             <label>Lato Master (Sopra - Ruotati 180°)</label>
-                            {(battleState.pokemon_in_campo || []).filter(p => p.side === 'master').length === 0 && (
+                            {masterInField.length === 0 && (
                                 <div className="empty-field-hint">Nessun nemico in campo</div>
                             )}
-                            {(battleState.pokemon_in_campo || []).filter(p => p.side === 'master').map(p => (
-                                <div key={p.id} className="pkmn-field-item master hoverable transition-transform" onClick={() => setClickedPkmn(p)} style={{ cursor: 'pointer' }}>
+                            {masterInField.map((p, idx) => (
+                                <div 
+                                    key={p.id} 
+                                    className={`pkmn-field-item master hoverable transition-transform ${activeMasterPkmn?.id === p.id ? 'active-combat' : ''}`}
+                                    onClick={() => {
+                                        setClickedPkmn(p);
+                                        setActiveMasterIndex(idx);
+                                    }} 
+                                    style={{ cursor: 'pointer' }}
+                                >
                                     <div className="pkmn-field-info">
                                         <img src={p.immagine_url} width={30} />
                                         <span><strong>{p.nome}</strong> | {p.hp}/{p.hp_max} HP</span>
                                     </div>
                                     <div className="pkmn-field-actions">
+                                        <button 
+                                            className={`btn-status-circle ${p.ha_agito ? 'acted' : 'waiting'}`} 
+                                            onClick={(e) => { e.stopPropagation(); toggleHaAgito(p.id); }}
+                                            title={p.ha_agito ? 'Ha agito' : 'Deve agire'}
+                                        />
                                         <button className="btn-remove" onClick={(e) => { e.stopPropagation(); rimuoviDalCampo(p.id); }}><Trash2 size={14} /></button>
                                     </div>
                                 </div>
@@ -312,6 +440,11 @@ export default function Battaglia() {
                                         <span><strong>{p.nome}</strong> | {p.hp}/{p.hp_max} HP</span>
                                     </div>
                                     <div className="pkmn-field-actions">
+                                        <button 
+                                            className={`btn-status-circle ${p.ha_agito ? 'acted' : 'waiting'}`} 
+                                            onClick={(e) => { e.stopPropagation(); toggleHaAgito(p.id); }}
+                                            title={p.ha_agito ? 'Ha agito' : 'Deve agire'}
+                                        />
                                         <button className="btn-remove" onClick={(e) => { e.stopPropagation(); rimuoviDalCampo(p.id); }}><Trash2 size={14} /></button>
                                     </div>
                                 </div>
@@ -320,6 +453,207 @@ export default function Battaglia() {
                     </div>
                 </div>
             </div>
+
+            {/* 3. MASTER COMBAT CONSOLE */}
+            {masterInField.length > 0 && (
+                <div className="battle-panel-card master-combat-panel animate-slide-up">
+                    <div className="panel-header master-combat-header">
+                        <div className="flex-center gap-12">
+                            <Zap size={20} className="text-accent" />
+                            <h2>Console Mosse Master</h2>
+                        </div>
+                        
+                        {masterInField.length > 1 && (
+                            <div className="combat-nav-arrows">
+                                <button 
+                                    onClick={() => setActiveMasterIndex(prev => (prev > 0 ? prev - 1 : masterInField.length - 1))}
+                                    className="nav-arrow-btn"
+                                >
+                                    <ChevronLeft size={20} />
+                                </button>
+                                <span className="nav-index-indicator">{activeMasterIndex + 1} / {masterInField.length}</span>
+                                <button 
+                                    onClick={() => setActiveMasterIndex(prev => (prev < masterInField.length - 1 ? prev + 1 : 0))}
+                                    className="nav-arrow-btn"
+                                >
+                                    <ChevronRight size={20} />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="master-combat-content">
+                        {activeMasterPkmn && (
+                            <div className="active-master-header">
+                                <img src={activeMasterPkmn.immagine_url} alt={activeMasterPkmn.nome} className="active-master-img" />
+                                <div className="active-master-details">
+                                    <span className="name">{activeMasterPkmn.nome}</span>
+                                    <span className="trainer">Lato Master | Liv. {activeMasterPkmn.livello}</span>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="moves-grid-master">
+                            {loadingMoves ? (
+                                <div className="loading-full"><Loader2 className="spin" /></div>
+                            ) : masterMoves.length > 0 ? (
+                                masterMoves.map(move => (
+                                    <button 
+                                        key={move.id} 
+                                        className="move-card-master"
+                                        style={{ '--type-color': getTypeColor(move.tipo) }}
+                                        onClick={() => setPendingMasterMove(move)}
+                                    >
+                                        <div className="move-type-icon">
+                                            <img src={getTypeIcon(move.tipo)} alt={move.tipo} />
+                                        </div>
+                                        <div className="move-core">
+                                            <span className="m-name">{move.nome}</span>
+                                            <span className="m-pp">PP {move.pp_attuale}/{move.info?.pp_max || move.pp_max}</span>
+                                        </div>
+                                        <div className="m-power">
+                                            <span>{move.info?.danni || '--'}</span>
+                                        </div>
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="empty-moves-msg">Nessuna mossa attiva configurata per questo Pokémon.</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 4. SEZIONE TURNI */}
+            <div className="battle-panel-card turns-panel animate-slide-up" style={{ marginTop: '24px' }}>
+                <div className="panel-header turns-header">
+                    <div className="flex-center gap-12">
+                        <Clock size={20} color="#fbbf24" />
+                        <h2>TURNI BATTAGLIA</h2>
+                    </div>
+                    {battleState?.mosse_in_coda?.length > 0 && (
+                        <button className="btn-clear-turns" onClick={svuotaTurni}>
+                            <CheckCircle2 size={16} /> FINE TURNO
+                        </button>
+                    )}
+                </div>
+
+                <div className="turns-content">
+                    {(!battleState?.mosse_in_coda || battleState.mosse_in_coda.length === 0) ? (
+                        <div className="empty-turns-msg">In attesa che gli allenatori pianifichino le mosse...</div>
+                    ) : (
+                        <div className="turns-list">
+                            {[...(battleState.mosse_in_coda || [])]
+                                .sort((a,b) => b.valore_iniziativa - a.valore_iniziativa)
+                                .map((t, idx) => (
+                                    <div key={idx} className="turn-notification animate-pop-in">
+                                        <div className="turn-priority-badge">
+                                            {t.valore_iniziativa}
+                                        </div>
+                                        <div className="turn-main-info">
+                                            <span className="turn-text">
+                                                <strong>{t.pkmn_nome}</strong> <small>(Lv.{t.pkmn_livello})</small> di <strong>{t.allenatore}</strong> vuole usare 
+                                                <span className="turn-move-highlight" style={{ backgroundColor: getTypeColor(t.mossa_tipo) }}>
+                                                    {t.mossa_nome}
+                                                </span> 
+                                                su <strong>{t.bersagli?.join(', ') || 'qualcuno'}</strong>
+                                            </span>
+                                        </div>
+                                        <button className="btn-remove-turn" onClick={() => rimuoviTurno(idx)} title="Rimuovi questo turno">
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* OVERLAY SELEZIONE BERSAGLIO MASTER */}
+            {pendingMasterMove && (
+                <div className="modal-overlay master-target-selector">
+                    <div className="modal-content animate-pop-in">
+                        <div className="flex-between" style={{ marginBottom: '20px' }}>
+                            <div className="target-select-title">
+                                <span style={{ fontSize: '0.8rem', opacity: 0.7, textTransform: 'uppercase' }}>Bersagli per {activeMasterPkmn?.nome}</span>
+                                <h3 style={{ textTransform: 'uppercase', color: getTypeColor(pendingMasterMove.tipo) }}>{pendingMasterMove.nome}</h3>
+                            </div>
+                            <button onClick={() => setPendingMasterMove(null)} className="btn-circle">✕</button>
+                        </div>
+
+                        <div className="target-selection-columns">
+                            {/* COLONNA MASTER */}
+                            <div className="target-column">
+                                <label className="column-label master">LATO MASTER (NEMICI)</label>
+                                <div className="target-list-inner">
+                                    {(battleState?.pokemon_in_campo || [])
+                                        .filter(p => p.side === 'master')
+                                        .map(p => (
+                                        <div 
+                                            key={p.id} 
+                                            className={`target-card-master ${selectedMasterTargets.find(t => t.id === p.id) ? 'selected' : ''}`}
+                                            onClick={() => toggleTargetMaster(p)}
+                                        >
+                                            <div className="target-img">
+                                                <img src={p.immagine_url} width={36} alt={p.nome} />
+                                                {p.id === activeMasterPkmn?.id && (
+                                                    <span className="active-attacker-dot" title="Attaccante"></span>
+                                                )}
+                                            </div>
+                                            <div className="target-info">
+                                                <span className="target-name">{p.nome}</span>
+                                                <span className="target-trainer"><i>{p.allenatore}</i></span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {(battleState?.pokemon_in_campo || []).filter(p => p.side === 'master').length === 0 && (
+                                        <div className="empty-col-hint">Nessun nemico in campo</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* COLONNA GIOCATORI */}
+                            <div className="target-column">
+                                <label className="column-label player">LATO GIOCATORI (ALLEATI)</label>
+                                <div className="target-list-inner">
+                                    {(battleState?.pokemon_in_campo || [])
+                                        .filter(p => p.side === 'player')
+                                        .map(p => (
+                                        <div 
+                                            key={p.id} 
+                                            className={`target-card-master player ${selectedMasterTargets.find(t => t.id === p.id) ? 'selected' : ''}`}
+                                            onClick={() => toggleTargetMaster(p)}
+                                        >
+                                            <div className="target-img">
+                                                <img src={p.immagine_url} width={36} alt={p.nome} />
+                                                {p.id === activeMasterPkmn?.id && (
+                                                    <span className="active-attacker-dot" title="Attaccante"></span>
+                                                )}
+                                            </div>
+                                            <div className="target-info">
+                                                <span className="target-name">{p.nome}</span>
+                                                <span className="target-trainer"><i>{p.allenatore}</i></span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {(battleState?.pokemon_in_campo || []).filter(p => p.side === 'player').length === 0 && (
+                                        <div className="empty-col-hint">Nessun alleato in campo</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <button 
+                            className="btn-confirm-action" 
+                            disabled={selectedMasterTargets.length === 0}
+                            onClick={confermaMossaMaster}
+                        >
+                            PIANIFICA AZIONE
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {clickedPkmn && (
                 <LivePokemonCard 
