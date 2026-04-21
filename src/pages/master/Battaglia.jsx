@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Swords, Power, Users, Shield, Zap, Heart, Trash2, Plus, Users2, Search, Loader2, ChevronLeft, ChevronRight, Info, Clock, CheckCircle2 } from 'lucide-react';
-import { getTypeColor, getTypeIcon } from '../../lib/typeColors';
+import { getTypeColor, getTypeIcon, getTypeLabel } from '../../lib/typeColors';
 import LivePokemonCard from '../../components/master/LivePokemonCard';
 import './Battaglia.css';
 
@@ -25,6 +25,7 @@ export default function Battaglia() {
     const [loadingMoves, setLoadingMoves] = useState(false);
     const [pendingMasterMove, setPendingMasterMove] = useState(null);
     const [selectedMasterTargets, setSelectedMasterTargets] = useState([]);
+    const [infoMoveMaster, setInfoMoveMaster] = useState(null);
 
     useEffect(() => {
         caricaDatiBattaglia();
@@ -514,6 +515,12 @@ export default function Battaglia() {
                                         <div className="m-power">
                                             <span>{move.info?.danni || '--'}</span>
                                         </div>
+                                        <div className="move-info-trigger-master" onClick={(e) => {
+                                            e.stopPropagation();
+                                            setInfoMoveMaster(move);
+                                        }}>
+                                            <Info size={14} />
+                                        </div>
                                     </button>
                                 ))
                             ) : (
@@ -569,6 +576,51 @@ export default function Battaglia() {
                     )}
                 </div>
             </div>
+
+            {/* MODALE INFO MOSSA MASTER */}
+            {infoMoveMaster && (
+                <div className="modal-overlay" onClick={() => setInfoMoveMaster(null)}>
+                    <div className="modal-content info-modal-master" onClick={e => e.stopPropagation()} style={{ maxWidth: '350px' }}>
+                        <div className="flex-between" style={{ marginBottom: '15px' }}>
+                            <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, textTransform: 'uppercase' }}>{infoMoveMaster.nome}</h3>
+                            <button onClick={() => setInfoMoveMaster(null)} className="btn-circle">✕</button>
+                        </div>
+                        <div className="move-pop-meta" style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
+                            <span className="type-tag" style={{ background: getTypeColor(infoMoveMaster.tipo), color: 'white', padding: '4px 10px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 900 }}>
+                                {getTypeLabel(infoMoveMaster.tipo)}
+                            </span>
+                            <span className="cat-tag" style={{ background: 'rgba(255,255,255,0.1)', padding: '4px 10px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 800 }}>
+                                {infoMoveMaster.info?.categoria?.toUpperCase()}
+                            </span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
+                            <div className="info-box-mini">
+                                <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)' }}>POTENZA</span>
+                                <span style={{ fontWeight: 800 }}>{infoMoveMaster.info?.danni || '--'}</span>
+                            </div>
+                            <div className="info-box-mini">
+                                <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)' }}>PRECISIONE</span>
+                                <span style={{ fontWeight: 800 }}>{infoMoveMaster.info?.accuratezza ? (infoMoveMaster.info.accuratezza.includes('%') ? infoMoveMaster.info.accuratezza : `${infoMoveMaster.info.accuratezza}%`) : '--%'}</span>
+                            </div>
+                        </div>
+                        {infoMoveMaster.info?.effetto && (
+                            <div style={{ marginBottom: '12px', fontSize: '0.95rem', color: '#fff', lineHeight: 1.5 }}>
+                                {infoMoveMaster.info.effetto}
+                            </div>
+                        )}
+                        {infoMoveMaster.info?.descrizione && (
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: 1.4, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px' }}>
+                                "{infoMoveMaster.info.descrizione}"
+                            </div>
+                        )}
+                        {(!infoMoveMaster.info?.effetto && !infoMoveMaster.info?.descrizione) && (
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                Nessuna informazione aggiuntiva disponibile.
+                            </p>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* OVERLAY SELEZIONE BERSAGLIO MASTER */}
             {pendingMasterMove && (
