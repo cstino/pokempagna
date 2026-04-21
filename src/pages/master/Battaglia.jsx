@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Swords, Power, Users, Shield, Zap, Heart, Trash2, Plus, Users2, Search, Loader2, ChevronLeft, ChevronRight, Info, Clock, CheckCircle2 } from 'lucide-react';
+import { Swords, Power, Users, Shield, Zap, Heart, Trash2, Plus, Users2, Search, Loader2, ChevronLeft, ChevronRight, Info, Clock, CheckCircle2, ChevronDown } from 'lucide-react';
 import { getTypeColor, getTypeIcon, getTypeLabel } from '../../lib/typeColors';
 import LivePokemonCard from '../../components/master/LivePokemonCard';
 import './Battaglia.css';
@@ -16,8 +16,16 @@ export default function Battaglia() {
     const [allPokemon, setAllPokemon] = useState([]);
     
     const [library, setLibrary] = useState([]);
-    const [selectedEntityId, setSelectedEntityId] = useState(null);
-    const [entityType, setEntityType] = useState('player'); // 'player' | 'npc'
+    
+    // Selection State for Upper Side
+    const [upperEntityId, setUpperEntityId] = useState(null);
+    const [upperEntityType, setUpperEntityType] = useState('player'); // 'player' | 'npc'
+    const [isUpperOpen, setIsUpperOpen] = useState(false);
+    
+    // Selection State for Lower Side
+    const [lowerEntityId, setLowerEntityId] = useState(null);
+    const [lowerEntityType, setLowerEntityType] = useState('player'); // 'player' | 'npc'
+    const [isLowerOpen, setIsLowerOpen] = useState(false);
     
     // Master Combat Console State
     const [activeMasterIndex, setActiveMasterIndex] = useState(0);
@@ -40,7 +48,7 @@ export default function Battaglia() {
         return () => supabase.removeChannel(channel);
     }, []);
     
-    const masterInField = (battleState?.pokemon_in_campo || []).filter(p => p.side === 'master');
+    const masterInField = (battleState?.pokemon_in_campo || []).filter(p => p.side === 'master' || p.side === 'upper');
     const activeMasterPkmn = masterInField[activeMasterIndex] || null;
 
     useEffect(() => {
@@ -62,7 +70,7 @@ export default function Battaglia() {
                         descrizione,
                         categoria,
                         pp_max,
-                        danni,
+                        dadi,
                         accuratezza,
                         effetto,
                         priorita
@@ -158,7 +166,7 @@ export default function Battaglia() {
         const nomeOriginale = specie ? specie.nome : pokemon.nome;
 
         // Recuperiamo il nome dell'allenatore dall'entità selezionata
-        const entita = players.find(p => p.id === selectedEntityId) || npcs.find(n => n.id === selectedEntityId);
+        const entita = players.find(p => p.id === pokemon.giocatore_id) || npcs.find(n => n.id === pokemon.giocatore_id);
         const nomeAllenatore = entita ? entita.nome : 'Sconosciuto';
 
         const nuovoInCampo = [
@@ -185,7 +193,7 @@ export default function Battaglia() {
                     elusione: 0,
                     precisione: 0
                 },
-                side: side,
+                side: side === 'upper' ? 'master' : 'player',
                 is_damaged: false
             }
         ];
@@ -327,65 +335,154 @@ export default function Battaglia() {
                 <div className="battle-panel-card selection-panel">
                     <div className="panel-header">
                         <Users2 size={20} />
-                        <h2>Selezione Combattenti</h2>
-                    </div>
-                    
-                    <div className="entity-tabs">
-                        <button 
-                            className={entityType === 'player' ? 'active' : ''} 
-                            onClick={() => { setEntityType('player'); setSelectedEntityId(null); }}
-                        >
-                            Giocatori
-                        </button>
-                        <button 
-                            className={entityType === 'npc' ? 'active' : ''} 
-                            onClick={() => { setEntityType('npc'); setSelectedEntityId(null); }}
-                        >
-                            NPC / Nemici
-                        </button>
+                        <h2>Gestione Combattenti</h2>
                     </div>
 
-                    <div className="entity-list">
-                        {(entityType === 'player' ? players : npcs).map(e => (
-                            <div 
-                                key={e.id} 
-                                className={`entity-item ${selectedEntityId === e.id ? 'selected' : ''}`}
-                                onClick={() => setSelectedEntityId(e.id)}
-                            >
-                                <div className="entity-avatar">
-                                    {e.immagine_profilo ? (
-                                        <img src={e.immagine_profilo} alt={e.nome} />
-                                    ) : (
-                                        <div className="avatar-placeholder">{e.nome[0]}</div>
-                                    )}
+                    <div className="selection-split-container">
+                        {/* SELETTORE LATO SUPERIORE */}
+                        <div className="selection-area upper-area">
+                            <div className="area-label upper">LATO SUPERIORE (TOP)</div>
+                            
+                            <div className="entity-tabs mini">
+                                <button 
+                                    className={upperEntityType === 'player' ? 'active' : ''} 
+                                    onClick={() => { setUpperEntityType('player'); setUpperEntityId(null); }}
+                                >
+                                    Giocatori
+                                </button>
+                                <button 
+                                    className={upperEntityType === 'npc' ? 'active' : ''} 
+                                    onClick={() => { setUpperEntityType('npc'); setUpperEntityId(null); }}
+                                >
+                                    NPC
+                                </button>
+                            </div>
+
+                            <div className="custom-dropdown-master">
+                                <div 
+                                    className={`dropdown-trigger-master ${isUpperOpen ? 'open' : ''}`}
+                                    onClick={() => setIsUpperOpen(!isUpperOpen)}
+                                >
+                                    <span>
+                                        {upperEntityId 
+                                            ? (players.find(p => p.id === upperEntityId) || npcs.find(n => n.id === upperEntityId))?.nome 
+                                            : 'Scegli Allenatore...'}
+                                    </span>
+                                    <ChevronDown size={16} className="arrow-icon" />
                                 </div>
-                                <span>{e.nome}</span>
+                                
+                                {isUpperOpen && (
+                                    <div className="dropdown-options-master animate-pop-in">
+                                        {(upperEntityType === 'player' ? players : npcs).map(e => (
+                                            <div 
+                                                key={e.id} 
+                                                className={`dropdown-option-master ${upperEntityId === e.id ? 'selected' : ''}`}
+                                                onClick={() => {
+                                                    setUpperEntityId(e.id);
+                                                    setIsUpperOpen(false);
+                                                }}
+                                            >
+                                                <div className="option-avatar">
+                                                    {e.immagine_profilo ? <img src={e.immagine_profilo} alt="" /> : <div className="avatar-placeholder">{e.nome[0]}</div>}
+                                                </div>
+                                                <span>{e.nome}</span>
+                                                {upperEntityId === e.id && <div className="selected-dot"></div>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        ))}
-                    </div>
 
-                    {selectedEntityId && (
-                        <div className="pokemon-selector animate-slide-up">
-                            <h3>Squadra di { (players.find(p=>p.id===selectedEntityId) || npcs.find(n=>n.id===selectedEntityId))?.nome }</h3>
-                            <div className="pokemon-mini-grid">
-                                {allPokemon
-                                    .filter(p => {
-                                        if (p.giocatore_id !== selectedEntityId) return false;
-                                        const entita = players.find(e => e.id === selectedEntityId) || npcs.find(e => e.id === selectedEntityId);
-                                        const limit = entita?.slot_squadra || 3;
-                                        return p.posizione_squadra < limit;
-                                    })
-                                    .map(p => (
-                                        <div key={p.id} className="pokemon-select-btn" onClick={() => mandaInCampo(p, entityType === 'player' ? 'player' : 'master')}>
-                                            <img src={getPkmnImage(p)} alt={p.nome} />
-                                            <span>{p.nome}</span>
-                                            <Plus size={14} />
-                                        </div>
-                                    ))
-                                }
-                            </div>
+                            {upperEntityId && (
+                                <div className="pokemon-mini-grid animate-slide-up">
+                                    {allPokemon
+                                        .filter(p => p.giocatore_id === upperEntityId)
+                                        .filter(p => p.posizione_squadra < ((players.find(e => e.id === upperEntityId) || npcs.find(e => e.id === upperEntityId))?.slot_squadra || 3))
+                                        .map(p => (
+                                            <div key={p.id} className="pokemon-select-btn" onClick={() => mandaInCampo(p, 'upper')}>
+                                                <img src={getPkmnImage(p)} alt={p.nome} />
+                                                <span>{p.nome}</span>
+                                                <Plus size={14} />
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                            )}
                         </div>
-                    )}
+
+                        <div className="selection-divider"></div>
+
+                        {/* SELETTORE LATO INFERIORE */}
+                        <div className="selection-area lower-area">
+                            <div className="area-label lower">LATO INFERIORE (BOTTOM)</div>
+                            
+                            <div className="entity-tabs mini">
+                                <button 
+                                    className={lowerEntityType === 'player' ? 'active' : ''} 
+                                    onClick={() => { setLowerEntityType('player'); setLowerEntityId(null); }}
+                                >
+                                    Giocatori
+                                </button>
+                                <button 
+                                    className={lowerEntityType === 'npc' ? 'active' : ''} 
+                                    onClick={() => { setLowerEntityType('npc'); setLowerEntityId(null); }}
+                                >
+                                    NPC
+                                </button>
+                            </div>
+
+                            <div className="custom-dropdown-master">
+                                <div 
+                                    className={`dropdown-trigger-master ${isLowerOpen ? 'open' : ''}`}
+                                    onClick={() => setIsLowerOpen(!isLowerOpen)}
+                                >
+                                    <span>
+                                        {lowerEntityId 
+                                            ? (players.find(p => p.id === lowerEntityId) || npcs.find(n => n.id === lowerEntityId))?.nome 
+                                            : 'Scegli Allenatore...'}
+                                    </span>
+                                    <ChevronDown size={16} className="arrow-icon" />
+                                </div>
+                                
+                                {isLowerOpen && (
+                                    <div className="dropdown-options-master animate-pop-in">
+                                        {(lowerEntityType === 'player' ? players : npcs).map(e => (
+                                            <div 
+                                                key={e.id} 
+                                                className={`dropdown-option-master ${lowerEntityId === e.id ? 'selected' : ''}`}
+                                                onClick={() => {
+                                                    setLowerEntityId(e.id);
+                                                    setIsLowerOpen(false);
+                                                }}
+                                            >
+                                                <div className="option-avatar">
+                                                    {e.immagine_profilo ? <img src={e.immagine_profilo} alt="" /> : <div className="avatar-placeholder">{e.nome[0]}</div>}
+                                                </div>
+                                                <span>{e.nome}</span>
+                                                {lowerEntityId === e.id && <div className="selected-dot"></div>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {lowerEntityId && (
+                                <div className="pokemon-mini-grid animate-slide-up">
+                                    {allPokemon
+                                        .filter(p => p.giocatore_id === lowerEntityId)
+                                        .filter(p => p.posizione_squadra < ((players.find(e => e.id === lowerEntityId) || npcs.find(e => e.id === lowerEntityId))?.slot_squadra || 3))
+                                        .map(p => (
+                                            <div key={p.id} className="pokemon-select-btn" onClick={() => mandaInCampo(p, 'lower')}>
+                                                <img src={getPkmnImage(p)} alt={p.nome} />
+                                                <span>{p.nome}</span>
+                                                <Plus size={14} />
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 {/* 2. GESTIONE CAMPO (Sempre visibile per il Master) */}
@@ -399,7 +496,7 @@ export default function Battaglia() {
 
                     <div className="field-management">
                         <div className="field-side-group">
-                            <label>Lato Master (Sopra - Ruotati 180°)</label>
+                            <label>Lato Superiore (Top - Ruotati 180°)</label>
                             {masterInField.length === 0 && (
                                 <div className="empty-field-hint">Nessun nemico in campo</div>
                             )}
@@ -430,7 +527,7 @@ export default function Battaglia() {
                         </div>
 
                         <div className="field-side-group">
-                            <label>Lato Giocatori (Sotto - Normali)</label>
+                            <label>Lato Inferiore (Bottom - Normali)</label>
                             {(battleState.pokemon_in_campo || []).filter(p => p.side === 'player').length === 0 && (
                                 <div className="empty-field-hint">Nessun alleato in campo</div>
                             )}
@@ -513,7 +610,7 @@ export default function Battaglia() {
                                             <span className="m-pp">PP {move.pp_attuale}/{move.info?.pp_max || move.pp_max}</span>
                                         </div>
                                         <div className="m-power">
-                                            <span>{move.info?.danni || '--'}</span>
+                                            <span>{move.info?.dadi || '--'}</span>
                                         </div>
                                         <div className="move-info-trigger-master" onClick={(e) => {
                                             e.stopPropagation();
@@ -635,9 +732,9 @@ export default function Battaglia() {
                         </div>
 
                         <div className="target-selection-columns">
-                            {/* COLONNA MASTER */}
+                            {/* COLONNA SUPERIORE */}
                             <div className="target-column">
-                                <label className="column-label master">LATO MASTER (NEMICI)</label>
+                                <label className="column-label master">LATO SUPERIORE</label>
                                 <div className="target-list-inner">
                                     {(battleState?.pokemon_in_campo || [])
                                         .filter(p => p.side === 'master')
@@ -660,14 +757,14 @@ export default function Battaglia() {
                                         </div>
                                     ))}
                                     {(battleState?.pokemon_in_campo || []).filter(p => p.side === 'master').length === 0 && (
-                                        <div className="empty-col-hint">Nessun nemico in campo</div>
+                                        <div className="empty-col-hint">Nessuno in campo</div>
                                     )}
                                 </div>
                             </div>
 
-                            {/* COLONNA GIOCATORI */}
+                            {/* COLONNA INFERIORE */}
                             <div className="target-column">
-                                <label className="column-label player">LATO GIOCATORI (ALLEATI)</label>
+                                <label className="column-label player">LATO INFERIORE</label>
                                 <div className="target-list-inner">
                                     {(battleState?.pokemon_in_campo || [])
                                         .filter(p => p.side === 'player')
@@ -690,7 +787,7 @@ export default function Battaglia() {
                                         </div>
                                     ))}
                                     {(battleState?.pokemon_in_campo || []).filter(p => p.side === 'player').length === 0 && (
-                                        <div className="empty-col-hint">Nessun alleato in campo</div>
+                                        <div className="empty-col-hint">Nessuno in campo</div>
                                     )}
                                 </div>
                             </div>
