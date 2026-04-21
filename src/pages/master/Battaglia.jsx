@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Swords, Power, Users, Shield, Zap, Heart, Trash2, Plus, Users2, Search, Loader2, ChevronLeft, ChevronRight, Info, Clock, CheckCircle2, ChevronDown } from 'lucide-react';
+import { Swords, Power, Users, Shield, Zap, Heart, Trash2, Plus, Users2, Search, Loader2, ChevronLeft, ChevronRight, Info, Clock, CheckCircle2, ChevronDown, Check } from 'lucide-react';
 import { getTypeColor, getTypeIcon, getTypeLabel } from '../../lib/typeColors';
 import LivePokemonCard from '../../components/master/LivePokemonCard';
 import './Battaglia.css';
@@ -258,7 +258,8 @@ export default function Battaglia() {
             mossa_nome: pendingMasterMove.nome,
             mossa_tipo: pendingMasterMove.tipo,
             valore_iniziativa: totalInit,
-            bersagli: selectedMasterTargets.map(t => t.nome)
+            bersagli: selectedMasterTargets.map(t => t.nome),
+            approvata: true
         };
 
         const nuovaCoda = [...(battleState.mosse_in_coda || []), nuovaAzione];
@@ -279,6 +280,15 @@ export default function Battaglia() {
         } else {
             setSelectedMasterTargets([...selectedMasterTargets, target]);
         }
+    };
+
+    const approvaTurno = async (index) => {
+        const nuovaCoda = [...(battleState.mosse_in_coda || [])];
+        nuovaCoda[index].approvata = true;
+        await supabase
+            .from('battaglia_attiva')
+            .update({ mosse_in_coda: nuovaCoda })
+            .eq('id', battleState.id);
     };
 
     const rimuoviTurno = async (index) => {
@@ -647,28 +657,47 @@ export default function Battaglia() {
                         <div className="empty-turns-msg">In attesa che gli allenatori pianifichino le mosse...</div>
                     ) : (
                         <div className="turns-list">
-                            {[...(battleState.mosse_in_coda || [])]
-                                .sort((a,b) => b.valore_iniziativa - a.valore_iniziativa)
-                                .map((t, idx) => (
-                                    <div key={idx} className="turn-notification animate-pop-in">
-                                        <div className="turn-priority-badge">
-                                            {t.valore_iniziativa}
+                            {(() => {
+                                const codaRaw = battleState.mosse_in_coda || [];
+                                const allApproved = codaRaw.length > 0 && codaRaw.every(t => t.approvata);
+
+                                // Ordiniamo per iniziativa SOLO se tutto è approvato
+                                const displayCoda = allApproved 
+                                    ? [...codaRaw].sort((a,b) => b.valore_iniziativa - a.valore_iniziativa)
+                                    : codaRaw;
+
+                                return displayCoda.map((t, idx) => {
+                                    // Troviamo l'indice originale nella coda per le funzioni di DB
+                                    const originalIndex = codaRaw.findIndex(item => item.id === t.id);
+
+                                    return (
+                                        <div key={t.id || idx} className={`turn-notification animate-pop-in ${t.approvata ? 'approved' : 'pending'}`}>
+                                            <div className="turn-priority-badge">
+                                                {t.valore_iniziativa}
+                                            </div>
+                                            <div className="turn-main-info">
+                                                <span className="turn-text">
+                                                    <strong>{t.pkmn_nome}</strong> <small>(Lv.{t.pkmn_livello})</small> di <strong>{t.allenatore}</strong> vuole usare 
+                                                    <span className="turn-move-highlight" style={{ backgroundColor: getTypeColor(t.mossa_tipo) }}>
+                                                        {t.mossa_nome}
+                                                    </span> 
+                                                    su <strong>{t.bersagli?.join(', ') || 'qualcuno'}</strong>
+                                                </span>
+                                            </div>
+                                            <div className="turn-actions">
+                                                {!t.approvata && (
+                                                    <button className="btn-approve-turn" onClick={() => approvaTurno(originalIndex)} title="Accetta mossa">
+                                                        <Check size={16} />
+                                                    </button>
+                                                )}
+                                                <button className="btn-remove-turn" onClick={() => rimuoviTurno(originalIndex)} title="Rifiuta / Rimuovi">
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="turn-main-info">
-                                            <span className="turn-text">
-                                                <strong>{t.pkmn_nome}</strong> <small>(Lv.{t.pkmn_livello})</small> di <strong>{t.allenatore}</strong> vuole usare 
-                                                <span className="turn-move-highlight" style={{ backgroundColor: getTypeColor(t.mossa_tipo) }}>
-                                                    {t.mossa_nome}
-                                                </span> 
-                                                su <strong>{t.bersagli?.join(', ') || 'qualcuno'}</strong>
-                                            </span>
-                                        </div>
-                                        <button className="btn-remove-turn" onClick={() => rimuoviTurno(idx)} title="Rimuovi questo turno">
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
-                                ))
-                            }
+                                    );
+                                });
+                            })()}
                         </div>
                     )}
                 </div>
@@ -692,8 +721,8 @@ export default function Battaglia() {
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
                             <div className="info-box-mini">
-                                <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)' }}>POTENZA</span>
-                                <span style={{ fontWeight: 800 }}>{infoMoveMaster.info?.danni || '--'}</span>
+                                <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)' }}>DADI</span>
+                                <span style={{ fontWeight: 800 }}>{infoMoveMaster.info?.dadi || '--'}</span>
                             </div>
                             <div className="info-box-mini">
                                 <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)' }}>PRECISIONE</span>

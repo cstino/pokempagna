@@ -101,7 +101,7 @@ export default function Combat() {
                         descrizione,
                         categoria,
                         pp_max,
-                        danni,
+                        dadi,
                         accuratezza,
                         effetto,
                         priorita
@@ -177,7 +177,8 @@ export default function Combat() {
             mossa_nome: pendingMove.nome,
             mossa_tipo: pendingMove.tipo,
             valore_iniziativa: totalInit,
-            bersagli: selectedTargets.map(t => t.nome)
+            bersagli: selectedTargets.map(t => t.nome),
+            approvata: false
         };
 
         const nuovaCoda = [...(activeBattle.mosse_in_coda || []), nuovaAzione];
@@ -362,8 +363,8 @@ export default function Combat() {
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
                             <div className="info-box-mini">
-                                <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)' }}>POTENZA</span>
-                                <span style={{ fontWeight: 800 }}>{infoMove.info?.danni || '--'}</span>
+                                <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)' }}>DADI</span>
+                                <span style={{ fontWeight: 800 }}>{infoMove.info?.dadi || '--'}</span>
                             </div>
                             <div className="info-box-mini">
                                 <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)' }}>PRECISIONE</span>

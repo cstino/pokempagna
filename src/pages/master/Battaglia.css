@@ -778,13 +778,22 @@
     border-radius: 12px;
     margin-bottom: 10px;
     border: 1px solid rgba(255,255,255,0.05);
-    transition: 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.turn-notification.pending {
+    border-left: 4px solid #fbbf24;
+    background: rgba(251, 191, 36, 0.05);
+}
+
+.turn-notification.approved {
+    border-left: 4px solid #10b981;
+    background: rgba(16, 185, 129, 0.06);
 }
 
 .turn-notification:hover {
     background: rgba(255,255,255,0.06);
     transform: translateX(5px);
-    border-color: rgba(255,255,255,0.1);
 }
 
 .turn-priority-badge {
@@ -800,6 +809,43 @@
     font-size: 1rem;
     flex-shrink: 0;
     box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.turn-notification.approved .turn-priority-badge {
+    background: #10b981;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+.turn-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.btn-approve-turn, .btn-remove-turn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-muted);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-approve-turn:hover {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border-color: #10b981;
+}
+
+.btn-remove-turn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border-color: #ef4444;
 }
 
 .turn-text {
@@ -820,27 +866,6 @@
     font-size: 0.85rem;
     text-transform: uppercase;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-
-.btn-remove-turn {
-    margin-left: auto;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: var(--text-muted);
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.btn-remove-turn:hover {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-    border-color: #ef4444;
 }
 
 .empty-turns-msg {
