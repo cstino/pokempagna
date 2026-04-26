@@ -81,8 +81,16 @@ export default function LivePokemonCard({
             setLoading(false);
             return;
         }
-        console.log(`[LiveCard] Caricamento ID: ${pokemonId} dalla tabella: ${tableName || 'pokemon_giocatore'}`);
+        console.log(`[LiveCard] Tentativo caricamento ID: ${pokemonId} [${tableName || 'pokemon_giocatore'}]`);
         setLoading(true);
+        
+        // Timeout di sicurezza: se dopo 5 secondi non ha caricato, sblocca il pulsante
+        const timeout = setTimeout(() => {
+            if (loading) {
+                console.warn("[LiveCard] Caricamento in timeout...");
+                setLoading(false);
+            }
+        }, 5000);
         try {
             // 1. Carica Pokemon dal DB
             const { data: pkmn, error: pErr } = await supabase
@@ -116,6 +124,7 @@ export default function LivePokemonCard({
         } catch (error) {
             console.error("Errore critico init LivePokemonCard:", error);
         } finally {
+            clearTimeout(timeout);
             setLoading(false);
         }
     }
