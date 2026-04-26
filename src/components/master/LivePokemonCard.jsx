@@ -139,6 +139,11 @@ export default function LivePokemonCard({
     };
 
     const toggleMoveAssignment = (moveId, assign) => {
+        if (assign && selectedPkmnMoveIds.length >= 4) {
+            // Impedisce di selezionare più di 4 mosse
+            return;
+        }
+        
         setSelectedPkmnMoveIds(prev => 
             assign ? [...prev, moveId] : prev.filter(id => id !== moveId)
         );
@@ -619,7 +624,20 @@ export default function LivePokemonCard({
                         </div>
 
                         <div className="pkmn-moves-master-section" style={{ marginTop: '20px' }}>
-                            <h4 className="edit-section-title"><Zap size={16} /> Mosse Conosciute</h4>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                <h4 className="edit-section-title" style={{ margin: 0 }}><Zap size={16} /> Mosse Conosciute</h4>
+                                <span style={{ 
+                                    fontSize: '0.8rem', 
+                                    padding: '2px 8px', 
+                                    borderRadius: '10px', 
+                                    background: selectedPkmnMoveIds.length >= 4 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+                                    color: selectedPkmnMoveIds.length >= 4 ? '#ef4444' : '#3b82f6',
+                                    fontWeight: '900',
+                                    border: `1px solid ${selectedPkmnMoveIds.length >= 4 ? '#ef4444' : '#3b82f6'}`
+                                }}>
+                                    {selectedPkmnMoveIds.length} / 4
+                                </span>
+                            </div>
 
                             <div className="move-filters-row">
                                 
@@ -656,13 +674,17 @@ export default function LivePokemonCard({
                                     })
                                     .map(move => {
                                         const isChecked = selectedPkmnMoveIds.includes(move.id);
+                                        const isLimitReached = selectedPkmnMoveIds.length >= 4 && !isChecked;
+                                        
                                         return (
                                             <div 
                                                 key={move.id} 
-                                                className={`move-checkbox-card ${isChecked ? 'checked' : ''}`}
+                                                className={`move-checkbox-card ${isChecked ? 'checked' : ''} ${isLimitReached ? 'disabled' : ''}`}
+                                                style={{ opacity: isLimitReached ? 0.4 : 1, cursor: isLimitReached ? 'not-allowed' : 'pointer' }}
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     e.stopPropagation();
+                                                    if (isLimitReached) return;
                                                     toggleMoveAssignment(move.id, !isChecked);
                                                 }}
                                             >
