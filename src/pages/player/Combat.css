@@ -315,6 +315,9 @@
 .target-selector-overlay .modal-content {
     max-width: 800px;
     width: 95%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .target-select-title h3 {
@@ -327,7 +330,11 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
-    margin-bottom: 25px;
+    margin-bottom: 15px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    padding-right: 5px;
 }
 
 .self-target-section {
@@ -378,9 +385,6 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 350px;
-    overflow-y: auto;
-    padding-right: 5px;
 }
 
 .target-card {

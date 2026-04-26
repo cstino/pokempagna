@@ -118,7 +118,7 @@ export default function NPC() {
             const { data, error } = await supabase
                 .from('giocatori')
                 .insert([{
-                    id: crypto.randomUUID(),
+                    id: (globalThis.crypto && globalThis.crypto.randomUUID) ? crypto.randomUUID() : 'id_' + Date.now().toString(36) + Math.random().toString(36).substring(2),
                     nome: 'Nuovo NPC',
                     ruolo: 'npc',
                     campagna_corrente_id: profile.campagna_corrente_id,

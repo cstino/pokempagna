@@ -913,13 +913,20 @@
 .master-target-selector .modal-content {
     max-width: 800px;
     width: 95%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .target-selection-columns {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
-    margin-bottom: 25px;
+    margin-bottom: 15px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    padding-right: 5px;
 }
 
 .target-column {
@@ -955,9 +962,6 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    max-height: 400px;
-    overflow-y: auto;
-    padding-right: 8px;
 }
 
 /* Scrollbar styling for fixed columns */

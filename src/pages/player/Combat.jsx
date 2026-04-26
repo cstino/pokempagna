@@ -139,7 +139,7 @@ export default function Combat() {
         const nuovoInCampo = [
             ...(activeBattle.pokemon_in_campo || []),
             {
-                id: crypto.randomUUID(),
+                id: (globalThis.crypto && globalThis.crypto.randomUUID) ? crypto.randomUUID() : 'id_' + Date.now().toString(36) + Math.random().toString(36).substring(2),
                 original_id: selectedPkmn.id,
                 nome: selectedPkmn.soprannome || selectedPkmn.nome,
                 nome_originale: selectedPkmn.nome_originale,
@@ -168,7 +168,7 @@ export default function Combat() {
         const totalInit = movePriority + pkmnSpeed;
 
         const nuovaAzione = {
-            id: crypto.randomUUID(),
+            id: (globalThis.crypto && globalThis.crypto.randomUUID) ? crypto.randomUUID() : 'id_' + Date.now().toString(36) + Math.random().toString(36).substring(2),
             pkmn_id: selectedPkmn.id,
             pkmn_nome: selectedPkmn.soprannome || selectedPkmn.nome,
             pkmn_livello: selectedPkmn.livello,
@@ -469,7 +469,7 @@ export default function Combat() {
                             disabled={selectedTargets.length === 0}
                             onClick={confermaMossa}
                         >
-                            Conferma Azione
+                            {selectedTargets.length === 0 ? "Seleziona Bersaglio" : "Conferma Azione"}
                         </button>
                     </div>
                 </div>

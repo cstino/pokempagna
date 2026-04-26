@@ -172,7 +172,7 @@ export default function Battaglia() {
         const nuovoInCampo = [
             ...(battleState.pokemon_in_campo || []),
             {
-                id: crypto.randomUUID(), 
+                id: (globalThis.crypto && globalThis.crypto.randomUUID) ? crypto.randomUUID() : 'id_' + Date.now().toString(36) + Math.random().toString(36).substring(2), 
                 original_id: pokemon.id,
                 nome: pokemon.nome,
                 nome_originale: nomeOriginale,
@@ -249,7 +249,7 @@ export default function Battaglia() {
         const totalInit = movePriority + pkmnSpeed;
 
         const nuovaAzione = {
-            id: crypto.randomUUID(),
+            id: (globalThis.crypto && globalThis.crypto.randomUUID) ? crypto.randomUUID() : 'id_' + Date.now().toString(36) + Math.random().toString(36).substring(2),
             pkmn_id: activeMasterPkmn.id,
             pkmn_nome: activeMasterPkmn.nome,
             pkmn_livello: activeMasterPkmn.livello,
