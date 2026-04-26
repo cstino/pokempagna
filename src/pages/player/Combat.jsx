@@ -125,12 +125,12 @@ export default function Combat() {
 
     const isPkmnInField = (pkmnId) => {
         if (!activeBattle?.pokemon_in_campo) return false;
-        return activeBattle.pokemon_in_campo.some(p => p.original_id === pkmnId);
+        return activeBattle.pokemon_in_campo.some(p => p.original_id === pkmnId && p.allenatore === profile?.nome);
     };
 
     const getPkmnInFieldData = (pkmnId) => {
         if (!activeBattle?.pokemon_in_campo) return null;
-        return activeBattle.pokemon_in_campo.find(p => p.original_id === pkmnId);
+        return activeBattle.pokemon_in_campo.find(p => p.original_id === pkmnId && p.allenatore === profile?.nome);
     };
 
     const mandaInCampo = async () => {
