@@ -125,14 +125,21 @@ export default function Combat() {
 
     const isPkmnInField = (pkmnId) => {
         if (!activeBattle?.pokemon_in_campo) return false;
-        const found = activeBattle.pokemon_in_campo.find(p => String(p.original_id) === String(pkmnId) && p.allenatore === profile?.nome);
-        if (found) console.log(`[CombatCheck] PKMN ${pkmnId} trovato in campo! Allenatore: ${found.allenatore}, Side: ${found.side}`);
+        const found = activeBattle.pokemon_in_campo.find(p => 
+            String(p.original_id) === String(pkmnId) && 
+            p.allenatore === profile?.nome && 
+            p.side === 'player'
+        );
         return !!found;
     };
 
     const getPkmnInFieldData = (pkmnId) => {
         if (!activeBattle?.pokemon_in_campo) return null;
-        return activeBattle.pokemon_in_campo.find(p => String(p.original_id) === String(pkmnId) && p.allenatore === profile?.nome);
+        return activeBattle.pokemon_in_campo.find(p => 
+            String(p.original_id) === String(pkmnId) && 
+            p.allenatore === profile?.nome && 
+            p.side === 'player'
+        );
     };
 
     const mandaInCampo = async () => {

@@ -522,7 +522,7 @@ export default function Battaglia() {
                                 >
                                     <div className="pkmn-field-info">
                                         <img src={p.immagine_url} width={30} />
-                                        <span><strong>{p.nome}</strong> | {p.hp}/{p.hp_max} HP</span>
+                                        <span><strong>{p.nome}</strong> | {p.hp}/{p.hp_max} HP <i style={{ marginLeft: '8px', opacity: 0.7, fontSize: '0.9em' }}>({p.allenatore})</i></span>
                                     </div>
                                     <div className="pkmn-field-actions">
                                         <button 
@@ -545,7 +545,7 @@ export default function Battaglia() {
                                 <div key={p.id} className="pkmn-field-item player hoverable transition-transform" onClick={() => setClickedPkmn(p)} style={{ cursor: 'pointer' }}>
                                     <div className="pkmn-field-info">
                                         <img src={p.immagine_url} width={30} />
-                                        <span><strong>{p.nome}</strong> | {p.hp}/{p.hp_max} HP</span>
+                                        <span><strong>{p.nome}</strong> | {p.hp}/{p.hp_max} HP <i style={{ marginLeft: '8px', opacity: 0.7, fontSize: '0.9em' }}>({p.allenatore})</i></span>
                                     </div>
                                     <div className="pkmn-field-actions">
                                         <button 
