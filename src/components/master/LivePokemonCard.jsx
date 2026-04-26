@@ -84,7 +84,7 @@ export default function LivePokemonCard({
                 .from('pokemon_giocatore')
                 .select('*')
                 .eq('id', pokemonId)
-                .single();
+                .maybeSingle();
             if (pErr) throw pErr;
 
             // 2. Carica mosse assegnate
@@ -248,7 +248,19 @@ export default function LivePokemonCard({
         return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${poke.pokemon_id}.png`;
     };
 
-    const imageSrc = getPkmnImage(editingPkmn);
+    const imageSrc = editingPkmn ? getPkmnImage(editingPkmn) : '';
+
+    if (!loading && !editingPkmn) {
+        return (
+            <div className="modal-overlay custom-live-modal" onClick={onClose}>
+                <div className="modal-content master-edit-modal error-modal" style={{ padding: '40px', textAlign: 'center', background: '#0f172a' }}>
+                    <h3 style={{ color: '#ef4444', marginBottom: '20px' }}>Pokémon non trovato</h3>
+                    <p style={{ color: '#94a3b8', marginBottom: '30px' }}>Il record di questo Pokémon sembra essere stato eliminato dal database (forse l'NPC è stato cancellato?). Rimuovilo dal campo di battaglia.</p>
+                    <button className="btn-save" onClick={onClose}>Chiudi</button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="modal-overlay custom-live-modal" onClick={onClose}>
