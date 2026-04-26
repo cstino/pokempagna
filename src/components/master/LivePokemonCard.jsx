@@ -77,6 +77,11 @@ export default function LivePokemonCard({
     }, [pokemonInCampo, isBattleMode]);
 
     async function caricaDatiBase() {
+        if (!pokemonId) {
+            setLoading(false);
+            return;
+        }
+        console.log(`[LiveCard] Caricamento ID: ${pokemonId} dalla tabella: ${tableName || 'pokemon_giocatore'}`);
         setLoading(true);
         try {
             // 1. Carica Pokemon dal DB
@@ -87,21 +92,29 @@ export default function LivePokemonCard({
                 .maybeSingle();
             if (pErr) throw pErr;
 
-            // 2. Carica mosse assegnate
-            const { data: mosseAss, error: mErr } = await supabase
-                .from('mosse_pokemon')
-                .select('mossa_id')
-                .eq('pokemon_giocatore_id', pokemonId);
-            if (mErr) throw mErr;
-            
-            // 3. Tutte le mosse disponibili
-            const { data: allMoves } = await supabase.from('mosse_disponibili').select('*').order('nome');
-
             setEditingPkmn(pkmn);
-            setSelectedPkmnMoveIds(mosseAss?.map(m => m.mossa_id) || []);
-            setAllAvailableMoves(allMoves || []);
+
+            // 2. Carica mosse assegnate (Soft Load - non blocca se fallisce)
+            try {
+                const { data: mosseAss } = await supabase
+                    .from('mosse_pokemon')
+                    .select('mossa_id')
+                    .eq('pokemon_giocatore_id', pokemonId);
+                setSelectedPkmnMoveIds(mosseAss?.map(m => m.mossa_id) || []);
+            } catch (mErr) {
+                console.warn("Errore caricamento mosse assegnate:", mErr);
+            }
+            
+            // 3. Tutte le mosse disponibili (Soft Load)
+            try {
+                const { data: allMoves } = await supabase.from('mosse_disponibili').select('*').order('nome');
+                setAllAvailableMoves(allMoves || []);
+            } catch (allMErr) {
+                console.warn("Errore caricamento mosse disponibili:", allMErr);
+            }
+
         } catch (error) {
-            console.error("Errore init LivePokemonCard:", error);
+            console.error("Errore critico init LivePokemonCard:", error);
         } finally {
             setLoading(false);
         }
