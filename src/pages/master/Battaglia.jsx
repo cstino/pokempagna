@@ -836,7 +836,7 @@ export default function Battaglia() {
             {clickedPkmn && (
                 <LivePokemonCard 
                     pokemonId={clickedPkmn.original_id}
-                    tableName={clickedPkmn.side === 'master' ? 'pokemon_nemici' : 'pokemon_giocatore'}
+                    tableName="pokemon_giocatore"
                     onClose={() => setClickedPkmn(null)}
                     isBattleMode={true}
                     battleStateId={battleState?.id}

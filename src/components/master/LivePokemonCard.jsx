@@ -81,7 +81,7 @@ export default function LivePokemonCard({
         try {
             // 1. Carica Pokemon dal DB
             const { data: pkmn, error: pErr } = await supabase
-                .from('pokemon_giocatore')
+                .from(tableName || 'pokemon_giocatore')
                 .select('*')
                 .eq('id', pokemonId)
                 .maybeSingle();
@@ -155,7 +155,7 @@ export default function LivePokemonCard({
         try {
             // 1. Salva statistiche permanenti
             const { error: saveErr } = await supabase
-                .from('pokemon_giocatore')
+                .from(tableName || 'pokemon_giocatore')
                 .update(editingPkmn)
                 .eq('id', pokemonId);
             if (saveErr) throw saveErr;
