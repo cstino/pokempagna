@@ -182,11 +182,11 @@ export default function Combat() {
             pkmn_nome: selectedPkmn.soprannome || selectedPkmn.nome,
             pkmn_livello: selectedPkmn.livello,
             allenatore: profile.nome,
-            mossa_id: pendingMove.id,
+            mossa_id: pendingMove.mossa_id || pendingMove.id,
             mossa_nome: pendingMove.nome,
             mossa_tipo: pendingMove.tipo,
             valore_iniziativa: totalInit,
-            bersagli: selectedTargets.map(t => t.nome),
+            bersagli: selectedTargets.map(t => `${t.nome} di ${t.allenatore}`),
             approvata: false
         };
 

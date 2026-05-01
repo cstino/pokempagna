@@ -4,7 +4,15 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Swords, Power, Users, Shield, Zap, Heart, Trash2, Plus, Users2, Search, Loader2, ChevronLeft, ChevronRight, Info, Clock, CheckCircle2, ChevronDown, Check } from 'lucide-react';
 import { getTypeColor, getTypeIcon, getTypeLabel } from '../../lib/typeColors';
 import LivePokemonCard from '../../components/master/LivePokemonCard';
+import DamageCalculator from '../../components/master/DamageCalculator';
 import './Battaglia.css';
+
+const getHPColor = (hp, max) => {
+    const pct = (hp / max) * 100;
+    if (pct > 50) return '#22c55e';
+    if (pct > 20) return '#eab308';
+    return '#ef4444';
+};
 
 export default function Battaglia() {
     const { profile } = useAuth();
@@ -34,6 +42,10 @@ export default function Battaglia() {
     const [pendingMasterMove, setPendingMasterMove] = useState(null);
     const [selectedMasterTargets, setSelectedMasterTargets] = useState([]);
     const [infoMoveMaster, setInfoMoveMaster] = useState(null);
+
+    // Damage Calculator State
+    const [calcTurn, setCalcTurn] = useState(null);
+    const [showCalculator, setShowCalculator] = useState(false);
 
     useEffect(() => {
         caricaDatiBattaglia();
@@ -253,13 +265,13 @@ export default function Battaglia() {
             pkmn_id: activeMasterPkmn.id,
             pkmn_nome: activeMasterPkmn.nome,
             pkmn_livello: activeMasterPkmn.livello,
-            allenatore: "LATO MASTER",
-            mossa_id: pendingMasterMove.id,
+            allenatore: activeMasterPkmn.allenatore || "Master",
+            mossa_id: pendingMasterMove.mossa_id || pendingMasterMove.id,
             mossa_nome: pendingMasterMove.nome,
             mossa_tipo: pendingMasterMove.tipo,
             valore_iniziativa: totalInit,
-            bersagli: selectedMasterTargets.map(t => t.nome),
-            approvata: true
+            bersagli: selectedMasterTargets.map(t => `${t.nome} di ${t.allenatore}`),
+            approvata: false
         };
 
         const nuovaCoda = [...(battleState.mosse_in_coda || []), nuovaAzione];
@@ -283,12 +295,35 @@ export default function Battaglia() {
     };
 
     const approvaTurno = async (index) => {
+        const turn = battleState.mosse_in_coda[index];
+        
+        // Se è una mossa, apriamo il calcolatore prima di approvare definitivamente
+        if (turn.mossa_id) {
+            setCalcTurn({ ...turn, index });
+            setShowCalculator(true);
+            return;
+        }
+
+        // Altrimenti approviamo normalmente (Fuga, Sostituzione, ecc.)
         const nuovaCoda = [...(battleState.mosse_in_coda || [])];
         nuovaCoda[index].approvata = true;
         await supabase
             .from('battaglia_attiva')
             .update({ mosse_in_coda: nuovaCoda })
             .eq('id', battleState.id);
+    };
+
+    const handleCalcFinish = async (fullyCompleted) => {
+        if (fullyCompleted && calcTurn) {
+            const nuovaCoda = [...(battleState.mosse_in_coda || [])];
+            nuovaCoda[calcTurn.index].approvata = true;
+            await supabase
+                .from('battaglia_attiva')
+                .update({ mosse_in_coda: nuovaCoda })
+                .eq('id', battleState.id);
+        }
+        setShowCalculator(false);
+        setCalcTurn(null);
     };
 
     const rimuoviTurno = async (index) => {
@@ -520,15 +555,50 @@ export default function Battaglia() {
                                     }} 
                                     style={{ cursor: 'pointer' }}
                                 >
-                                    <div className="pkmn-field-info">
-                                        <img src={p.immagine_url} width={30} />
-                                        <span><strong>{p.nome}</strong> | {p.hp}/{p.hp_max} HP <i style={{ marginLeft: '8px', opacity: 0.7, fontSize: '0.9em' }}>({p.allenatore})</i></span>
+                                    <div className="pkmn-field-info" style={{ flex: 1, gap: '12px' }}>
+                                        <img src={p.immagine_url} width={38} style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+                                        <div className="pkmn-field-details" style={{ flex: 1 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                                <strong style={{ fontSize: '0.95rem', letterSpacing: '0.5px', color: '#fff' }}>{p.nome.toUpperCase()}</strong>
+                                                <div style={{ 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    gap: '4px', 
+                                                    padding: '2px 8px', 
+                                                    background: 'rgba(255,255,255,0.08)', 
+                                                    borderRadius: '4px',
+                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                    marginRight: '12px'
+                                                }}>
+                                                    <Users2 size={10} style={{ opacity: 0.8 }} />
+                                                    <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.3px', opacity: 0.9 }}>
+                                                        {p.allenatore}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div className="hp-bar-container" style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden', flex: 1, maxWidth: '150px' }}>
+                                                    <div 
+                                                        className="hp-bar-fill" 
+                                                        style={{ 
+                                                            width: `${(p.hp / p.hp_max) * 100}%`,
+                                                            backgroundColor: getHPColor(p.hp, p.hp_max),
+                                                            height: '100%',
+                                                            transition: 'width 0.3s ease'
+                                                        }} 
+                                                    />
+                                                </div>
+                                                <span style={{ fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 700, opacity: 0.8 }}>
+                                                    {p.hp}/{p.hp_max}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="pkmn-field-actions">
                                         <button 
-                                            className={`btn-status-circle ${p.ha_agito ? 'acted' : 'waiting'}`} 
-                                            onClick={(e) => { e.stopPropagation(); toggleHaAgito(p.id); }}
-                                            title={p.ha_agito ? 'Ha agito' : 'Deve agire'}
+                                            className={`btn-status-circle ${(battleState.mosse_in_coda || []).some(m => m.pkmn_id === p.id) ? 'acted' : 'waiting'}`} 
+                                            onClick={(e) => e.stopPropagation()}
+                                            title={(battleState.mosse_in_coda || []).some(m => m.pkmn_id === p.id) ? 'Mossa pianificata' : 'In attesa di mossa'}
                                         />
                                         <button className="btn-remove" onClick={(e) => { e.stopPropagation(); rimuoviDalCampo(p.id); }}><Trash2 size={14} /></button>
                                     </div>
@@ -543,15 +613,50 @@ export default function Battaglia() {
                             )}
                             {(battleState.pokemon_in_campo || []).filter(p => p.side === 'player').map(p => (
                                 <div key={p.id} className="pkmn-field-item player hoverable transition-transform" onClick={() => setClickedPkmn(p)} style={{ cursor: 'pointer' }}>
-                                    <div className="pkmn-field-info">
-                                        <img src={p.immagine_url} width={30} />
-                                        <span><strong>{p.nome}</strong> | {p.hp}/{p.hp_max} HP <i style={{ marginLeft: '8px', opacity: 0.7, fontSize: '0.9em' }}>({p.allenatore})</i></span>
+                                    <div className="pkmn-field-info" style={{ flex: 1, gap: '12px' }}>
+                                        <img src={p.immagine_url} width={38} style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+                                        <div className="pkmn-field-details" style={{ flex: 1 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                                <strong style={{ fontSize: '0.95rem', letterSpacing: '0.5px', color: '#fff' }}>{p.nome.toUpperCase()}</strong>
+                                                <div style={{ 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    gap: '4px', 
+                                                    padding: '2px 8px', 
+                                                    background: 'rgba(255,255,255,0.08)', 
+                                                    borderRadius: '4px',
+                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                    marginRight: '12px'
+                                                }}>
+                                                    <Users2 size={10} style={{ opacity: 0.8 }} />
+                                                    <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.3px', opacity: 0.9 }}>
+                                                        {p.allenatore}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div className="hp-bar-container" style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden', flex: 1, maxWidth: '150px' }}>
+                                                    <div 
+                                                        className="hp-bar-fill" 
+                                                        style={{ 
+                                                            width: `${(p.hp / p.hp_max) * 100}%`,
+                                                            backgroundColor: getHPColor(p.hp, p.hp_max),
+                                                            height: '100%',
+                                                            transition: 'width 0.3s ease'
+                                                        }} 
+                                                    />
+                                                </div>
+                                                <span style={{ fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 700, opacity: 0.8 }}>
+                                                    {p.hp}/{p.hp_max}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="pkmn-field-actions">
                                         <button 
-                                            className={`btn-status-circle ${p.ha_agito ? 'acted' : 'waiting'}`} 
-                                            onClick={(e) => { e.stopPropagation(); toggleHaAgito(p.id); }}
-                                            title={p.ha_agito ? 'Ha agito' : 'Deve agire'}
+                                            className={`btn-status-circle ${(battleState.mosse_in_coda || []).some(m => m.pkmn_id === p.id) ? 'acted' : 'waiting'}`} 
+                                            onClick={(e) => e.stopPropagation()}
+                                            title={(battleState.mosse_in_coda || []).some(m => m.pkmn_id === p.id) ? 'Mossa pianificata' : 'In attesa di mossa'}
                                         />
                                         <button className="btn-remove" onClick={(e) => { e.stopPropagation(); rimuoviDalCampo(p.id); }}><Trash2 size={14} /></button>
                                     </div>
@@ -661,10 +766,8 @@ export default function Battaglia() {
                                 const codaRaw = battleState.mosse_in_coda || [];
                                 const allApproved = codaRaw.length > 0 && codaRaw.every(t => t.approvata);
 
-                                // Ordiniamo per iniziativa SOLO se tutto è approvato
-                                const displayCoda = allApproved 
-                                    ? [...codaRaw].sort((a,b) => b.valore_iniziativa - a.valore_iniziativa)
-                                    : codaRaw;
+                                // Ordiniamo SEMPRE per iniziativa
+                                const displayCoda = [...codaRaw].sort((a,b) => (b.valore_iniziativa || 0) - (a.valore_iniziativa || 0));
 
                                 return displayCoda.map((t, idx) => {
                                     // Troviamo l'indice originale nella coda per le funzioni di DB
@@ -844,6 +947,16 @@ export default function Battaglia() {
                     pokemonInCampo={battleState?.pokemon_in_campo?.find(x => x.id === clickedPkmn.id)}
                     updateBattleState={updateBattleStateLive}
                 />
+            )}
+            {/* CALCOLATORE DANNI MODALE */}
+            {showCalculator && calcTurn && (
+                <div className="modal-overlay" style={{ zIndex: 1000 }}>
+                    <DamageCalculator 
+                        turn={calcTurn}
+                        battleState={battleState}
+                        onClose={handleCalcFinish}
+                    />
+                </div>
             )}
         </div>
     );
