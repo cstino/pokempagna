@@ -46,7 +46,7 @@ export default function MosseMaster() {
                 livello: m.livello || 1,
                 categoria: cat,
                 tipologia: cat,
-                danni: m.danni || '0',
+                danni: m.dadi || m.potenza || '0',
                 accuratezza: m.accuratezza || '100',
                 priorita: m.priorita || 0,
                 bersagli: m.bersagli || 'Singolo',
@@ -82,8 +82,8 @@ export default function MosseMaster() {
             const payload = { 
                 nome: editForm.nome,
                 tipo: editForm.tipo,
-                categoria: catValue, // Usiamo il nome definitivo
-                danni: editForm.danni,
+                categoria: catValue,
+                dadi: editForm.danni, // Nel DB si chiama dadi, nel form danni
                 accuratezza: editForm.accuratezza,
                 priorita: parseInt(editForm.priorita) || 0,
                 bersagli: editForm.bersagli,
@@ -274,7 +274,7 @@ export default function MosseMaster() {
                                             </td>
                                             <td>
                                                 <div style={{ fontSize: '0.85rem' }}>
-                                                    <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>{m.danni || 0}</span>
+                                                    <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>{m.dadi || m.potenza || 0}</span>
                                                     <span style={{ opacity: 0.5, margin: '0 4px' }}>/</span>
                                                     <span style={{ color: '#34d399' }}>{m.accuratezza || '100'}</span>
                                                 </div>

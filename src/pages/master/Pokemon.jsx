@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Search, Plus, Edit2, Save, X, Loader2, Check, Info, Trash2, Heart, Shield, Zap, TrendingUp, Ruler, Weight, Upload } from 'lucide-react';
 import { getTypeColor, getTypeLabel } from '../../lib/typeColors';
+import { calculateMatchups } from '../../lib/typeLogic';
+import { useRef } from 'react';
 import './Party.css'; // Reusing Party.css for consistent Master dashboard styling
 
 export default function PokemonMaster() {
@@ -16,6 +18,7 @@ export default function PokemonMaster() {
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [tipiDisponibili, setTipiDisponibili] = useState([]);
+    const lastTypesRef = useRef("");
 
     const BUCKET_NAME = 'pokemon_immagini';
 
@@ -54,6 +57,25 @@ export default function PokemonMaster() {
             setUploading(false);
         }
     };
+    
+    // Automatismo per generare debolezze/resistenze basate sui tipi
+    useEffect(() => {
+        if (isEditing && editForm) {
+            const currentTypes = `${editForm.tipo1}-${editForm.tipo2 || ''}`;
+            // Se i tipi sono cambiati rispetto all'ultima generazione, ricalcola
+            if (lastTypesRef.current !== currentTypes && lastTypesRef.current !== "INITIALIZING") {
+                const buckets = calculateMatchups(editForm.tipo1, editForm.tipo2);
+                setEditForm(prev => ({
+                    ...prev,
+                    ...buckets
+                }));
+                lastTypesRef.current = currentTypes;
+            } else if (lastTypesRef.current === "INITIALIZING") {
+                // Abbiamo finito l'inizializzazione, ora i prossimi cambi attiveranno il calcolo
+                lastTypesRef.current = currentTypes;
+            }
+        }
+    }, [editForm?.tipo1, editForm?.tipo2, isEditing]);
 
     useEffect(() => {
         caricaDati();
@@ -262,6 +284,8 @@ export default function PokemonMaster() {
                 tipo1: p.tipo1.toUpperCase(), 
                 tipo2: p.tipo2 ? p.tipo2.toUpperCase() : null 
             });
+            // Blocchiamo il ricalcolo automatico all'apertura per non sovrascrivere dati custom
+            lastTypesRef.current = "INITIALIZING";
         } else {
             setEditForm({
                 nome: '',
@@ -285,6 +309,8 @@ export default function PokemonMaster() {
                 resistenze_x4: '',
                 immunita: ''
             });
+            // Per i nuovi pokemon, permettiamo il calcolo immediato
+            lastTypesRef.current = "";
         }
         setIsEditing(true);
     };
