@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Swords, Power, Users, Shield, Zap, Heart, Trash2, Plus, Users2, Search, Loader2, ChevronLeft, ChevronRight, Info, Clock, CheckCircle2, ChevronDown, Check } from 'lucide-react';
@@ -936,7 +937,7 @@ export default function Battaglia() {
                 </div>
             )}
 
-            {clickedPkmn && (
+            {clickedPkmn && createPortal(
                 <LivePokemonCard 
                     pokemonId={clickedPkmn.original_id}
                     tableName="pokemon_giocatore"
@@ -946,17 +947,19 @@ export default function Battaglia() {
                     battleInstanceId={clickedPkmn.id}
                     pokemonInCampo={battleState?.pokemon_in_campo?.find(x => x.id === clickedPkmn.id)}
                     updateBattleState={updateBattleStateLive}
-                />
+                />,
+                document.body
             )}
             {/* CALCOLATORE DANNI MODALE */}
-            {showCalculator && calcTurn && (
-                <div className="modal-overlay" style={{ zIndex: 1000 }}>
+            {showCalculator && calcTurn && createPortal(
+                <div className="modal-overlay" style={{ zIndex: 9999 }}>
                     <DamageCalculator 
                         turn={calcTurn}
                         battleState={battleState}
                         onClose={handleCalcFinish}
                     />
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

@@ -41,6 +41,10 @@ export default function Party() {
     // Stati per le Mosse (Master Edit)
     const [allAvailableMoves, setAllAvailableMoves] = useState([]);
     const [selectedPkmnMoveIds, setSelectedPkmnMoveIds] = useState([]); // Array di ID mosse assegnate
+    const [activeMoveIds, setActiveMoveIds] = useState([]); // Array di ID mosse attive (max 4)
+    const [showAddMoveModal, setShowAddMoveModal] = useState(false);
+    const [viewingMoveDetails, setViewingMoveDetails] = useState(null);
+    const [slotToReplace, setSlotToReplace] = useState(null);
     const [moveSearch, setMoveSearch] = useState('');
     const [moveTypeFilter, setMoveTypeFilter] = useState('all');
     const [showEvoSearch, setShowEvoSearch] = useState(false);
@@ -522,10 +526,11 @@ export default function Party() {
             // 1. Fetch mosse
             const { data: mData, error: mErr } = await supabase
                 .from('mosse_pokemon')
-                .select('mossa_id')
+                .select('mossa_id, attiva')
                 .eq('pokemon_giocatore_id', pkmn.id);
             if (mErr) throw mErr;
             setSelectedPkmnMoveIds(mData.map(m => m.mossa_id));
+            setActiveMoveIds(mData.filter(m => m.attiva).map(m => m.mossa_id));
 
             // 2. Fetch specie (per Approach A: ricalcolo basato su base_stats)
             const { data: sData, error: sErr } = await supabase
@@ -547,6 +552,37 @@ export default function Party() {
             setSelectedPkmnMoveIds(prev => [...prev, moveId]);
         } else {
             setSelectedPkmnMoveIds(prev => prev.filter(id => id !== moveId));
+        }
+    };
+
+    // Helper per gestione mosse v2
+    const handleAddMoveFromLibrary = (moveId) => {
+        if (!selectedPkmnMoveIds.includes(moveId)) {
+            setSelectedPkmnMoveIds(prev => [...prev, moveId]);
+        }
+        setShowAddMoveModal(false);
+    };
+
+    const handleAssignToSlot = (moveId) => {
+        if (slotToReplace !== null) {
+            const newActive = [...activeMoveIds];
+            newActive[slotToReplace] = moveId;
+            setActiveMoveIds(newActive.filter(id => id !== null));
+            setSlotToReplace(null);
+            setViewingMoveDetails(null);
+        }
+    };
+
+    const handleRemoveActive = (moveId) => {
+        setActiveMoveIds(prev => prev.filter(id => id !== moveId));
+        setViewingMoveDetails(null);
+    };
+
+    const handleDeleteKnown = (moveId) => {
+        if (window.confirm("Rimuovere questa mossa dalle conosciute?")) {
+            setSelectedPkmnMoveIds(prev => prev.filter(id => id !== moveId));
+            setActiveMoveIds(prev => prev.filter(id => id !== moveId));
+            setViewingMoveDetails(null);
         }
     };
 
@@ -606,7 +642,7 @@ export default function Party() {
                             tipo: mDetails?.tipo || 'normale',
                             pp_attuale: mDetails?.pp_max || 20,
                             pp_max: mDetails?.pp_max || 20,
-                            attiva: true
+                            attiva: activeMoveIds.includes(moveId)
                         };
                     });
                     const { error: mError } = await supabase.from('mosse_pokemon').insert(movesToInsert);
@@ -633,7 +669,7 @@ export default function Party() {
                             tipo: mDetails?.tipo || 'normale',
                             pp_attuale: mDetails?.pp_max || 20,
                             pp_max: mDetails?.pp_max || 20,
-                            attiva: true
+                            attiva: activeMoveIds.includes(moveId)
                         };
                     });
                     
@@ -1459,65 +1495,87 @@ export default function Party() {
                                                 </div>
                                             </div>
 
-                                            <div className="pkmn-moves-master-section" style={{ marginTop: '20px' }}>
-                                                <h4 className="edit-section-title"><Zap size={16} /> Mosse Conosciute</h4>
-
-                                                <div className="move-filters-row">
-                                                    <div className="search-input-wrapper">
-                                                        <Search size={14} />
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Cerca mossa..."
-                                                            value={moveSearch}
-                                                            onChange={(e) => setMoveSearch(e.target.value)}
-                                                        />
-                                                    </div>
-                                                    <select value={moveTypeFilter} onChange={(e) => setMoveTypeFilter(e.target.value)}>
-                                                        <option value="all">Tutti i Tipi</option>
-                                                        {Array.from(new Set(allAvailableMoves.map(m => m.tipo?.toLowerCase()))).map(type => (
-                                                            <option key={type} value={type}>{getTypeLabel(type)}</option>
-                                                        ))}
-                                                    </select>
+                                            {/* SEZIONE MOSSE ATTIVE (4 SLOT) - V2 */}
+                                            <div className="active-moves-management" style={{ marginTop: '24px' }}>
+                                                <h4 className="edit-section-title"><Zap size={16} /> Mosse Attive (4 Slot)</h4>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                                    {[0, 1, 2, 3].map(idx => {
+                                                        const moveId = activeMoveIds[idx];
+                                                        const move = allAvailableMoves.find(m => m.id === moveId);
+                                                        return (
+                                                            <div 
+                                                                key={idx} 
+                                                                className={`active-move-slot-v2 ${!move ? 'empty' : ''}`}
+                                                                onClick={() => {
+                                                                    if (move) setViewingMoveDetails(move);
+                                                                    else setSlotToReplace(idx);
+                                                                }}
+                                                                style={{ '--type-color': move ? getTypeColor(move.tipo) : 'transparent' }}
+                                                            >
+                                                                {move ? (
+                                                                    <div className="active-move-card-content">
+                                                                        <div className="move-type-mini">
+                                                                            <img src={getTypeIcon(move.tipo)} alt={move.tipo} />
+                                                                        </div>
+                                                                        <div className="move-main-info">
+                                                                            <span className="move-name">{move.nome}</span>
+                                                                            <div className="move-stats-mini">
+                                                                                <span>POT <strong>{move.danni || move.potenza || '-'}</strong></span>
+                                                                                <span>PP <strong>{move.pp_max}</strong></span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="move-slot-action">
+                                                                            <Edit2 size={14} />
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <>
+                                                                        <Plus size={18} />
+                                                                        <span>SLOT VUOTO</span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
+                                            </div>
 
-                                                <div className="moves-selection-grid">
-                                                    {allAvailableMoves
-                                                        .filter(m => {
-                                                            const matchesSearch = m.nome.toLowerCase().includes(moveSearch.toLowerCase()) || 
-                                                                               getTypeLabel(m.tipo).toLowerCase().includes(moveSearch.toLowerCase());
-                                                            const matchesType = moveTypeFilter === 'all' || m.tipo === moveTypeFilter;
-                                                            return matchesSearch && matchesType;
-                                                        })
-                                                        .map(move => {
-                                                            const isChecked = selectedPkmnMoveIds.includes(move.id);
+                                            {/* SEZIONE MOSSE CONOSCIUTE - V2 */}
+                                            <div className="known-moves-management" style={{ marginTop: '24px', width: '100%' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                                    <h4 className="edit-section-title" style={{ margin: 0 }}><BookOpen size={16} /> Mosse Conosciute</h4>
+                                                    <button 
+                                                        className="btn-add-move-library"
+                                                        onClick={() => setShowAddMoveModal(true)}
+                                                    >
+                                                        <Plus size={14} /> Aggiungi Mossa
+                                                    </button>
+                                                </div>
+                                                
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', minHeight: '40px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                                    {selectedPkmnMoveIds.length > 0 ? (
+                                                        selectedPkmnMoveIds.map(moveId => {
+                                                            const move = allAvailableMoves.find(m => m.id === moveId);
+                                                            if (!move) return null;
+                                                            const isActive = activeMoveIds.includes(moveId);
                                                             return (
                                                                 <div 
-                                                                    key={move.id} 
-                                                                    className={`move-checkbox-card ${isChecked ? 'checked' : ''}`}
-                                                                    onClick={(e) => {
-                                                                        e.preventDefault();
-                                                                        e.stopPropagation();
-                                                                        toggleMoveAssignment(move.id, !isChecked);
-                                                                    }}
+                                                                    key={moveId} 
+                                                                    className={`known-move-pill-v2 ${isActive ? 'is-active' : ''}`}
+                                                                    onClick={() => setViewingMoveDetails(move)}
+                                                                    style={{ '--type-color': getTypeColor(move.tipo) }}
                                                                 >
-                                                                    <div className={`custom-checkbox-master ${isChecked ? 'active' : ''}`}>
-                                                                        {isChecked && <Check size={12} />}
-                                                                    </div>
-                                                                    <div className="move-check-content">
-                                                                        <div className="move-check-header">
-                                                                            <span className="move-check-name">{move.nome}</span>
-                                                                            <span className="type-tag-move" style={{ borderLeftColor: getTypeColor(move.tipo) }}>
-                                                                                {getTypeLabel(move.tipo)}
-                                                                            </span>
-                                                                        </div>
-                                                                        <div className="move-check-details">
-                                                                            <span>POT <strong style={{ color: '#fbbf24' }}>{move.danni || move.potenza || '-'}</strong></span>
-                                                                            <span>PP <strong style={{ color: '#fbbf24' }}>{move.pp_max}</strong></span>
-                                                                        </div>
-                                                                    </div>
+                                                                    {isActive && <div className="active-dot-indicator" />}
+                                                                    <img src={getTypeIcon(move.tipo)} alt={move.tipo} className="pill-type-icon" />
+                                                                    <span className="pill-name">{move.nome}</span>
                                                                 </div>
                                                             );
-                                                        })}
+                                                        })
+                                                    ) : (
+                                                        <span style={{ fontSize: '0.8rem', opacity: 0.4, fontStyle: 'italic', width: '100%', textAlign: 'center' }}>
+                                                            Nessuna mossa conosciuta. Usa "+ Aggiungi Mossa" per espandere il repertorio.
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                             <div className="note-master-section" style={{ marginTop: '20px', width: '100%' }}>
@@ -1953,6 +2011,192 @@ export default function Party() {
                     box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
                 }
             `}</style>
+
+            {/* LIBRERIA MOSSE MODAL */}
+            {showAddMoveModal && (
+                <div className="modal-overlay animate-fade-in" style={{ zIndex: 3000 }}>
+                    <div className="master-edit-modal move-library-modal animate-slide-up" style={{ maxWidth: '600px', width: '90%' }}>
+                        <div className="library-header">
+                            <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
+                                <BookOpen size={20} color="#3b82f6" /> Libreria Mosse
+                            </h3>
+                            <button onClick={() => setShowAddMoveModal(false)} className="btn-close-mini"><X size={20} /></button>
+                        </div>
+
+                        <div style={{ padding: '0 20px 15px' }}>
+                            <div className="input-with-icon" style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '10px' }}>
+                                <Search size={16} color="#94a3b8" />
+                                <input 
+                                    type="text" 
+                                    placeholder="Cerca per nome o tipo..." 
+                                    value={moveSearch}
+                                    onChange={(e) => setMoveSearch(e.target.value)}
+                                    style={{ border: 'none', background: 'transparent' }}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="modal-body-scroll" style={{ height: '450px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {allAvailableMoves
+                                    .filter(m => {
+                                        const matchesSearch = m.nome.toLowerCase().includes(moveSearch.toLowerCase()) || 
+                                                            getTypeLabel(m.tipo).toLowerCase().includes(moveSearch.toLowerCase());
+                                        return matchesSearch;
+                                    })
+                                    .map(move => {
+                                        const isKnown = selectedPkmnMoveIds.includes(move.id);
+                                        return (
+                                            <div 
+                                                key={move.id} 
+                                                className={`library-move-item-v2 ${isKnown ? 'is-known' : ''}`}
+                                                onClick={() => !isKnown && handleAddMoveFromLibrary(move.id)}
+                                                style={{ '--type-color': getTypeColor(move.tipo) }}
+                                            >
+                                                <div className="move-type-icon-mini">
+                                                    <img src={getTypeIcon(move.tipo)} alt={move.tipo} />
+                                                </div>
+                                                <div className="move-core-info">
+                                                    <span className="name">{move.nome}</span>
+                                                    <span className="type">{getTypeLabel(move.tipo)}</span>
+                                                </div>
+                                                <div className="move-stats-mini">
+                                                    <span>POT <strong>{move.danni || move.potenza || '-'}</strong></span>
+                                                    <span>PP <strong>{move.pp_max}</strong></span>
+                                                </div>
+                                                {isKnown ? (
+                                                    <Check size={16} color="#10b981" />
+                                                ) : (
+                                                    <Plus size={16} color="#3b82f6" />
+                                                )}
+                                            </div>
+                                        );
+                                    })
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* DETTAGLI MOSSA / GESTIONE ATTIVA MODAL */}
+            {viewingMoveDetails && (
+                <div className="modal-overlay animate-fade-in" style={{ zIndex: 3100 }}>
+                    <div className="master-edit-modal animate-slide-up" style={{ maxWidth: '400px', width: '90%', padding: '25px', borderRadius: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: getTypeColor(viewingMoveDetails.tipo), display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 4px 12px ${getTypeColor(viewingMoveDetails.tipo)}44` }}>
+                                    <img src={getTypeIcon(viewingMoveDetails.tipo)} alt="" style={{ width: '24px', filter: 'brightness(0) invert(1)' }} />
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>{viewingMoveDetails.nome}</h3>
+                                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 'bold' }}>{getTypeLabel(viewingMoveDetails.tipo).toUpperCase()}</span>
+                                </div>
+                            </div>
+                            <button onClick={() => { setViewingMoveDetails(null); setSlotToReplace(null); }} className="btn-close-mini"><X size={24} /></button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
+                            <div className="m-stat-box">
+                                <span className="label">POTENZA</span>
+                                <span className="value">{viewingMoveDetails.danni || viewingMoveDetails.potenza || '-'}</span>
+                            </div>
+                            <div className="m-stat-box">
+                                <span className="label">PUNTI POTENZA</span>
+                                <span className="value">{viewingMoveDetails.pp_max}</span>
+                            </div>
+                        </div>
+
+                        {viewingMoveDetails.descrizione && (
+                            <div className="move-effect-box">
+                                <label>EFFETTO</label>
+                                <p>{viewingMoveDetails.descrizione}</p>
+                            </div>
+                        )}
+
+                        <div style={{ marginTop: '25px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {activeMoveIds.includes(viewingMoveDetails.id) ? (
+                                <button 
+                                    className="btn-remove-active-v2"
+                                    onClick={() => handleRemoveActive(viewingMoveDetails.id)}
+                                >
+                                    <Trash2 size={18} /> DISINSTALLA DALLO SLOT
+                                </button>
+                            ) : (
+                                <button 
+                                    className="btn-save" 
+                                    style={{ width: '100%', height: '50px', background: '#3b82f6' }}
+                                    onClick={() => {
+                                        if (activeMoveIds.length < 4 || slotToReplace !== null) {
+                                            const newActive = [...activeMoveIds];
+                                            if (slotToReplace !== null) {
+                                                newActive[slotToReplace] = viewingMoveDetails.id;
+                                                setSlotToReplace(null);
+                                            } else {
+                                                newActive.push(viewingMoveDetails.id);
+                                            }
+                                            setActiveMoveIds(newActive);
+                                            setViewingMoveDetails(null);
+                                        } else {
+                                            alert("Il Pokemon ha già 4 mosse attive. Seleziona uno slot occupato per sostituirla.");
+                                        }
+                                    }}
+                                >
+                                    <Swords size={18} /> {slotToReplace !== null ? 'SOSTITUISCI IN SLOT' : 'EQUIPAGGIA IN SLOT'}
+                                </button>
+                            )}
+
+                            <button 
+                                className="btn-delete-known-v2"
+                                onClick={() => handleDeleteKnown(viewingMoveDetails.id)}
+                            >
+                                Dimentica Mossa Permanentemente
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* PICKER PER SLOT VUOTO */}
+            {slotToReplace !== null && !viewingMoveDetails && (
+                <div className="modal-overlay animate-fade-in" style={{ zIndex: 3000 }}>
+                    <div className="master-edit-modal animate-slide-up" style={{ maxWidth: '450px', width: '90%' }}>
+                        <div className="library-header">
+                            <h3 style={{ margin: 0 }}>Seleziona Mossa per Slot {slotToReplace + 1}</h3>
+                            <button onClick={() => setSlotToReplace(null)} className="btn-close-mini"><X size={20} /></button>
+                        </div>
+                        <div className="modal-body-scroll" style={{ height: '350px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {selectedPkmnMoveIds
+                                    .filter(mid => !activeMoveIds.includes(mid))
+                                    .map(mid => {
+                                        const m = allAvailableMoves.find(x => x.id === mid);
+                                        if (!m) return null;
+                                        return (
+                                            <div 
+                                                key={mid} 
+                                                className="picker-move-item"
+                                                onClick={() => handleAssignToSlot(mid)}
+                                                style={{ '--type-color': getTypeColor(m.tipo) }}
+                                            >
+                                                <img src={getTypeIcon(m.tipo)} alt="" />
+                                                <span className="name">{m.nome}</span>
+                                                <Plus size={16} className="plus-icon" />
+                                            </div>
+                                        );
+                                    })
+                                }
+                                {selectedPkmnMoveIds.filter(mid => !activeMoveIds.includes(mid)).length === 0 && (
+                                    <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
+                                        <Info size={32} style={{ opacity: 0.2, marginBottom: '10px' }} />
+                                        <p>Nessuna mossa conosciuta disponibile.<br/>Aggiungine una prima.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

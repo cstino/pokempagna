@@ -41,7 +41,11 @@ export default function NPC() {
 
     // Stati per le Mosse (Master Edit)
     const [allAvailableMoves, setAllAvailableMoves] = useState([]);
-    const [selectedPkmnMoveIds, setSelectedPkmnMoveIds] = useState([]); // Array di ID mosse assegnate
+    const [selectedPkmnMoveIds, setSelectedPkmnMoveIds] = useState([]); // Array di ID mosse "Conosciute"
+    const [activeMoveIds, setActiveMoveIds] = useState([]); // Array di 4 ID mosse "Attive"
+    const [showAddMoveModal, setShowAddMoveModal] = useState(false);
+    const [viewingMoveDetails, setViewingMoveDetails] = useState(null);
+    const [slotToReplace, setSlotToReplace] = useState(null);
     const [moveSearch, setMoveSearch] = useState('');
     const [moveTypeFilter, setMoveTypeFilter] = useState('all');
 
@@ -497,12 +501,17 @@ export default function NPC() {
     const startEditingPkmn = async (pkmn) => {
         setEditingPkmn(pkmn);
         try {
-            const { data, error } = await supabase
+            const { data: mData, error: mErr } = await supabase
                 .from('mosse_pokemon')
-                .select('mossa_id')
+                .select('mossa_id, attiva')
                 .eq('pokemon_giocatore_id', pkmn.id);
-            if (error) throw error;
-            setSelectedPkmnMoveIds(data.map(m => m.mossa_id));
+            if (mErr) throw mErr;
+            
+            const knownIds = mData.map(m => m.mossa_id);
+            const activeIds = mData.filter(m => m.attiva).map(m => m.mossa_id);
+            
+            setSelectedPkmnMoveIds(knownIds);
+            setActiveMoveIds(activeIds);
         } catch (err) { console.error("Errore recupero mosse assegnate:", err); }
     };
 
@@ -567,7 +576,7 @@ export default function NPC() {
                             tipo: mDetails?.tipo || 'normale',
                             pp_attuale: mDetails?.pp_max || 20,
                             pp_max: mDetails?.pp_max || 20,
-                            attiva: true
+                            attiva: activeMoveIds.includes(moveId)
                         };
                     });
                     const { error: mError } = await supabase.from('mosse_pokemon').insert(movesToInsert);
@@ -594,7 +603,7 @@ export default function NPC() {
                             tipo: mDetails?.tipo || 'normale',
                             pp_attuale: mDetails?.pp_max || 20,
                             pp_max: mDetails?.pp_max || 20,
-                            attiva: true
+                            attiva: activeMoveIds.includes(moveId)
                         };
                     });
                     
@@ -1356,11 +1365,273 @@ export default function NPC() {
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                                
+                                                {/* SEZIONE MOSSE ATTIVE (4 SLOT) */}
+                                                <div className="active-moves-management" style={{ marginTop: '24px' }}>
+                                                    <h4 className="edit-section-title"><Zap size={16} /> Mosse Attive (4 Slot)</h4>
+                                                    <div className="active-moves-slots-grid">
+                                                        {[0, 1, 2, 3].map(index => {
+                                                            const moveId = activeMoveIds[index];
+                                                            const move = allAvailableMoves.find(m => m.id === moveId);
+                                                            return (
+                                                                <div 
+                                                                    key={index} 
+                                                                    className={`active-move-slot ${!move ? 'empty' : ''}`}
+                                                                    onClick={() => move ? setViewingMoveDetails(move) : setSlotToReplace(index)}
+                                                                >
+                                                                    {move ? (
+                                                                        <>
+                                                                            <div className="slot-type-indicator" style={{ backgroundColor: getTypeColor(move.tipo) }} />
+                                                                            <span className="slot-move-name">{move.nome}</span>
+                                                                            <Info size={14} className="slot-info-icon" />
+                                                                        </>
+                                                                    ) : (
+                                                                        <div className="slot-empty-content">
+                                                                            <Plus size={16} />
+                                                                            <span>Scegli</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
 
-                                            <button className="btn-confirm-add" onClick={salvaPokeStats} disabled={saving} style={{ marginTop: '20px' }}>
-                                                {saving ? <Loader2 size={18} className="spin" /> : <Save size={18} />} Salva Pokémon
-                                            </button>
+                                                {/* SEZIONE MOSSE CONOSCIUTE */}
+                                                <div className="known-moves-management" style={{ marginTop: '24px', width: '100%' }}>
+                                                    <div className="flex-between align-center" style={{ marginBottom: '12px' }}>
+                                                        <h4 className="edit-section-title" style={{ margin: 0 }}><BookOpen size={16} /> Mosse Conosciute</h4>
+                                                        <button 
+                                                            className="btn-add-move-trigger"
+                                                            onClick={() => setShowAddMoveModal(true)}
+                                                            style={{ 
+                                                                padding: '6px 12px', 
+                                                                borderRadius: '8px', 
+                                                                background: 'rgba(251, 191, 36, 0.1)', 
+                                                                color: '#fbbf24', 
+                                                                border: '1px solid rgba(251, 191, 36, 0.3)',
+                                                                fontSize: '0.8rem',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            <Plus size={14} /> Aggiungi Mossa
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <div className="known-moves-list-new">
+                                                        {selectedPkmnMoveIds.length > 0 ? (
+                                                            <div className="known-moves-grid">
+                                                                {selectedPkmnMoveIds.map(moveId => {
+                                                                    const move = allAvailableMoves.find(m => m.id === moveId);
+                                                                    if (!move) return null;
+                                                                    const isActive = activeMoveIds.includes(moveId);
+                                                                    return (
+                                                                        <div key={moveId} className={`known-move-pill ${isActive ? 'is-active' : ''}`}>
+                                                                            <span className="type-dot" style={{ backgroundColor: getTypeColor(move.tipo) }} />
+                                                                            <span className="m-name">{move.nome}</span>
+                                                                            <button 
+                                                                                className="btn-remove-known" 
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setSelectedPkmnMoveIds(prev => prev.filter(id => id !== moveId));
+                                                                                    setActiveMoveIds(prev => prev.filter(id => id !== moveId));
+                                                                                }}
+                                                                            >
+                                                                                <X size={12} />
+                                                                            </button>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="empty-state-text" style={{ textAlign: 'center', padding: '20px', opacity: 0.5, border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px' }}>
+                                                                Nessuna mossa conosciuta. Aggiungine una per poterla equipaggiare!
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <button className="btn-confirm-add" onClick={salvaPokeStats} disabled={saving} style={{ marginTop: '20px' }}>
+                                                    {saving ? <Loader2 size={18} className="spin" /> : <Save size={18} />} Salva Pokémon
+                                                </button>
+
+                                                {/* MODAL AGGIUNGI MOSSA ALLA CONOSCENZA */}
+                                                {showAddMoveModal && (
+                                                    <div className="sub-modal-overlay">
+                                                        <div className="sub-modal-content moves-library-modal">
+                                                            <div className="sub-modal-header">
+                                                                <h3><Plus size={18} /> Aggiungi alla Conoscenza</h3>
+                                                                <button className="btn-close-sub" onClick={() => setShowAddMoveModal(false)}><X size={20} /></button>
+                                                            </div>
+                                                            
+                                                            <div className="move-filters-row" style={{ padding: '15px' }}>
+                                                                <div className="search-input-wrapper">
+                                                                    <Search size={14} />
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="Cerca mossa..."
+                                                                        value={moveSearch}
+                                                                        onChange={(e) => setMoveSearch(e.target.value)}
+                                                                    />
+                                                                </div>
+                                                                <select value={moveTypeFilter} onChange={(e) => setMoveTypeFilter(e.target.value)}>
+                                                                    <option value="all">Tutti i Tipi</option>
+                                                                    {Array.from(new Set(allAvailableMoves.map(m => m.tipo?.toLowerCase()))).map(type => (
+                                                                        <option key={type} value={type}>{getTypeLabel(type)}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+
+                                                            <div className="moves-library-grid">
+                                                                {allAvailableMoves
+                                                                    .filter(m => {
+                                                                        const matchesSearch = m.nome.toLowerCase().includes(moveSearch.toLowerCase()) || 
+                                                                                           getTypeLabel(m.tipo).toLowerCase().includes(moveSearch.toLowerCase());
+                                                                        const matchesType = moveTypeFilter === 'all' || m.tipo === moveTypeFilter;
+                                                                        return matchesSearch && matchesType;
+                                                                    })
+                                                                    .map(move => {
+                                                                        const isAlreadyKnown = selectedPkmnMoveIds.includes(move.id);
+                                                                        return (
+                                                                            <div 
+                                                                                key={move.id} 
+                                                                                className={`library-move-card ${isAlreadyKnown ? 'disabled' : ''}`}
+                                                                                onClick={() => {
+                                                                                    if (!isAlreadyKnown) {
+                                                                                        setSelectedPkmnMoveIds(prev => [...prev, move.id]);
+                                                                                        setShowAddMoveModal(false);
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                <div className="m-header">
+                                                                                    <span className="m-name">{move.nome}</span>
+                                                                                    <span className="m-type" style={{ color: getTypeColor(move.tipo) }}>{getTypeLabel(move.tipo)}</span>
+                                                                                </div>
+                                                                                <div className="m-stats">
+                                                                                    <span>POT: {move.danni || move.potenza || '-'}</span>
+                                                                                    <span>PP: {move.pp_max}</span>
+                                                                                </div>
+                                                                                {isAlreadyKnown && <div className="already-known-badge">GIA' CONOSCIUTA</div>}
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* MODAL SELEZIONA MOSSA ATTIVA (SLOT SELECTION) */}
+                                                {slotToReplace !== null && (
+                                                    <div className="sub-modal-overlay">
+                                                        <div className="sub-modal-content moves-selection-modal">
+                                                            <div className="sub-modal-header">
+                                                                <h3>Scegli Mossa per lo Slot {slotToReplace + 1}</h3>
+                                                                <button className="btn-close-sub" onClick={() => setSlotToReplace(null)}><X size={20} /></button>
+                                                            </div>
+                                                            <div className="selection-list">
+                                                                {selectedPkmnMoveIds.map(moveId => {
+                                                                    const move = allAvailableMoves.find(m => m.id === moveId);
+                                                                    const isAlreadyActive = activeMoveIds.includes(moveId);
+                                                                    return (
+                                                                        <div 
+                                                                            key={moveId} 
+                                                                            className={`selection-item ${isAlreadyActive ? 'active' : ''}`}
+                                                                            onClick={() => {
+                                                                                const newActive = [...activeMoveIds];
+                                                                                // Se la mossa è già attiva in un altro slot, la spostiamo? 
+                                                                                // O impediamo il duplicato. Pokémon non possono avere mosse duplicate.
+                                                                                if (isAlreadyActive) return; 
+                                                                                
+                                                                                newActive[slotToReplace] = moveId;
+                                                                                setActiveMoveIds(newActive.filter(id => id !== null));
+                                                                                setSlotToReplace(null);
+                                                                            }}
+                                                                        >
+                                                                            <span className="type-dot" style={{ backgroundColor: getTypeColor(move.tipo) }} />
+                                                                            <span className="m-name">{move.nome}</span>
+                                                                            {isAlreadyActive && <span className="already-active-tag">EQUIPAGGIATA</span>}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                                {selectedPkmnMoveIds.length === 0 && (
+                                                                    <div className="empty-selection">Non hai ancora mosse conosciute. Aggiungine una prima!</div>
+                                                                )}
+                                                            </div>
+                                                            <button className="btn-clear-slot" onClick={() => {
+                                                                const newActive = [...activeMoveIds];
+                                                                newActive.splice(slotToReplace, 1);
+                                                                setActiveMoveIds(newActive.filter(id => id !== null));
+                                                                setSlotToReplace(null);
+                                                            }}>
+                                                                <Trash2 size={14} /> SVUOTA SLOT
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* MODAL DETTAGLI MOSSA (VISUALIZZAZIONE DA SLOT ATTIVO) */}
+                                                {viewingMoveDetails && (
+                                                    <div className="sub-modal-overlay">
+                                                        <div className="sub-modal-content move-details-modal">
+                                                            <div className="sub-modal-header">
+                                                                <div className="flex-center gap-8">
+                                                                    <div className="type-icon-small" style={{ backgroundColor: getTypeColor(viewingMoveDetails.tipo) }} />
+                                                                    <h3>{viewingMoveDetails.nome}</h3>
+                                                                </div>
+                                                                <button className="btn-close-sub" onClick={() => setViewingMoveDetails(null)}><X size={20} /></button>
+                                                            </div>
+                                                            <div className="move-details-body">
+                                                                <div className="details-grid">
+                                                                    <div className="detail-item"><strong>Tipo:</strong> {getTypeLabel(viewingMoveDetails.tipo)}</div>
+                                                                    <div className="detail-item"><strong>PP:</strong> {viewingMoveDetails.pp_max}</div>
+                                                                    <div className="detail-item"><strong>Potenza:</strong> {viewingMoveDetails.danni || viewingMoveDetails.potenza || '-'}</div>
+                                                                    <div className="detail-item"><strong>Accuratezza:</strong> {viewingMoveDetails.accuratezza || '100'}%</div>
+                                                                </div>
+                                                                <p className="move-description">{viewingMoveDetails.descrizione || 'Nessuna descrizione disponibile.'}</p>
+                                                                
+                                                                 <div className="move-details-actions" style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                                                                    <button 
+                                                                        className="btn-replace-move"
+                                                                        onClick={() => {
+                                                                            const index = activeMoveIds.indexOf(viewingMoveDetails.id);
+                                                                            setSlotToReplace(index);
+                                                                            setViewingMoveDetails(null);
+                                                                        }}
+                                                                        style={{ flex: 1 }}
+                                                                    >
+                                                                        <Edit2 size={16} /> SOSTITUISCI
+                                                                    </button>
+                                                                    <button 
+                                                                        className="btn-remove-active"
+                                                                        onClick={() => {
+                                                                            setActiveMoveIds(prev => prev.filter(id => id !== viewingMoveDetails.id));
+                                                                            setViewingMoveDetails(null);
+                                                                        }}
+                                                                        style={{ 
+                                                                            background: 'rgba(239, 68, 68, 0.1)', 
+                                                                            color: '#ef4444', 
+                                                                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                                                                            padding: '8px 15px',
+                                                                            borderRadius: '8px',
+                                                                            fontSize: '0.8rem',
+                                                                            fontWeight: 'bold',
+                                                                            cursor: 'pointer',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            gap: '8px'
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 size={16} /> RIMUOVI
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     ) : showAddItem ? (
                                         <div className="pokemon-search-view animate-slide-up library-mode">
@@ -1668,6 +1939,358 @@ export default function NPC() {
                     font-size: 0.75rem;
                     font-weight: 800;
                     color: white;
+                }
+
+                /* MOVE MANAGEMENT STYLES */
+                .active-moves-slots-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 12px;
+                    margin-top: 15px;
+                }
+
+                .active-move-slot {
+                    background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 12px;
+                    height: 50px;
+                    display: flex;
+                    align-items: center;
+                    padding: 0 15px;
+                    gap: 12px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    position: relative;
+                    overflow: hidden;
+                }
+
+                .active-move-slot:hover {
+                    background: rgba(255, 255, 255, 0.08);
+                    border-color: rgba(255, 255, 255, 0.2);
+                    transform: translateY(-2px);
+                }
+
+                .active-move-slot.empty {
+                    border-style: dashed;
+                    justify-content: center;
+                    opacity: 0.6;
+                }
+
+                .slot-type-indicator {
+                    width: 4px;
+                    height: 70%;
+                    border-radius: 2px;
+                }
+
+                .slot-move-name {
+                    font-weight: 700;
+                    font-size: 0.9rem;
+                    color: white;
+                    flex: 1;
+                }
+
+                .slot-info-icon {
+                    opacity: 0.4;
+                }
+
+                .slot-empty-content {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                    color: rgba(255,255,255,0.5);
+                }
+
+                .known-moves-grid {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                }
+
+                .known-move-pill {
+                    background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 20px;
+                    padding: 6px 12px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s;
+                }
+
+                .known-move-pill.is-active {
+                    background: rgba(251, 191, 36, 0.15);
+                    border-color: rgba(251, 191, 36, 0.3);
+                }
+
+                .known-move-pill .type-dot {
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                }
+
+                .known-move-pill .m-name {
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                }
+
+                .btn-remove-known {
+                    background: none;
+                    border: none;
+                    color: rgba(255,255,255,0.3);
+                    cursor: pointer;
+                    display: flex;
+                    padding: 2px;
+                    border-radius: 50%;
+                    transition: all 0.2s;
+                }
+
+                .btn-remove-known:hover {
+                    color: #ef4444;
+                    background: rgba(239, 68, 68, 0.1);
+                }
+
+                /* MODAL STYLES */
+                .sub-modal-overlay {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(15, 23, 42, 0.9);
+                    backdrop-filter: blur(8px);
+                    z-index: 100;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 30px;
+                    border-radius: 24px;
+                }
+
+                .sub-modal-content {
+                    background: #1e293b;
+                    border: 1px solid rgba(255,255,255,0.1);
+                    border-radius: 20px;
+                    width: 100%;
+                    max-width: 500px;
+                    max-height: 90%;
+                    display: flex;
+                    flex-direction: column;
+                    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+                }
+
+                .sub-modal-header {
+                    padding: 20px;
+                    border-bottom: 1px solid rgba(255,255,255,0.05);
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+
+                .sub-modal-header h3 {
+                    margin: 0;
+                    font-size: 1.1rem;
+                    color: white;
+                }
+
+                .btn-close-sub {
+                    background: none;
+                    border: none;
+                    color: rgba(255,255,255,0.5);
+                    cursor: pointer;
+                }
+
+                .moves-library-grid {
+                    padding: 15px;
+                    overflow-y: auto;
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 12px;
+                }
+
+                .library-move-card {
+                    background: rgba(255,255,255,0.03);
+                    border: 1px solid rgba(255,255,255,0.05);
+                    border-radius: 12px;
+                    padding: 12px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    position: relative;
+                }
+
+                .library-move-card:hover:not(.disabled) {
+                    background: rgba(255,255,255,0.06);
+                    border-color: var(--accent-primary);
+                    transform: translateY(-2px);
+                }
+
+                .library-move-card.disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+
+                .library-move-card .m-header {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 8px;
+                }
+
+                .library-move-card .m-name {
+                    font-weight: 700;
+                    font-size: 0.85rem;
+                }
+
+                .library-move-card .m-type {
+                    font-size: 0.7rem;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                }
+
+                .library-move-card .m-stats {
+                    display: flex;
+                    gap: 10px;
+                    font-size: 0.7rem;
+                    opacity: 0.6;
+                }
+
+                .already-known-badge {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(15, 23, 42, 0.4);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.6rem;
+                    font-weight: 900;
+                    color: #fbbf24;
+                    backdrop-filter: blur(1px);
+                    border-radius: 12px;
+                }
+
+                .selection-list {
+                    padding: 15px;
+                    overflow-y: auto;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+
+                .selection-item {
+                    background: rgba(255,255,255,0.03);
+                    border: 1px solid rgba(255,255,255,0.05);
+                    border-radius: 12px;
+                    padding: 12px 15px;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+
+                .selection-item:hover:not(.active) {
+                    background: rgba(255,255,255,0.06);
+                    border-color: var(--accent-primary);
+                }
+
+                .selection-item.active {
+                    opacity: 0.5;
+                    cursor: default;
+                    border-color: rgba(251, 191, 36, 0.3);
+                }
+
+                .selection-item .type-dot {
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 50%;
+                }
+
+                .selection-item .m-name {
+                    font-weight: 700;
+                    flex: 1;
+                }
+
+                .already-active-tag {
+                    font-size: 0.6rem;
+                    font-weight: 900;
+                    color: #fbbf24;
+                    background: rgba(251, 191, 36, 0.1);
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                }
+
+                .btn-clear-slot {
+                    margin: 0 20px 20px;
+                    background: rgba(239, 68, 68, 0.1);
+                    border: 1px solid rgba(239, 68, 68, 0.2);
+                    color: #ef4444;
+                    padding: 10px;
+                    border-radius: 10px;
+                    font-size: 0.8rem;
+                    font-weight: 700;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                }
+
+                .move-details-body {
+                    padding: 20px;
+                }
+
+                .details-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 15px;
+                    margin-bottom: 20px;
+                }
+
+                .detail-item {
+                    font-size: 0.9rem;
+                    color: rgba(255,255,255,0.8);
+                }
+
+                .detail-item strong {
+                    color: white;
+                    margin-right: 5px;
+                }
+
+                .move-description {
+                    font-size: 0.85rem;
+                    line-height: 1.5;
+                    color: rgba(255,255,255,0.6);
+                    background: rgba(0,0,0,0.2);
+                    padding: 15px;
+                    border-radius: 12px;
+                    margin-bottom: 20px;
+                }
+
+                .move-details-actions {
+                    display: flex;
+                    justify-content: flex-end;
+                }
+
+                .btn-replace-move {
+                    background: var(--accent-primary);
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 10px;
+                    font-weight: 700;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+
+                .btn-replace-move:hover {
+                    transform: scale(1.05);
+                    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
                 }
             `}</style>
         </div>
